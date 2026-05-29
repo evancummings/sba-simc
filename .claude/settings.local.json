@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\code\\\\sba-simc\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "PowerShell($items = Get-ChildItem -Path \"D:\\\\code\\\\sba-simc\" -Force -ErrorAction SilentlyContinue; if \\($items.Count -eq 0\\) { Write-Output \"No items found\" } else { $items | ForEach-Object { Write-Output \"$\\($_.FullName\\) [$\\(if \\($_.PSIsContainer\\) { 'DIR' } else { 'FILE' }\\)]\" } })",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\code\\\\sba-simc\\\\.claude\" -Force -Recurse | ForEach-Object { Write-Output $_.FullName })",
+      "PowerShell(Test-Path \"D:\\\\code\\\\sba-simc\"; if \\(\\(Test-Path \"D:\\\\code\\\\sba-simc\"\\) -eq $true\\) { Write-Output \"Path exists\"; $fullPath = Resolve-Path \"D:\\\\code\\\\sba-simc\"; Write-Output \"Resolved: $fullPath\"; Get-Item \"D:\\\\code\\\\sba-simc\" } else { Write-Output \"Path does not exist\" })",
+      "PowerShell(Get-ChildItem *)",
+      "Bash(docker run *)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('DEFAULT DPS:', d['sim']['players'][0]['collected_data']['dps']['mean']\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('BLIZZARD DPS:', d['sim']['players'][0]['collected_data']['dps']['mean']\\)\")",
+      "PowerShell(docker run *)",
+      "PowerShell(docker info *)"
+    ]
+  }
+}

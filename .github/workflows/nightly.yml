@@ -1,0 +1,74 @@
+name: Nightly SimC Analysis
+
+on:
+  # Run every day at 06:00 UTC — after SimC's own nightly builds publish
+  schedule:
+    - cron: '0 6 * * *'
+  # Allow manual triggers from the Actions tab (useful for testing or after patch days)
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'SimC iterations per run (overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write   # needed to push to gh-pages branch
+
+jobs:
+  simulate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # guard against a hung simulation
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      - name: Pull SimC Docker image
+        run: |
+          docker pull simulationcraftorg/simc:latest
+          echo "SimC image pulled:"
+          docker inspect simulationcraftorg/simc:latest --format '{{ index .RepoDigests 0 }}'
+
+      # -----------------------------------------------------------------------
+      # Probe the container to confirm actual profile paths before running sims.
+      # This output is visible in the Actions log — useful for debugging on
+      # new SimC releases that may have moved files.
+      - name: Probe SimC container paths
+        run: |
+          echo "=== Profile files ==="
+          docker run --rm simulationcraftorg/simc:latest find / -name "T3*.simc" 2>/dev/null | head -20 || true
+          echo "=== Assist combat APL files ==="
+          docker run --rm simulationcraftorg/simc:latest find / -path "*/assist_combat*" 2>/dev/null | head -20 || true
+
+      # -----------------------------------------------------------------------
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore src/SbaSimc/SbaSimc.csproj
+
+      # -----------------------------------------------------------------------
+      - name: Run simulations & generate site
+        env:
+          # Manual-trigger override takes precedence; falls back to repo variable,
+          # then appsettings.json default (1000).
+          SIMC__Iterations: ${{ github.event.inputs.iterations || vars.SIMC_ITERATIONS || '' }}
+        run: |
+          dotnet run --project src/SbaSimc/SbaSimc.csproj --configuration Release
+        working-directory: ${{ github.workspace }}
+
+      # -----------------------------------------------------------------------
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          # Stamp each deployment with the date so the Pages history is meaningful
+          commit_message: "chore: nightly SimC update ${{ github.run_id }}"
+          # Keep the CNAME file if you ever add a custom domain
+          keep_files: false

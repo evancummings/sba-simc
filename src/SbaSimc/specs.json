@@ -1,0 +1,125 @@
+[
+  // ── Death Knight ──────────────────────────────────────────────────────────
+  // Blood: two profiles — base file uses San'layn (confirmed via character name field)
+  { "class": "Death Knight", "spec": "Blood",  "heroTalent": "San'layn",              "simcProfileName": "MID1_Death_Knight_Blood",              "additionalSimcOptions": "" },
+  { "class": "Death Knight", "spec": "Blood",  "heroTalent": "Deathbringer",          "simcProfileName": "MID1_Death_Knight_Blood_Deathbringer",  "additionalSimcOptions": "" },
+
+  // Frost: base file has no hero talent in its character name (covers both via talent checks); _Rider is Rider of the Apocalypse
+  { "class": "Death Knight", "spec": "Frost",  "heroTalent": "Default",               "simcProfileName": "MID1_Death_Knight_Frost",              "additionalSimcOptions": "" },
+  { "class": "Death Knight", "spec": "Frost",  "heroTalent": "Rider of the Apocalypse","simcProfileName": "MID1_Death_Knight_Frost_Rider",       "additionalSimcOptions": "" },
+
+  // Unholy: base file uses Rider of the Apocalypse (confirmed via character name)
+  { "class": "Death Knight", "spec": "Unholy", "heroTalent": "Rider of the Apocalypse","simcProfileName": "MID1_Death_Knight_Unholy",            "additionalSimcOptions": "" },
+  { "class": "Death Knight", "spec": "Unholy", "heroTalent": "San'layn",              "simcProfileName": "MID1_Death_Knight_Unholy_San'layn",    "additionalSimcOptions": "" },
+
+  // ── Demon Hunter ──────────────────────────────────────────────────────────
+  // NOTE: As of WoW 12.0.5 (Midnight), Demon Hunter gained a third spec: Devourer.
+  // Devourer base file uses Annihilator hero talent (confirmed via character name).
+  { "class": "Demon Hunter", "spec": "Devourer",   "heroTalent": "Annihilator",       "simcProfileName": "MID1_Demon_Hunter_Devourer",               "additionalSimcOptions": "" },
+  { "class": "Demon Hunter", "spec": "Devourer",   "heroTalent": "Void-Scarred",      "simcProfileName": "MID1_Demon_Hunter_Devourer_Void-Scarred",  "additionalSimcOptions": "" },
+
+  // Havoc: only one profile; uses Fel-Scarred hero talent (confirmed via character name)
+  { "class": "Demon Hunter", "spec": "Havoc",      "heroTalent": "Fel-Scarred",       "simcProfileName": "MID1_Demon_Hunter_Havoc",                  "additionalSimcOptions": "" },
+
+  // Vengeance: base file uses Annihilator (confirmed via character name)
+  { "class": "Demon Hunter", "spec": "Vengeance",  "heroTalent": "Annihilator",       "simcProfileName": "MID1_Demon_Hunter_Vengeance",              "additionalSimcOptions": "" },
+  { "class": "Demon Hunter", "spec": "Vengeance",  "heroTalent": "Aldrachi Reaver",   "simcProfileName": "MID1_Demon_Hunter_Vengeance_Aldrachi_Reaver","additionalSimcOptions": "" },
+
+  // ── Druid ─────────────────────────────────────────────────────────────────
+  // Balance: one profile, no hero talent in character name
+  { "class": "Druid", "spec": "Balance",  "heroTalent": "Default",     "simcProfileName": "MID1_Druid_Balance",  "additionalSimcOptions": "" },
+
+  // Feral: one profile; uses Wildstalker (confirmed via character name)
+  { "class": "Druid", "spec": "Feral",    "heroTalent": "Wildstalker", "simcProfileName": "MID1_Druid_Feral",    "additionalSimcOptions": "" },
+
+  // Guardian: one profile, no hero talent in character name
+  { "class": "Druid", "spec": "Guardian", "heroTalent": "Default",     "simcProfileName": "MID1_Druid_Guardian", "additionalSimcOptions": "" },
+
+  // ── Evoker ────────────────────────────────────────────────────────────────
+  // Devastation: base uses Scalecommander (SC, confirmed via character name); _FS is Flameshaper
+  { "class": "Evoker", "spec": "Devastation", "heroTalent": "Scalecommander", "simcProfileName": "MID1_Evoker_Devastation",    "additionalSimcOptions": "" },
+  { "class": "Evoker", "spec": "Devastation", "heroTalent": "Flameshaper",    "simcProfileName": "MID1_Evoker_Devastation_FS", "additionalSimcOptions": "" },
+
+  // ── Hunter ────────────────────────────────────────────────────────────────
+  // Beast Mastery and Marksmanship: one profile each, no hero talent in character name
+  { "class": "Hunter", "spec": "Beast Mastery",  "heroTalent": "Default",              "simcProfileName": "MID1_Hunter_Beast_Mastery",     "additionalSimcOptions": "" },
+  { "class": "Hunter", "spec": "Marksmanship",   "heroTalent": "Default",              "simcProfileName": "MID1_Hunter_Marksmanship",      "additionalSimcOptions": "" },
+
+  // Survival: base uses Sentinel 2H build; _PL_DW is Pack Leader Dual-Wield build
+  { "class": "Hunter", "spec": "Survival", "heroTalent": "Sentinel (2H)",       "simcProfileName": "MID1_Hunter_Survival",        "additionalSimcOptions": "" },
+  { "class": "Hunter", "spec": "Survival", "heroTalent": "Pack Leader (DW)",    "simcProfileName": "MID1_Hunter_Survival_PL_DW",  "additionalSimcOptions": "" },
+
+  // ── Mage ──────────────────────────────────────────────────────────────────
+  // Arcane: base uses Spellslinger (confirmed via character name)
+  { "class": "Mage", "spec": "Arcane", "heroTalent": "Spellslinger", "simcProfileName": "MID1_Mage_Arcane",         "additionalSimcOptions": "" },
+  { "class": "Mage", "spec": "Arcane", "heroTalent": "Sunfury",      "simcProfileName": "MID1_Mage_Arcane_Sunfury", "additionalSimcOptions": "" },
+
+  // Fire: base uses Sunfury (confirmed via character name)
+  { "class": "Mage", "spec": "Fire",   "heroTalent": "Sunfury",      "simcProfileName": "MID1_Mage_Fire",           "additionalSimcOptions": "" },
+  { "class": "Mage", "spec": "Fire",   "heroTalent": "Frostfire",    "simcProfileName": "MID1_Mage_Fire_Frostfire", "additionalSimcOptions": "" },
+
+  // Frost: base uses Spellslinger (confirmed via character name)
+  { "class": "Mage", "spec": "Frost",  "heroTalent": "Spellslinger", "simcProfileName": "MID1_Mage_Frost",          "additionalSimcOptions": "" },
+  { "class": "Mage", "spec": "Frost",  "heroTalent": "Frostfire",    "simcProfileName": "MID1_Mage_Frost_Frostfire","additionalSimcOptions": "" },
+
+  // ── Monk ──────────────────────────────────────────────────────────────────
+  // Brewmaster: one profile, no hero talent in character name
+  { "class": "Monk", "spec": "Brewmaster", "heroTalent": "Default",                  "simcProfileName": "MID1_Monk_Brewmaster",         "additionalSimcOptions": "" },
+
+  // Windwalker: base has no hero talent in character name; _Conduit is Conduit of the Celestials
+  { "class": "Monk", "spec": "Windwalker", "heroTalent": "Default",                  "simcProfileName": "MID1_Monk_Windwalker",         "additionalSimcOptions": "" },
+  { "class": "Monk", "spec": "Windwalker", "heroTalent": "Conduit of the Celestials","simcProfileName": "MID1_Monk_Windwalker_Conduit", "additionalSimcOptions": "" },
+
+  // ── Paladin ───────────────────────────────────────────────────────────────
+  // Protection: base has no hero talent in character name; _Lightsmith is Lightsmith
+  { "class": "Paladin", "spec": "Protection", "heroTalent": "Default",    "simcProfileName": "MID1_Paladin_Protection",           "additionalSimcOptions": "" },
+  { "class": "Paladin", "spec": "Protection", "heroTalent": "Lightsmith", "simcProfileName": "MID1_Paladin_Protection_Lightsmith","additionalSimcOptions": "" },
+
+  // Retribution: base has no hero talent in character name; _Herald is Herald of the Sun
+  { "class": "Paladin", "spec": "Retribution","heroTalent": "Default",        "simcProfileName": "MID1_Paladin_Retribution",        "additionalSimcOptions": "" },
+  { "class": "Paladin", "spec": "Retribution","heroTalent": "Herald of the Sun","simcProfileName": "MID1_Paladin_Retribution_Herald","additionalSimcOptions": "" },
+
+  // ── Priest ────────────────────────────────────────────────────────────────
+  // Shadow: base uses Voidweaver (confirmed via character name); _Archon is Archon
+  { "class": "Priest", "spec": "Shadow", "heroTalent": "Voidweaver", "simcProfileName": "MID1_Priest_Shadow",        "additionalSimcOptions": "" },
+  { "class": "Priest", "spec": "Shadow", "heroTalent": "Archon",     "simcProfileName": "MID1_Priest_Shadow_Archon", "additionalSimcOptions": "" },
+
+  // ── Rogue ─────────────────────────────────────────────────────────────────
+  // Assassination and Subtlety: one profile each, no hero talent in character name
+  { "class": "Rogue", "spec": "Assassination", "heroTalent": "Default",   "simcProfileName": "MID1_Rogue_Assassination",     "additionalSimcOptions": "" },
+
+  // Outlaw: base uses Fatebound (confirmed via character name); _Trickster is Trickster
+  { "class": "Rogue", "spec": "Outlaw",        "heroTalent": "Fatebound", "simcProfileName": "MID1_Rogue_Outlaw",            "additionalSimcOptions": "" },
+  { "class": "Rogue", "spec": "Outlaw",        "heroTalent": "Trickster", "simcProfileName": "MID1_Rogue_Outlaw_Trickster",  "additionalSimcOptions": "" },
+
+  { "class": "Rogue", "spec": "Subtlety",      "heroTalent": "Default",   "simcProfileName": "MID1_Rogue_Subtlety",          "additionalSimcOptions": "" },
+
+  // ── Shaman ────────────────────────────────────────────────────────────────
+  // Elemental: one profile; uses Stormbringer (confirmed via character name)
+  { "class": "Shaman", "spec": "Elemental",   "heroTalent": "Stormbringer", "simcProfileName": "MID1_Shaman_Elemental",              "additionalSimcOptions": "" },
+
+  // Enhancement: base uses Totemic (confirmed via character name); _Stormbringer is Stormbringer
+  { "class": "Shaman", "spec": "Enhancement", "heroTalent": "Totemic",      "simcProfileName": "MID1_Shaman_Enhancement",            "additionalSimcOptions": "" },
+  { "class": "Shaman", "spec": "Enhancement", "heroTalent": "Stormbringer", "simcProfileName": "MID1_Shaman_Enhancement_Stormbringer","additionalSimcOptions": "" },
+
+  // ── Warlock ───────────────────────────────────────────────────────────────
+  // Affliction: base uses Soul Harvester (confirmed via character name); _Hellcaller is Hellcaller
+  { "class": "Warlock", "spec": "Affliction",  "heroTalent": "Soul Harvester","simcProfileName": "MID1_Warlock_Affliction",         "additionalSimcOptions": "" },
+  { "class": "Warlock", "spec": "Affliction",  "heroTalent": "Hellcaller",    "simcProfileName": "MID1_Warlock_Affliction_Hellcaller","additionalSimcOptions": "" },
+
+  // Demonology: one profile; uses Diabolist (confirmed via character name)
+  { "class": "Warlock", "spec": "Demonology",  "heroTalent": "Diabolist",     "simcProfileName": "MID1_Warlock_Demonology",         "additionalSimcOptions": "" },
+
+  // Destruction: base uses Diabolist (confirmed via character name); three profiles exist —
+  // MID1_Warlock_Destruction.simc and MID1_Warlock_Destruction_Diabolist.simc share the same
+  // internal character name; the base file is used here. _Hellcaller is Hellcaller.
+  { "class": "Warlock", "spec": "Destruction", "heroTalent": "Diabolist",     "simcProfileName": "MID1_Warlock_Destruction",        "additionalSimcOptions": "" },
+  { "class": "Warlock", "spec": "Destruction", "heroTalent": "Hellcaller",    "simcProfileName": "MID1_Warlock_Destruction_Hellcaller","additionalSimcOptions": "" },
+
+  // ── Warrior ───────────────────────────────────────────────────────────────
+  // All three Warrior specs: one profile each, no hero talent in character name.
+  // The APLs handle multiple hero talents internally via talent checks.
+  { "class": "Warrior", "spec": "Arms",       "heroTalent": "Default", "simcProfileName": "MID1_Warrior_Arms",       "additionalSimcOptions": "" },
+  { "class": "Warrior", "spec": "Fury",       "heroTalent": "Default", "simcProfileName": "MID1_Warrior_Fury",       "additionalSimcOptions": "" },
+  { "class": "Warrior", "spec": "Protection", "heroTalent": "Default", "simcProfileName": "MID1_Warrior_Protection", "additionalSimcOptions": "" }
+]
