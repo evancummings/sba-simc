@@ -217,12 +217,10 @@
         <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight + Cooldowns DPS (Blizzard APL, manual cooldowns)">AH+CDs DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">AH DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(6)" style="text-align:right" title="One Button DPS (Blizzard APL + GCD penalty)">OB DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(7)" style="text-align:right" title="Assisted Highlight + Cooldowns Delta vs SimC APL">AH+CDs Δ <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(8)" style="text-align:right" title="Assisted Highlight Delta vs SimC APL">AH Δ <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(9)" style="text-align:right" title="One Button Delta vs SimC APL">OB Δ <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">AH DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(5)" style="text-align:right" title="One Button DPS (Blizzard APL + GCD penalty)">OB DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(6)" style="text-align:right" title="Assisted Highlight Delta vs SimC APL">AH Δ <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(7)" style="text-align:right" title="One Button Delta vs SimC APL">OB Δ <span class="sort-arrow">↕</span></th>
         <th class="delta-bar-cell"></th>
       </tr>
     </thead>
@@ -240,14 +238,6 @@
             severity_class = "delta-poor"
             bar_class = "bar-poor"
           end
-          ah_cds_severity_class = ""
-          if r.assisted_highlight_cds_severity == 0
-            ah_cds_severity_class = "delta-good"
-          else if r.assisted_highlight_cds_severity == 1
-            ah_cds_severity_class = "delta-moderate"
-          else
-            ah_cds_severity_class = "delta-poor"
-          end
           ob_severity_class = ""
           if r.one_button_severity == 0
             ob_severity_class = "delta-good"
@@ -263,10 +253,8 @@
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
         <td class="dps" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
-        <td class="dps" data-val="{{ r.assisted_highlight_cds_dps | math.round }}">{{ r.assisted_highlight_cds_dps | math.round }}</td>
         <td class="dps" data-val="{{ r.assisted_highlight_dps | math.round }}">{{ r.assisted_highlight_dps | math.round }}</td>
         <td class="dps" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
-        <td class="delta {{ ah_cds_severity_class }}" data-val="{{ r.assisted_highlight_cds_delta_percent }}">{{ r.assisted_highlight_cds_delta_formatted }}</td>
         <td class="delta {{ severity_class }}" data-val="{{ r.delta_percent }}">{{ r.delta_formatted }}</td>
         <td class="delta {{ ob_severity_class }}" data-val="{{ r.one_button_delta_percent }}">{{ r.one_button_delta_formatted }}</td>
         <td class="delta-bar-cell">
@@ -368,7 +356,7 @@
   }
 
   // Sort
-  let sortCol = 8, sortAsc = true; // pre-set so first sortTable(8) call flips to descending
+  let sortCol = 6, sortAsc = true; // pre-set so first sortTable(6) call flips to descending
   function sortTable(col) {
     const table = document.getElementById('results-table');
     const tbody = table.querySelector('tbody');
@@ -401,8 +389,8 @@
     });
   }
 
-  // Default sort: AH delta descending (worst performers — most negative — at top)
-  sortTable(8);
+  // Default sort: AH delta descending (closest to optimal at top)
+  sortTable(6);
 </script>
 </body>
 </html>

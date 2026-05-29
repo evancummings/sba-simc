@@ -123,12 +123,6 @@ public class SimcRunner(SimcConfig config)
             // unrelated armory data-import tag and does not change the APL.
             sb.Append(" use_blizzard_action_list=1");
         }
-        else if (aplSource == "blizzard_cds")
-        {
-            // Blizzard APL + SimC-authored cooldown stub (potions, trinkets, racials, major CD).
-            // Simulates a player following Blizzard's rotation but manually pressing cooldowns.
-            sb.Append(" use_blizzard_action_list=1 use_cds_with_blizzard_action_list=1");
-        }
         else if (aplSource == "one_button")
         {
             // One Button Rotation: Blizzard's APL + a 25%-of-GCD timing penalty per cast,

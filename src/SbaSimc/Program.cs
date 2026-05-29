@@ -64,38 +64,35 @@ await Parallel.ForEachAsync(
             .Replace("'", "")
             .Replace(" ", "_");
 
-        var optOutputFile    = Path.Combine(tempDir, $"{safeName}_optimal.json");
-        var ahCdsOutputFile  = Path.Combine(tempDir, $"{safeName}_ah_cds.json");
-        var ahOutputFile     = Path.Combine(tempDir, $"{safeName}_assisted_highlight.json");
-        var obOutputFile     = Path.Combine(tempDir, $"{safeName}_one_button.json");
+        var optOutputFile = Path.Combine(tempDir, $"{safeName}_optimal.json");
+        var ahOutputFile  = Path.Combine(tempDir, $"{safeName}_assisted_highlight.json");
+        var obOutputFile  = Path.Combine(tempDir, $"{safeName}_one_button.json");
 
-        string? optJson   = await runner.RunAsync(spec.SimcProfileName, aplSource: null,            optOutputFile,   spec.AdditionalSimcOptions, ct);
-        string? ahCdsJson = await runner.RunAsync(spec.SimcProfileName, aplSource: "blizzard_cds",  ahCdsOutputFile, spec.AdditionalSimcOptions, ct);
-        string? ahJson    = await runner.RunAsync(spec.SimcProfileName, aplSource: "blizzard",      ahOutputFile,    spec.AdditionalSimcOptions, ct);
-        string? obJson    = await runner.RunAsync(spec.SimcProfileName, aplSource: "one_button",    obOutputFile,    spec.AdditionalSimcOptions, ct);
+        string? optJson = await runner.RunAsync(spec.SimcProfileName, aplSource: null,          optOutputFile, spec.AdditionalSimcOptions, ct);
+        string? ahJson  = await runner.RunAsync(spec.SimcProfileName, aplSource: "blizzard",    ahOutputFile,  spec.AdditionalSimcOptions, ct);
+        string? obJson  = await runner.RunAsync(spec.SimcProfileName, aplSource: "one_button",  obOutputFile,  spec.AdditionalSimcOptions, ct);
 
-        if (optJson is null || ahCdsJson is null || ahJson is null || obJson is null)
+        if (optJson is null || ahJson is null || obJson is null)
         {
             Console.Error.WriteLine($"  ✗ Skipping {label} — simulation run failed.");
             return;
         }
 
-        var optDps   = ResultParser.ExtractDps(optJson);
-        var ahCdsDps = ResultParser.ExtractDps(ahCdsJson);
-        var ahDps    = ResultParser.ExtractDps(ahJson);
-        var obDps    = ResultParser.ExtractDps(obJson);
+        var optDps = ResultParser.ExtractDps(optJson);
+        var ahDps  = ResultParser.ExtractDps(ahJson);
+        var obDps  = ResultParser.ExtractDps(obJson);
 
-        if (optDps is null || ahCdsDps is null || ahDps is null || obDps is null)
+        if (optDps is null || ahDps is null || obDps is null)
         {
             Console.Error.WriteLine($"  ✗ Skipping {label} — could not parse DPS from output.");
             return;
         }
 
-        var result = new SimulationResult(spec, optDps.Value, ahCdsDps.Value, ahDps.Value, obDps.Value);
+        var result = new SimulationResult(spec, optDps.Value, ahDps.Value, obDps.Value);
         results.Add(result);
 
         Console.WriteLine($"  ✓ {label}");
-        Console.WriteLine($"      Optimal: {optDps.Value:N0}  |  AH+CDs: {ahCdsDps.Value:N0}  |  AH: {ahDps.Value:N0}  |  OB: {obDps.Value:N0}  |  Δ {result.DeltaFormatted}");
+        Console.WriteLine($"      Optimal: {optDps.Value:N0}  |  AH: {ahDps.Value:N0}  |  OB: {obDps.Value:N0}  |  Δ {result.DeltaFormatted}");
     });
 
 Console.WriteLine();
