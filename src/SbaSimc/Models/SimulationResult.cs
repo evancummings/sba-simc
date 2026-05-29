@@ -3,6 +3,7 @@ namespace SbaSimc.Models;
 public record SimulationResult(
     WowSpec Spec,
     double OptimalDps,
+    double AssistedHighlightCdsDps,
     double AssistedHighlightDps,
     double OneButtonDps
 )
@@ -19,6 +20,19 @@ public record SimulationResult(
 
     /// <summary>Severity bucket used for HTML colour-coding.</summary>
     public DeltaSeverity Severity => DeltaPercent switch
+    {
+        >= -5 => DeltaSeverity.Good,
+        >= -15 => DeltaSeverity.Moderate,
+        _ => DeltaSeverity.Poor
+    };
+
+    public double AssistedHighlightCdsDeltaPercent => OptimalDps > 0
+        ? (AssistedHighlightCdsDps - OptimalDps) / OptimalDps * 100.0
+        : 0.0;
+
+    public string AssistedHighlightCdsDeltaFormatted => $"{AssistedHighlightCdsDeltaPercent:+0.0;-0.0}%";
+
+    public DeltaSeverity AssistedHighlightCdsSeverity => AssistedHighlightCdsDeltaPercent switch
     {
         >= -5 => DeltaSeverity.Good,
         >= -15 => DeltaSeverity.Moderate,
