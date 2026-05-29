@@ -116,8 +116,19 @@ public class SimcRunner(SimcConfig config)
         if (!string.IsNullOrWhiteSpace(additionalOptions))
             sb.Append($" {additionalOptions}");
 
-        if (!string.IsNullOrEmpty(aplSource))
-            sb.Append($" source={aplSource}");
+        if (aplSource == "blizzard")
+        {
+            // Selects Blizzard's Assisted Highlight APL (no GCD penalty).
+            // use_blizzard_action_list=1 is the correct actor-scoped flag; source=blizzard is an
+            // unrelated armory data-import tag and does not change the APL.
+            sb.Append(" use_blizzard_action_list=1");
+        }
+        else if (aplSource == "one_button")
+        {
+            // One Button Rotation: Blizzard's APL + a 25%-of-GCD timing penalty per cast,
+            // modelling the delay inherent in the game's one-button cycling mechanic.
+            sb.Append(" use_blizzard_action_list=1 one_button_mode=1");
+        }
 
         return sb.ToString();
     }
