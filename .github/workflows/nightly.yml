@@ -4,6 +4,10 @@ on:
   # Run every day at 06:00 UTC — after SimC's own nightly builds publish
   schedule:
     - cron: '0 6 * * *'
+  # Run automatically on every push to main
+  push:
+    branches:
+      - main
   # Allow manual triggers from the Actions tab (useful for testing or after patch days)
   workflow_dispatch:
     inputs:
