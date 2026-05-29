@@ -216,10 +216,11 @@
         <th onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(3)" style="text-align:right">SimC APL <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(4)" style="text-align:right">Assisted Highlight DPS <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(5)" style="text-align:right">One Button DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(6)" style="text-align:right">Delta <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(6)" style="text-align:right">Assisted Highlight Delta <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(7)" style="text-align:right">One Button Delta <span class="sort-arrow">↕</span></th>
         <th class="delta-bar-cell"></th>
       </tr>
     </thead>
@@ -236,6 +237,14 @@
           else
             severity_class = "delta-poor"
             bar_class = "bar-poor"
+          end
+          ob_severity_class = ""
+          if r.one_button_severity == 0
+            ob_severity_class = "delta-good"
+          else if r.one_button_severity == 1
+            ob_severity_class = "delta-moderate"
+          else
+            ob_severity_class = "delta-poor"
           end }}
       {{- bar_width = (r.delta_percent | math.abs) * (100.0 / 30.0) | math.round
           bar_width = bar_width > 100 ? 100 : bar_width }}
@@ -247,6 +256,7 @@
         <td class="dps" data-val="{{ r.assisted_highlight_dps | math.round }}">{{ r.assisted_highlight_dps | math.round }}</td>
         <td class="dps" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
         <td class="delta {{ severity_class }}" data-val="{{ r.delta_percent }}">{{ r.delta_formatted }}</td>
+        <td class="delta {{ ob_severity_class }}" data-val="{{ r.one_button_delta_percent }}">{{ r.one_button_delta_formatted }}</td>
         <td class="delta-bar-cell">
           <div class="delta-bar-wrap">
             <div class="delta-bar {{ bar_class }}" style="width: {{ bar_width }}%"></div>
@@ -378,6 +388,9 @@
       if (arrow) arrow.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
     });
   }
+
+  // Default sort: delta ascending (worst performers first)
+  sortTable(6);
 </script>
 </body>
 </html>

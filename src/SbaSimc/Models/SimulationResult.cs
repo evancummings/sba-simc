@@ -24,6 +24,19 @@ public record SimulationResult(
         >= -15 => DeltaSeverity.Moderate,
         _ => DeltaSeverity.Poor
     };
+
+    public double OneButtonDeltaPercent => OptimalDps > 0
+        ? (OneButtonDps - OptimalDps) / OptimalDps * 100.0
+        : 0.0;
+
+    public string OneButtonDeltaFormatted => $"{OneButtonDeltaPercent:+0.0;-0.0}%";
+
+    public DeltaSeverity OneButtonSeverity => OneButtonDeltaPercent switch
+    {
+        >= -5 => DeltaSeverity.Good,
+        >= -15 => DeltaSeverity.Moderate,
+        _ => DeltaSeverity.Poor
+    };
 }
 
 public enum DeltaSeverity { Good, Moderate, Poor }
