@@ -25,7 +25,7 @@ var outputConfig = configuration.GetSection("Output").Get<OutputConfig>()
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
-Console.WriteLine("=== SBA SimC — Blizzard APL vs Optimal APL Comparison ===");
+Console.WriteLine("=== SBA SimC — Optimal vs Assisted Highlight vs One Button Rotation ===");
 Console.WriteLine($"  Docker image : {simcConfig.DockerImage}");
 Console.WriteLine($"  Iterations   : {simcConfig.Iterations:N0}");
 Console.WriteLine($"  Parallelism  : {simcConfig.MaxParallelism}");
@@ -65,31 +65,34 @@ await Parallel.ForEachAsync(
             .Replace(" ", "_");
 
         var optOutputFile  = Path.Combine(tempDir, $"{safeName}_optimal.json");
-        var blizOutputFile = Path.Combine(tempDir, $"{safeName}_blizzard.json");
+        var ahOutputFile   = Path.Combine(tempDir, $"{safeName}_assisted_highlight.json");
+        var obOutputFile   = Path.Combine(tempDir, $"{safeName}_one_button.json");
 
-        string? optJson  = await runner.RunAsync(spec.SimcProfileName, useBlizzardApl: false, optOutputFile,  spec.AdditionalSimcOptions, ct);
-        string? blizJson = await runner.RunAsync(spec.SimcProfileName, useBlizzardApl: true,  blizOutputFile, spec.AdditionalSimcOptions, ct);
+        string? optJson = await runner.RunAsync(spec.SimcProfileName, aplSource: null,           optOutputFile, spec.AdditionalSimcOptions, ct);
+        string? ahJson  = await runner.RunAsync(spec.SimcProfileName, aplSource: "blizzard",     ahOutputFile,  spec.AdditionalSimcOptions, ct);
+        string? obJson  = await runner.RunAsync(spec.SimcProfileName, aplSource: "one_button",   obOutputFile,  spec.AdditionalSimcOptions, ct);
 
-        if (optJson is null || blizJson is null)
+        if (optJson is null || ahJson is null || obJson is null)
         {
             Console.Error.WriteLine($"  ✗ Skipping {label} — simulation run failed.");
             return;
         }
 
-        var optDps  = ResultParser.ExtractDps(optJson);
-        var blizDps = ResultParser.ExtractDps(blizJson);
+        var optDps = ResultParser.ExtractDps(optJson);
+        var ahDps  = ResultParser.ExtractDps(ahJson);
+        var obDps  = ResultParser.ExtractDps(obJson);
 
-        if (optDps is null || blizDps is null)
+        if (optDps is null || ahDps is null || obDps is null)
         {
             Console.Error.WriteLine($"  ✗ Skipping {label} — could not parse DPS from output.");
             return;
         }
 
-        var result = new SimulationResult(spec, optDps.Value, blizDps.Value);
+        var result = new SimulationResult(spec, optDps.Value, ahDps.Value, obDps.Value);
         results.Add(result);
 
         Console.WriteLine($"  ✓ {label}");
-        Console.WriteLine($"      Optimal: {optDps.Value:N0}  |  Blizzard: {blizDps.Value:N0}  |  Δ {result.DeltaFormatted}");
+        Console.WriteLine($"      Optimal: {optDps.Value:N0}  |  Assisted Highlight: {ahDps.Value:N0}  |  One Button: {obDps.Value:N0}  |  Δ {result.DeltaFormatted}");
     });
 
 Console.WriteLine();

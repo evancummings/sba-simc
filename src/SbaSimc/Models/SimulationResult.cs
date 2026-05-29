@@ -3,15 +3,16 @@ namespace SbaSimc.Models;
 public record SimulationResult(
     WowSpec Spec,
     double OptimalDps,
-    double BlizzardDps
+    double AssistedHighlightDps,
+    double OneButtonDps
 )
 {
     /// <summary>
-    /// How much DPS Blizzard's APL loses relative to the optimal APL.
-    /// Negative means Blizzard APL underperforms (expected). Positive would mean it somehow outperforms.
+    /// How much DPS the Assisted Highlight APL loses relative to the optimal APL.
+    /// Negative means underperformance (expected). Positive would mean it outperforms.
     /// </summary>
     public double DeltaPercent => OptimalDps > 0
-        ? (BlizzardDps - OptimalDps) / OptimalDps * 100.0
+        ? (AssistedHighlightDps - OptimalDps) / OptimalDps * 100.0
         : 0.0;
 
     public string DeltaFormatted => $"{DeltaPercent:+0.0;-0.0}%";

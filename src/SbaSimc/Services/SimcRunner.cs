@@ -17,14 +17,15 @@ public class SimcRunner(SimcConfig config)
     ///     Filename (without extension) of the SimC profile inside the container's profiles directory,
     ///     e.g. "T33_Warrior_Arms".
     /// </param>
-    /// <param name="useBlizzardApl">
-    ///     When true, disables the default optimal APL and loads the assist_combat APL instead.
+    /// <param name="aplSource">
+    ///     Optional SimC source override. Null = optimal community APL; "blizzard" = Assisted Highlight
+    ///     (no GCD penalty); "one_button" = One Button Rotation (with GCD penalty).
     /// </param>
     /// <param name="hostOutputFile">Absolute path on the host where the JSON result should be written.</param>
     /// <param name="additionalOptions">Extra simc options for this spec (e.g. hero talent selection).</param>
     public async Task<string?> RunAsync(
         string profileName,
-        bool useBlizzardApl,
+        string? aplSource,
         string hostOutputFile,
         string additionalOptions = "",
         CancellationToken ct = default)
@@ -35,7 +36,7 @@ public class SimcRunner(SimcConfig config)
         var containerOutputFile = $"/output/{Path.GetFileName(hostOutputFile)}";
         var profilePath = $"{config.ContainerProfilesPath}/{profileName}.simc";
 
-        var args = BuildDockerArgs(hostOutputDir, profilePath, useBlizzardApl, containerOutputFile, additionalOptions);
+        var args = BuildDockerArgs(hostOutputDir, profilePath, aplSource, containerOutputFile, additionalOptions);
 
         Console.WriteLine($"    docker {args[..Math.Min(120, args.Length)]}...");
 
@@ -91,7 +92,7 @@ public class SimcRunner(SimcConfig config)
     private string BuildDockerArgs(
         string hostOutputDir,
         string containerProfilePath,
-        bool useBlizzardApl,
+        string? aplSource,
         string containerOutputFile,
         string additionalOptions)
     {
@@ -115,13 +116,8 @@ public class SimcRunner(SimcConfig config)
         if (!string.IsNullOrWhiteSpace(additionalOptions))
             sb.Append($" {additionalOptions}");
 
-        if (useBlizzardApl)
-        {
-            // `source=blizzard` switches the profile to Blizzard's Assisted Combat (Single Button
-            // Assistant) APL, which is compiled into the simc binary per-class.
-            // Confirmed working: the json2 output shows `profile_source: "blizzard"` when set.
-            sb.Append(" source=blizzard");
-        }
+        if (!string.IsNullOrEmpty(aplSource))
+            sb.Append($" source={aplSource}");
 
         return sb.ToString();
     }

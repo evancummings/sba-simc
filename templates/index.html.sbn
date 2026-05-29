@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SBA SimC — Blizzard APL vs Optimal APL</title>
+  <title>SBA SimC — Optimal vs Assisted Highlight vs One Button Rotation</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -186,10 +186,10 @@
 <body>
 
 <header>
-  <h1>⚔️ SBA SimC — Blizzard APL vs Optimal APL</h1>
+  <h1>⚔️ SBA SimC — Optimal vs Assisted Highlight vs One Button Rotation</h1>
   <p class="subtitle">
-    Comparing Blizzard's Single Button Assistant APL against the SimulationCraft community-optimal APL
-    for every class/spec/hero-talent combination, using SimC's standard T-gear baseline profiles.
+    Comparing the SimulationCraft community-optimal APL against Blizzard's Assisted Highlight (no GCD penalty)
+    and One Button Rotation (with GCD penalty), for every class/spec/hero-talent combination.
     SimC version: <strong>{{ simc_version }}</strong> &mdash; {{ iterations | math.format "N0" }} iterations per sim.
   </p>
 
@@ -217,8 +217,9 @@
         <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
         <th onclick="sortTable(3)" style="text-align:right">Optimal DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(4)" style="text-align:right">Blizzard DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(5)" style="text-align:right">Delta <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(4)" style="text-align:right">Assisted Highlight DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(5)" style="text-align:right">One Button DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(6)" style="text-align:right">Delta <span class="sort-arrow">↕</span></th>
         <th class="delta-bar-cell"></th>
       </tr>
     </thead>
@@ -243,7 +244,8 @@
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
         <td class="dps" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
-        <td class="dps" data-val="{{ r.blizzard_dps | math.round }}">{{ r.blizzard_dps | math.round }}</td>
+        <td class="dps" data-val="{{ r.assisted_highlight_dps | math.round }}">{{ r.assisted_highlight_dps | math.round }}</td>
+        <td class="dps" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
         <td class="delta {{ severity_class }}" data-val="{{ r.delta_percent }}">{{ r.delta_formatted }}</td>
         <td class="delta-bar-cell">
           <div class="delta-bar-wrap">
