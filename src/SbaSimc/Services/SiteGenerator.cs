@@ -14,6 +14,7 @@ public class SiteGenerator(string outputDir)
     public async Task GenerateAsync(
         IEnumerable<SimulationResult> results,
         string simcVersion,
+        int iterations,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(outputDir);
@@ -45,6 +46,7 @@ public class SiteGenerator(string outputDir)
             classes,
             generated_at = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") + " UTC",
             simc_version = simcVersion,
+            iterations,
             total_specs = sortedResults.Count,
             good_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Good),
             moderate_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Moderate),

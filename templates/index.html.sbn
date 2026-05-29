@@ -190,7 +190,7 @@
   <p class="subtitle">
     Comparing Blizzard's Single Button Assistant APL against the SimulationCraft community-optimal APL
     for every class/spec/hero-talent combination, using SimC's standard T-gear baseline profiles.
-    SimC version: <strong>{{ simc_version }}</strong>.
+    SimC version: <strong>{{ simc_version }}</strong> &mdash; {{ iterations | math.format "N0" }} iterations per sim.
   </p>
 
   <div class="summary">

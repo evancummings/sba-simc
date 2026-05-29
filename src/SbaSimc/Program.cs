@@ -117,7 +117,7 @@ if (firstResultFile is not null)
 // ---------------------------------------------------------------------------
 Console.WriteLine("Generating static site...");
 var generator = new SiteGenerator(outputConfig.Directory);
-await generator.GenerateAsync(results, simcVersion, cts.Token);
+await generator.GenerateAsync(results, simcVersion, simcConfig.Iterations, cts.Token);
 
 Console.WriteLine();
 Console.WriteLine("Done.");
