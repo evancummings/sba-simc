@@ -59,10 +59,12 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Run simulations & generate site
         env:
-          # Manual-trigger override takes precedence; falls back to repo variable,
-          # then appsettings.json default (1000).
-          SIMC__Iterations: ${{ github.event.inputs.iterations || vars.SIMC_ITERATIONS || '' }}
+          # Manual-trigger override takes precedence; falls back to repo variable.
+          # Empty string is intentional — the run step unsets it so the appsettings.json
+          # default (1000) applies rather than failing the int binder with an empty string.
+          SIMC__Iterations: ${{ github.event.inputs.iterations || vars.SIMC_ITERATIONS }}
         run: |
+          [ -z "${SIMC__Iterations}" ] && unset SIMC__Iterations
           dotnet run --project src/SbaSimc/SbaSimc.csproj --configuration Release
         working-directory: ${{ github.workspace }}
 
