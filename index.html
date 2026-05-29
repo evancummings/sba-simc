@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBA SimC — Blizzard APL vs Optimal APL</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .4rem;
+    }
+
+    .subtitle {
+      font-size: .9rem;
+      color: #71717a;
+    }
+
+    .subtitle a { color: #a1a1aa; }
+
+    /* Summary pills */
+    .summary {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin: 1.5rem 0;
+    }
+
+    .pill {
+      padding: .35rem .85rem;
+      border-radius: 9999px;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+
+    .pill-good     { background: #14532d; color: #86efac; }
+    .pill-moderate { background: #713f12; color: #fde68a; }
+    .pill-poor     { background: #7f1d1d; color: #fca5a5; }
+    .pill-total    { background: #1e1e2e; color: #a1a1aa; border: 1px solid #3f3f46; }
+
+    /* Class filter */
+    .filters {
+      max-width: 1100px;
+      margin: 0 auto 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      align-items: center;
+    }
+
+    .filter-label { font-size: .8rem; color: #71717a; margin-right: .25rem; }
+
+    .filter-btn {
+      padding: .3rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    /* Table */
+    .table-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .875rem;
+    }
+
+    thead tr {
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+    }
+
+    th {
+      padding: .75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #a1a1aa;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    th:hover { color: #f4f4f5; }
+    th.sorted { color: #f4f4f5; }
+    th .sort-arrow { margin-left: .25rem; opacity: .5; font-size: .7rem; }
+    th.sorted .sort-arrow { opacity: 1; }
+
+    tbody tr {
+      border-bottom: 1px solid #1f1f23;
+      transition: background .1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #18181b; }
+    tbody tr.hidden { display: none; }
+
+    td { padding: .65rem 1rem; }
+
+    .class-badge {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 5px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: #27272a;
+      color: #d4d4d8;
+    }
+
+    .dps { font-variant-numeric: tabular-nums; text-align: right; }
+
+    .delta {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .delta-good     { color: #4ade80; }
+    .delta-moderate { color: #fbbf24; }
+    .delta-poor     { color: #f87171; }
+
+    .delta-bar-cell { width: 120px; }
+
+    .delta-bar-wrap {
+      background: #27272a;
+      border-radius: 4px;
+      height: 6px;
+      width: 100px;
+      overflow: hidden;
+    }
+
+    .delta-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .3s ease;
+    }
+
+    .bar-good     { background: #4ade80; }
+    .bar-moderate { background: #fbbf24; }
+    .bar-poor     { background: #f87171; }
+
+    footer {
+      max-width: 1100px;
+      margin: 2rem auto 0;
+      font-size: .78rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚔️ SBA SimC — Blizzard APL vs Optimal APL</h1>
+  <p class="subtitle">
+    Comparing Blizzard's Single Button Assistant APL against the SimulationCraft community-optimal APL
+    for every class/spec/hero-talent combination, using SimC's standard T-gear baseline profiles.
+    SimC version: <strong>1205-01</strong>.
+  </p>
+
+  <div class="summary">
+    <span class="pill pill-total">46 combinations</span>
+    <span class="pill pill-good">✓ 43 within 5%</span>
+    <span class="pill pill-moderate">~ 3 within 5–15%</span>
+    <span class="pill pill-poor">✗ 0 over 15% loss</span>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Filter by class:</span>
+  <button class="filter-btn active" data-class="all" onclick="filterClass(this, 'all')">All</button>
+  <button class="filter-btn" data-class="Death Knight" onclick="filterClass(this, 'Death Knight')">Death Knight</button>
+  <button class="filter-btn" data-class="Demon Hunter" onclick="filterClass(this, 'Demon Hunter')">Demon Hunter</button>
+  <button class="filter-btn" data-class="Druid" onclick="filterClass(this, 'Druid')">Druid</button>
+  <button class="filter-btn" data-class="Evoker" onclick="filterClass(this, 'Evoker')">Evoker</button>
+  <button class="filter-btn" data-class="Mage" onclick="filterClass(this, 'Mage')">Mage</button>
+  <button class="filter-btn" data-class="Monk" onclick="filterClass(this, 'Monk')">Monk</button>
+  <button class="filter-btn" data-class="Paladin" onclick="filterClass(this, 'Paladin')">Paladin</button>
+  <button class="filter-btn" data-class="Priest" onclick="filterClass(this, 'Priest')">Priest</button>
+  <button class="filter-btn" data-class="Rogue" onclick="filterClass(this, 'Rogue')">Rogue</button>
+  <button class="filter-btn" data-class="Shaman" onclick="filterClass(this, 'Shaman')">Shaman</button>
+  <button class="filter-btn" data-class="Warlock" onclick="filterClass(this, 'Warlock')">Warlock</button>
+  <button class="filter-btn" data-class="Warrior" onclick="filterClass(this, 'Warrior')">Warrior</button>
+</div>
+
+<div class="table-wrap">
+  <table id="results-table">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(3)" style="text-align:right">Optimal DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(4)" style="text-align:right">Blizzard DPS <span class="sort-arrow">↕</span></th>
+        <th onclick="sortTable(5)" style="text-align:right">Delta <span class="sort-arrow">↕</span></th>
+        <th class="delta-bar-cell"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Blood</td>
+        <td>Deathbringer</td>
+        <td class="dps" data-val="58940">58940</td>
+        <td class="dps" data-val="56751">56751</td>
+        <td class="delta delta-good" data-val="-3.714181171783822">-3.7%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 12%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Blood</td>
+        <td>San'layn</td>
+        <td class="dps" data-val="69421">69421</td>
+        <td class="dps" data-val="66901">66901</td>
+        <td class="delta delta-good" data-val="-3.630816140702172">-3.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 12%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Frost</td>
+        <td>Default</td>
+        <td class="dps" data-val="130372">130372</td>
+        <td class="dps" data-val="131719">131719</td>
+        <td class="delta delta-good" data-val="1.0335594840600724">+1.0%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 3%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Frost</td>
+        <td>Rider of the Apocalypse</td>
+        <td class="dps" data-val="124402">124402</td>
+        <td class="dps" data-val="129783">129783</td>
+        <td class="delta delta-good" data-val="4.325179551571088">+4.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 14%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Unholy</td>
+        <td>Rider of the Apocalypse</td>
+        <td class="dps" data-val="123679">123679</td>
+        <td class="dps" data-val="122638">122638</td>
+        <td class="delta delta-good" data-val="-0.8413007024418493">-0.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 3%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Death Knight">
+        <td><span class="class-badge">Death Knight</span></td>
+        <td>Unholy</td>
+        <td>San'layn</td>
+        <td class="dps" data-val="110653">110653</td>
+        <td class="dps" data-val="113818">113818</td>
+        <td class="delta delta-good" data-val="2.8597015321172656">+2.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 10%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Demon Hunter">
+        <td><span class="class-badge">Demon Hunter</span></td>
+        <td>Devourer</td>
+        <td>Annihilator</td>
+        <td class="dps" data-val="104172">104172</td>
+        <td class="dps" data-val="98097">98097</td>
+        <td class="delta delta-moderate" data-val="-5.832311342272604">-5.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-moderate" style="width: 19%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Demon Hunter">
+        <td><span class="class-badge">Demon Hunter</span></td>
+        <td>Devourer</td>
+        <td>Void-Scarred</td>
+        <td class="dps" data-val="116265">116265</td>
+        <td class="dps" data-val="101877">101877</td>
+        <td class="delta delta-moderate" data-val="-12.375197702349636">-12.4%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-moderate" style="width: 41%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Demon Hunter">
+        <td><span class="class-badge">Demon Hunter</span></td>
+        <td>Havoc</td>
+        <td>Fel-Scarred</td>
+        <td class="dps" data-val="119224">119224</td>
+        <td class="dps" data-val="119120">119120</td>
+        <td class="delta delta-good" data-val="-0.08780677882657477">-0.1%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 0%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Demon Hunter">
+        <td><span class="class-badge">Demon Hunter</span></td>
+        <td>Vengeance</td>
+        <td>Aldrachi Reaver</td>
+        <td class="dps" data-val="78638">78638</td>
+        <td class="dps" data-val="78159">78159</td>
+        <td class="delta delta-good" data-val="-0.6090975273039482">-0.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 2%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Demon Hunter">
+        <td><span class="class-badge">Demon Hunter</span></td>
+        <td>Vengeance</td>
+        <td>Annihilator</td>
+        <td class="dps" data-val="75169">75169</td>
+        <td class="dps" data-val="76559">76559</td>
+        <td class="delta delta-good" data-val="1.8495216298852646">+1.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 6%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Druid">
+        <td><span class="class-badge">Druid</span></td>
+        <td>Balance</td>
+        <td>Default</td>
+        <td class="dps" data-val="114687">114687</td>
+        <td class="dps" data-val="111441">111441</td>
+        <td class="delta delta-good" data-val="-2.8303044803668915">-2.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 9%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Druid">
+        <td><span class="class-badge">Druid</span></td>
+        <td>Feral</td>
+        <td>Wildstalker</td>
+        <td class="dps" data-val="129256">129256</td>
+        <td class="dps" data-val="126454">126454</td>
+        <td class="delta delta-good" data-val="-2.1673629258386065">-2.2%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 7%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Druid">
+        <td><span class="class-badge">Druid</span></td>
+        <td>Guardian</td>
+        <td>Default</td>
+        <td class="dps" data-val="78863">78863</td>
+        <td class="dps" data-val="77783">77783</td>
+        <td class="delta delta-good" data-val="-1.3702968165518616">-1.4%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 5%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Evoker">
+        <td><span class="class-badge">Evoker</span></td>
+        <td>Devastation</td>
+        <td>Flameshaper</td>
+        <td class="dps" data-val="118846">118846</td>
+        <td class="dps" data-val="115892">115892</td>
+        <td class="delta delta-good" data-val="-2.485082559769159">-2.5%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 8%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Evoker">
+        <td><span class="class-badge">Evoker</span></td>
+        <td>Devastation</td>
+        <td>Scalecommander</td>
+        <td class="dps" data-val="116903">116903</td>
+        <td class="dps" data-val="110420">110420</td>
+        <td class="delta delta-moderate" data-val="-5.545602534095466">-5.5%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-moderate" style="width: 18%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Arcane</td>
+        <td>Spellslinger</td>
+        <td class="dps" data-val="103468">103468</td>
+        <td class="dps" data-val="112432">112432</td>
+        <td class="delta delta-good" data-val="8.663689889962212">+8.7%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 29%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Arcane</td>
+        <td>Sunfury</td>
+        <td class="dps" data-val="111983">111983</td>
+        <td class="dps" data-val="109140">109140</td>
+        <td class="delta delta-good" data-val="-2.538512456059885">-2.5%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 8%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Fire</td>
+        <td>Frostfire</td>
+        <td class="dps" data-val="116112">116112</td>
+        <td class="dps" data-val="113208">113208</td>
+        <td class="delta delta-good" data-val="-2.501198095327272">-2.5%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 8%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Fire</td>
+        <td>Sunfury</td>
+        <td class="dps" data-val="113247">113247</td>
+        <td class="dps" data-val="109939">109939</td>
+        <td class="delta delta-good" data-val="-2.921488202545819">-2.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 10%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Frost</td>
+        <td>Frostfire</td>
+        <td class="dps" data-val="104074">104074</td>
+        <td class="dps" data-val="108826">108826</td>
+        <td class="delta delta-good" data-val="4.566177031311686">+4.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 15%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Mage">
+        <td><span class="class-badge">Mage</span></td>
+        <td>Frost</td>
+        <td>Spellslinger</td>
+        <td class="dps" data-val="114485">114485</td>
+        <td class="dps" data-val="112944">112944</td>
+        <td class="delta delta-good" data-val="-1.3465288653188012">-1.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 4%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Monk">
+        <td><span class="class-badge">Monk</span></td>
+        <td>Brewmaster</td>
+        <td>Default</td>
+        <td class="dps" data-val="86086">86086</td>
+        <td class="dps" data-val="82737">82737</td>
+        <td class="delta delta-good" data-val="-3.889638901441543">-3.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 13%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Monk">
+        <td><span class="class-badge">Monk</span></td>
+        <td>Windwalker</td>
+        <td>Conduit of the Celestials</td>
+        <td class="dps" data-val="104941">104941</td>
+        <td class="dps" data-val="106580">106580</td>
+        <td class="delta delta-good" data-val="1.5622386620581468">+1.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 5%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Monk">
+        <td><span class="class-badge">Monk</span></td>
+        <td>Windwalker</td>
+        <td>Default</td>
+        <td class="dps" data-val="111932">111932</td>
+        <td class="dps" data-val="119535">119535</td>
+        <td class="delta delta-good" data-val="6.79219599766406">+6.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 23%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Paladin">
+        <td><span class="class-badge">Paladin</span></td>
+        <td>Protection</td>
+        <td>Default</td>
+        <td class="dps" data-val="67159">67159</td>
+        <td class="dps" data-val="76247">76247</td>
+        <td class="delta delta-good" data-val="13.531870842390278">+13.5%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 45%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Paladin">
+        <td><span class="class-badge">Paladin</span></td>
+        <td>Protection</td>
+        <td>Lightsmith</td>
+        <td class="dps" data-val="55132">55132</td>
+        <td class="dps" data-val="56383">56383</td>
+        <td class="delta delta-good" data-val="2.268705960768246">+2.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 8%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Paladin">
+        <td><span class="class-badge">Paladin</span></td>
+        <td>Retribution</td>
+        <td>Default</td>
+        <td class="dps" data-val="109722">109722</td>
+        <td class="dps" data-val="111468">111468</td>
+        <td class="delta delta-good" data-val="1.591140852062245">+1.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 5%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Paladin">
+        <td><span class="class-badge">Paladin</span></td>
+        <td>Retribution</td>
+        <td>Herald of the Sun</td>
+        <td class="dps" data-val="109581">109581</td>
+        <td class="dps" data-val="116121">116121</td>
+        <td class="delta delta-good" data-val="5.968114326403958">+6.0%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 20%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Priest">
+        <td><span class="class-badge">Priest</span></td>
+        <td>Shadow</td>
+        <td>Archon</td>
+        <td class="dps" data-val="101974">101974</td>
+        <td class="dps" data-val="106623">106623</td>
+        <td class="delta delta-good" data-val="4.558942797604742">+4.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 15%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Priest">
+        <td><span class="class-badge">Priest</span></td>
+        <td>Shadow</td>
+        <td>Voidweaver</td>
+        <td class="dps" data-val="107633">107633</td>
+        <td class="dps" data-val="106704">106704</td>
+        <td class="delta delta-good" data-val="-0.8636574438870285">-0.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 3%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Rogue">
+        <td><span class="class-badge">Rogue</span></td>
+        <td>Assassination</td>
+        <td>Default</td>
+        <td class="dps" data-val="107585">107585</td>
+        <td class="dps" data-val="106225">106225</td>
+        <td class="delta delta-good" data-val="-1.263502831502374">-1.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 4%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Rogue">
+        <td><span class="class-badge">Rogue</span></td>
+        <td>Outlaw</td>
+        <td>Fatebound</td>
+        <td class="dps" data-val="124671">124671</td>
+        <td class="dps" data-val="136323">136323</td>
+        <td class="delta delta-good" data-val="9.346822131010715">+9.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 31%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Rogue">
+        <td><span class="class-badge">Rogue</span></td>
+        <td>Outlaw</td>
+        <td>Trickster</td>
+        <td class="dps" data-val="125130">125130</td>
+        <td class="dps" data-val="127240">127240</td>
+        <td class="delta delta-good" data-val="1.6866273393569262">+1.7%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 6%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Rogue">
+        <td><span class="class-badge">Rogue</span></td>
+        <td>Subtlety</td>
+        <td>Default</td>
+        <td class="dps" data-val="124019">124019</td>
+        <td class="dps" data-val="117868">117868</td>
+        <td class="delta delta-good" data-val="-4.959713912556159">-5.0%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 17%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Shaman">
+        <td><span class="class-badge">Shaman</span></td>
+        <td>Elemental</td>
+        <td>Stormbringer</td>
+        <td class="dps" data-val="120705">120705</td>
+        <td class="dps" data-val="142078">142078</td>
+        <td class="delta delta-good" data-val="17.70667548282117">+17.7%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 59%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Shaman">
+        <td><span class="class-badge">Shaman</span></td>
+        <td>Enhancement</td>
+        <td>Stormbringer</td>
+        <td class="dps" data-val="104518">104518</td>
+        <td class="dps" data-val="106467">106467</td>
+        <td class="delta delta-good" data-val="1.8647812555563612">+1.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 6%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Shaman">
+        <td><span class="class-badge">Shaman</span></td>
+        <td>Enhancement</td>
+        <td>Totemic</td>
+        <td class="dps" data-val="112424">112424</td>
+        <td class="dps" data-val="108315">108315</td>
+        <td class="delta delta-good" data-val="-3.654683900062213">-3.7%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 12%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warlock">
+        <td><span class="class-badge">Warlock</span></td>
+        <td>Affliction</td>
+        <td>Hellcaller</td>
+        <td class="dps" data-val="107013">107013</td>
+        <td class="dps" data-val="108502">108502</td>
+        <td class="delta delta-good" data-val="1.3913212335167775">+1.4%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 5%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warlock">
+        <td><span class="class-badge">Warlock</span></td>
+        <td>Affliction</td>
+        <td>Soul Harvester</td>
+        <td class="dps" data-val="117310">117310</td>
+        <td class="dps" data-val="113884">113884</td>
+        <td class="delta delta-good" data-val="-2.9208999251884604">-2.9%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 10%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warlock">
+        <td><span class="class-badge">Warlock</span></td>
+        <td>Demonology</td>
+        <td>Diabolist</td>
+        <td class="dps" data-val="114525">114525</td>
+        <td class="dps" data-val="114938">114938</td>
+        <td class="delta delta-good" data-val="0.3609549874187297">+0.4%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 1%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warlock">
+        <td><span class="class-badge">Warlock</span></td>
+        <td>Destruction</td>
+        <td>Diabolist</td>
+        <td class="dps" data-val="114955">114955</td>
+        <td class="dps" data-val="115824">115824</td>
+        <td class="delta delta-good" data-val="0.75577345685075">+0.8%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 3%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warlock">
+        <td><span class="class-badge">Warlock</span></td>
+        <td>Destruction</td>
+        <td>Hellcaller</td>
+        <td class="dps" data-val="112409">112409</td>
+        <td class="dps" data-val="113847">113847</td>
+        <td class="delta delta-good" data-val="1.279663908387394">+1.3%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 4%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warrior">
+        <td><span class="class-badge">Warrior</span></td>
+        <td>Arms</td>
+        <td>Default</td>
+        <td class="dps" data-val="108185">108185</td>
+        <td class="dps" data-val="104783">104783</td>
+        <td class="delta delta-good" data-val="-3.143924820155823">-3.1%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 10%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warrior">
+        <td><span class="class-badge">Warrior</span></td>
+        <td>Fury</td>
+        <td>Default</td>
+        <td class="dps" data-val="110769">110769</td>
+        <td class="dps" data-val="119185">119185</td>
+        <td class="delta delta-good" data-val="7.598344373233895">+7.6%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 25%"></div>
+          </div>
+        </td>
+      </tr>
+      <tr data-class="Warrior">
+        <td><span class="class-badge">Warrior</span></td>
+        <td>Protection</td>
+        <td>Default</td>
+        <td class="dps" data-val="77171">77171</td>
+        <td class="dps" data-val="85016">85016</td>
+        <td class="delta delta-good" data-val="10.16663586803609">+10.2%</td>
+        <td class="delta-bar-cell">
+          <div class="delta-bar-wrap">
+            <div class="delta-bar bar-good" style="width: 34%"></div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Generated 2026-05-29 17:31 UTC &mdash;
+  <a href="https://github.com/simulationcraft/simc" style="color:#52525b">SimulationCraft</a> &mdash;
+  <a href="https://github.com/ecummings/sba-simc" style="color:#52525b">Source</a>
+</footer>
+
+<script>
+  // Number formatter
+  const fmt = new Intl.NumberFormat('en-US');
+
+  // Humanize numbers already set as text — re-format after Scriban renders
+  document.querySelectorAll('td.dps').forEach(td => {
+    const v = parseFloat(td.dataset.val);
+    if (!isNaN(v)) td.textContent = fmt.format(Math.round(v));
+  });
+
+  // Class filter
+  let activeClass = 'all';
+  function filterClass(btn, cls) {
+    activeClass = cls;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#results-table tbody tr').forEach(row => {
+      row.classList.toggle('hidden', cls !== 'all' && row.dataset.class !== cls);
+    });
+  }
+
+  // Sort
+  let sortCol = -1, sortAsc = true;
+  function sortTable(col) {
+    const table = document.getElementById('results-table');
+    const tbody = table.querySelector('tbody');
+    const rows  = Array.from(tbody.querySelectorAll('tr'));
+
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+
+    rows.sort((a, b) => {
+      const aCell = a.cells[col];
+      const bCell = b.cells[col];
+      const aVal  = aCell.dataset.val ?? aCell.textContent.trim();
+      const bVal  = bCell.dataset.val ?? bCell.textContent.trim();
+      const aNum  = parseFloat(aVal);
+      const bNum  = parseFloat(bVal);
+      const cmp   = isNaN(aNum) || isNaN(bNum)
+        ? aVal.localeCompare(bVal)
+        : aNum - bNum;
+      return sortAsc ? cmp : -cmp;
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+    filterClass(document.querySelector(`.filter-btn[data-class="${activeClass}"]`), activeClass);
+
+    // Update arrow indicators
+    document.querySelectorAll('th').forEach((th, i) => {
+      th.classList.toggle('sorted', i === col);
+      const arrow = th.querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
+    });
+  }
+</script>
+</body>
+</html>
