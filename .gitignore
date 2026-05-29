@@ -11,6 +11,9 @@ output/
 # SimC temp results (written to system temp, but just in case)
 simc-results/
 
+# Claude Code — local overrides (machine-specific; shared config lives in settings.json)
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
