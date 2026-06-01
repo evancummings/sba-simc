@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Death Knight Frost — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Death Knight Frost <span style="color:#71717a;font-weight:500">· Deathbringer</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Death_Knight_Frost</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Death_Knight_Frost_Deathbringer","class":"Death Knight","spec":"Frost","heroTalent":"Deathbringer","simcProfileName":"MID1_Death_Knight_Frost","playerName":"MID1_Death_Knight_Frost","talents":"CsPAAAAAAAAAAAAAAAAAAAAAAMDwMjZMDY2mZmZmZZmZkZMmZYGGPgZGMzMzMDAAAAAAAAAjZbgBsAWGmQGLYmxMzAzAYYmBYmBD","simc":{"dps":129996.24034519916,"fightLengthSec":300.04426926926925,"profileSource":"default","timeline":[65624.95086096201,585000.8529031791,263478.2375920548,235192.82750645376,200393.73692296358,194838.72971357976,189525.3124585572,181167.49217953742,160458.2329089913,137929.65384320525,135608.62962545504,101594.53430036956,101374.48340762747,101471.75402352605,62541.404543267665,61653.23640681541,342352.55465313094,187323.44356676337,166077.9276270675,103155.51262077199,77324.1207614684,69054.6726993331,63976.41829573489,65033.6028451245,69218.34907790164,67866.44347804443,62382.722844800504,56087.71619484011,54808.171164020845,54745.50325772926,41941.55133485299,248851.39916138677,315467.8098105881,272719.77532289544,227856.89743983434,158558.9969345373,140282.25438209527,126488.24792532835,111908.64413453761,101036.58489421631,80974.27068013212,69267.99141201234,67112.80409800714,63935.91751968674,59545.409922679646,66340.11001403486,130853.8644609696,253994.79015260455,224590.03026311033,141083.73756942098,92476.95637803384,71666.63571607252,64828.08871866091,66030.54067168254,68976.38657103569,65192.266717799066,65157.20056277364,58432.05806245412,55774.46434692776,56183.0474633972,44834.051304638335,81872.27082426928,324377.220749615,319583.75011565175,237225.5810755977,195970.45240060834,152958.3103086751,135697.19346167066,119200.28309272163,109491.45813240392,94647.80473038134,75856.97196094619,69087.52956195398,64021.76968525967,62425.4894615872,65872.14238937815,67443.92895101129,220358.40532432197,244147.55300406367,196297.75526426412,123166.1519322773,82650.52674150557,67744.77371459565,67134.16669493419,65349.64123538093,67052.8699777257,66375.81568513055,64023.389111078315,57734.56692569424,54030.5462450863,45238.89501976235,57156.48354921518,197672.23859555318,311950.74017273425,282120.6482471244,229496.8703144085,182664.57791902687,146057.0108623961,131403.1475715074,112127.07023354273,106229.00744824983,98397.62726290373,87257.68319627822,74795.19076465549,76564.28873558705,77495.23866165428,76088.45534242269,144101.79599741456,278826.4088198176,310549.93048003095,220137.35026261132,138344.62839636728,99181.39423149152,87119.314750048,81229.42967952344,81912.26016068709,79091.22464762133,82616.282112507,69395.37481014022,44497.07756427898],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":0,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":1.038,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":1.038,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":1.038,"name":"use_item_light_company_guidon","spellName":"use_item_light_company_guidon","target":"Fluffy_Pillow"},{"timeSec":1.038,"name":"breath_of_sindragosa","spellName":"Breath of Sindragosa","target":"Fluffy_Pillow"},{"timeSec":1.038,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":1.948,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":2.831,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":2.831,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":3.701,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":4.547,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":5.38,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":6.136,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":6.136,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":6.891,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":7.6450000000000005,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":8.4,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":9.155,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":9.91,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":10.666,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":10.673,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":11.428,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":12.181000000000001,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":12.935,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":13.689,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":14.443,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":14.443,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":15.196,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":15.951,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":16.706,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":17.503,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":18.312,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":19.107,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":19.925,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":20.731,"name":"antimagic_shell","spellName":"Anti-Magic Shell","target":"none"},{"timeSec":20.731,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":21.548000000000002,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":22.367,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":22.367,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":23.207,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":24.201,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":25.181,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":26.16,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":27.153000000000002,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":28.12,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":29.1,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":30.080000000000002,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":30.080000000000002,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":31.059,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":32.027,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":33.02,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":34,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":34.978,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":35.985,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":36.137,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":37.147,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":38.156,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":39.152,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":40.147,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":41.455,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":42.764,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":44.074,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":45.383,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":46.71,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":46.71,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":48.04,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":49.33,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":50.620000000000005,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":50.620000000000005,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":51.876,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":51.876,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":53.097,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":54.302,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":55.489000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":56.711,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":57.9,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":59.123000000000005,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":8.40052619535651,"executesPerFight":184.39739739739738,"intervalSec":1.9424435779336318,"critPercent":31.772370911057042,"avgHit":25375.895245771262,"totalDamageMean":4679249.03994921,"isSkipped":false},"empower_rune_weapon":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.962822228278603,"executesPerFight":35.691691691691695,"intervalSec":8.643668963059731,"critPercent":31.597619912283154,"avgHit":32367.277474644583,"totalDamageMean":1155242.8885244518,"isSkipped":false},"frost_fever":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.57148243956121,"executesPerFight":69.88888888888889,"intervalSec":4.291111104644379,"critPercent":null,"avgHit":14346.406637794265,"totalDamageMean":1002654.4194636215,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":184.39739739739738,"intervalSec":1.9424435779336318,"critPercent":0,"avgHit":11927.306481034451,"totalDamageMean":2199364.273063863,"isSkipped":true},"frost_strike":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":6.261224656928512,"executesPerFight":82.22522522522523,"intervalSec":3.5872356010633224,"critPercent":31.776618966771768,"avgHit":29690.801713629444,"totalDamageMean":2441332.858020684,"isSkipped":false},"frostreaper":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.89239534573541,"executesPerFight":31.86786786786787,"intervalSec":9.279947052686474,"critPercent":32.07257938370092,"avgHit":35389.33123807666,"totalDamageMean":1127782.5318272358,"isSkipped":false},"frostwyrms_fury":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":2.739850993630679,"executesPerFight":7.331331331331332,"intervalSec":92.44681709145432,"critPercent":30.99510603588907,"avgHit":145717.53183085113,"totalDamageMean":1068303.5066357895,"isSkipped":false},"howling_blast":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.981978166938155,"executesPerFight":49.05605605605606,"intervalSec":5.99707762366313,"critPercent":31.693289436247614,"avgHit":39598.332683186665,"totalDamageMean":1942538.0278327619,"isSkipped":false},"hyperpyrexia":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.7532974681602915,"executesPerFight":107.83083083083083,"intervalSec":2.7800673983555866,"critPercent":null,"avgHit":6339.870161219051,"totalDamageMean":683633.4668438437,"isSkipped":false},"icy_death_torrent":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.5343447322135932,"executesPerFight":58.589589589589586,"intervalSec":5.330617043121158,"critPercent":31.606623215288533,"avgHit":16866.03288550462,"totalDamageMean":988173.9447662372,"isSkipped":false},"obliterate":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.595894363111803,"executesPerFight":116.57557557557557,"intervalSec":2.5690575420153383,"critPercent":97.89282843313322,"avgHit":48908.037790967974,"totalDamageMean":5701482.655754093,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":0.70452395104834,"executesPerFight":7.018018018018018,"intervalSec":46.01700796812749,"critPercent":30.885068901832646,"avgHit":39142.53897041452,"totalDamageMean":274703.0437653415,"isSkipped":false}}},"assistedHighlight":{"dps":127533.59324596389,"fightLengthSec":299.930995995996,"profileSource":"default","timeline":[292498.9181848207,676904.8140614821,212504.4525809704,178357.054575175,199256.0038069943,197564.12020201757,215817.07476889752,148554.66642561354,150603.1202261067,142749.68173599083,123982.22511620448,102062.97249296018,97591.52552494105,97063.85796114702,69860.67692491342,60529.69716038883,171133.0439499696,221525.79763587864,207228.54438683714,121887.66745590497,75661.25334512234,65122.87345072771,62972.219436284926,67471.96982285868,63131.415187216786,67438.0621372264,58972.53169396984,57858.835134154644,52403.55924472447,56612.820965059684,44291.47801776178,298670.10000169725,317272.03696917597,208282.49691097264,175638.16705169296,145703.01597763234,120579.61478651146,97597.78825834765,89603.98457246508,89901.54323815381,75285.60989361646,62615.618584295655,62101.28981333812,62260.43068092465,60416.39811112133,56257.774154529376,115931.31620721368,276196.3874855563,233629.35762113865,143723.3499776576,83985.47910049086,67656.66390062906,65960.64902103996,59958.57456368327,62302.24968081,65307.2604487542,55797.70463060531,54891.6184215719,54428.90894744647,52644.36079909936,51083.57587391717,233966.51713350776,333862.74455341476,267525.4709560697,189549.72486202058,153990.96651319004,115559.32751520496,95484.11860814376,92668.8197599795,89205.4838360612,75419.16332089018,65659.49107992685,63615.56078127851,61587.52844924844,58231.69020099849,56302.988665146804,136550.8377751318,206766.5344089464,236631.74330681222,176123.63511199752,100068.06185250155,71158.52233948004,63209.78494760785,63593.40917110294,62191.54032008178,61501.23916070681,60525.78273230822,56726.9087521762,55963.38647550247,52800.47881729888,52494.85618806054,210808.74040796323,392545.8685146457,317453.881080651,215574.61665296843,169320.53248707805,117694.49275080668,98250.05398162019,90314.12540255788,86295.41682763625,70745.7695744143,86124.96338388545,82735.85009231952,72911.01054505706,70155.52864374385,74660.53565180638,176350.03182647866,202950.72279662103,326389.8714625796,239204.65956641283,165471.0765657372,71799.48601746566,58977.262940621,61841.256879171095,57682.52351100405,64778.985840173205,59254.859051503736,57679.5046861544,56123.861225997425,39968.58365470438],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":0,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":0.909,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":0.909,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":1.701,"name":"breath_of_sindragosa","spellName":"Breath of Sindragosa","target":"Fluffy_Pillow"},{"timeSec":1.701,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":1.706,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":2.494,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":2.494,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":3.263,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":3.263,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":4.018,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":4.772,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":5.525,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":6.279,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":7.035,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":7.79,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":8.543000000000001,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":9.297,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":10.051,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":10.805,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":11.559000000000001,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":12.314,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":13.07,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":13.826,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":14.581,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":15.337,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":16.167,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":16.997,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":17.816,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":18.634,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":19.56,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":19.56,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":20.487000000000002,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":21.426000000000002,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":22.365000000000002,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":23.305,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":24.259,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":25.240000000000002,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":26.194,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":27.173000000000002,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":27.173000000000002,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":28.151,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":29.118000000000002,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":30.085,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":31.052,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":32.032000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":32.997,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":33.976,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":34.956,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":35.909,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":36.875,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":37.841,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":38.793,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":38.793,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":39.747,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":40.688,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":41.926,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":43.163000000000004,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":44.454,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":44.495,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":45.785000000000004,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":45.785000000000004,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":47.199,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":48.528,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":49.837,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":51.145,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":51.145,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":52.418,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":53.657000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":54.912,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":56.133,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":57.372,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":58.591,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":59.844,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":8.493090964237753,"executesPerFight":183.92392392392392,"intervalSec":1.951167003564018,"critPercent":31.660911845535907,"avgHit":25230.388525334132,"totalDamageMean":4640472.059704598,"isSkipped":false},"empower_rune_weapon":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.8853309189865395,"executesPerFight":35.31831831831832,"intervalSec":8.53985506904283,"critPercent":31.763908883055297,"avgHit":31245.68425095809,"totalDamageMean":1103545.0224490033,"isSkipped":false},"frost_fever":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.594476988152502,"executesPerFight":69.15315315315316,"intervalSec":4.304682014814792,"critPercent":null,"avgHit":14349.351110090473,"totalDamageMean":992302.8749644547,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":183.92392392392392,"intervalSec":1.951167003564018,"critPercent":0,"avgHit":11815.032724589093,"totalDamageMean":2173067.179995996,"isSkipped":true},"frost_strike":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":6.248251938640792,"executesPerFight":80.990990990991,"intervalSec":3.6575745889993874,"critPercent":31.518688137095584,"avgHit":29506.401403466632,"totalDamageMean":2389752.69024473,"isSkipped":false},"frostreaper":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.8929856237658353,"executesPerFight":31.52052052052052,"intervalSec":9.287363205684937,"critPercent":31.82608695652174,"avgHit":35103.24954132228,"totalDamageMean":1106472.6975042014,"isSkipped":false},"frostwyrms_fury":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":1.9930287462613168,"executesPerFight":7.4774774774774775,"intervalSec":90.46353009259262,"critPercent":32.231404958677686,"avgHit":101941.9356781152,"totalDamageMean":762268.5280435642,"isSkipped":false},"howling_blast":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.966807397541374,"executesPerFight":48.248248248248245,"intervalSec":6.065690461958872,"critPercent":31.53175488616173,"avgHit":39372.246535490085,"totalDamageMean":1899641.9249355576,"isSkipped":false},"hyperpyrexia":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.7205910521875374,"executesPerFight":104.54754754754755,"intervalSec":2.818302911490687,"critPercent":null,"avgHit":6294.456505548482,"totalDamageMean":658069.9907997999,"isSkipped":false},"icy_death_torrent":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.546678657519537,"executesPerFight":58.228228228228225,"intervalSec":5.349476215290702,"critPercent":31.76907668338783,"avgHit":16727.652570454935,"totalDamageMean":974021.5715949585,"isSkipped":false},"obliterate":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.523355735952464,"executesPerFight":118.13513513513513,"intervalSec":2.5246826465106595,"critPercent":95.53893933767681,"avgHit":47211.53096071697,"totalDamageMean":5577340.589980915,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":0.9798597942182996,"executesPerFight":7.044044044044044,"intervalSec":45.59558929765882,"critPercent":32.59731068648266,"avgHit":53203.02203382225,"totalDamageMean":374764.4304824897,"isSkipped":false}}},"oneButton":{"dps":112855.56410104438,"fightLengthSec":300.04942842842837,"profileSource":"default","timeline":[201962.80050682698,384421.1734294721,519902.27591781755,183588.1636335108,197669.3238897745,165534.44125251926,170221.19952171715,145973.97555151334,136734.79500077124,97130.15561301853,123365.12743454587,58489.40416815232,71894.58673440738,67848.79088786601,28740.74887489923,34918.26526298914,102628.38199622519,339020.8040874223,195169.18119898796,130516.01137087157,64572.07013696577,45053.64795479678,36896.00116166734,40538.25822641395,52954.863897614254,56817.86399192955,56099.71421909369,42918.20047565003,33173.86297248499,36826.884752818674,43630.457243257886,221957.32889876817,291139.96649259474,256936.02120481757,168034.60177827804,134212.8400681665,98410.67062308812,76853.05077360506,71729.17829386554,51251.66400178161,48241.659712921515,55344.713419327556,59246.756782967255,53679.821928798665,44471.79634765738,35949.16122778847,83691.36358581691,197328.384416551,173453.51438479353,170536.1200098048,91973.97369395112,59299.05482993689,54001.58155721279,47587.27956541613,47548.90970840679,49480.01637856335,53129.85680709365,50829.25649938265,45890.53284271003,40726.69597393569,39775.390986239014,208135.1330951324,385658.9701269648,290001.93171731784,173279.4500558742,139536.1156714811,104418.71845614494,84144.20793809091,76813.89204205315,63534.78912588118,55099.72368433457,50149.03191205716,55810.84941053122,52591.219336691094,48472.62978657323,43153.0248988906,97876.5835685703,137627.31903521885,217034.14597260533,188758.880878601,119372.05700508326,68561.96597711103,56711.10599468528,50088.02905420366,50370.8149829091,51482.47545336759,50564.473968664795,49044.098027156695,48461.15848134327,42227.26292992385,42751.11817967876,168313.3024583917,243606.66805566376,286249.29820808914,222409.8209178372,161246.2626394543,114674.0606994259,90752.57400176146,77760.93123041096,65663.22750435183,45641.84304713688,69630.70963724153,65872.63390395563,67619.95045993637,59280.2441616115,58443.66566146132,84896.64116010095,134435.42062312723,302908.52603957336,249206.35383635046,198381.23126337942,85098.36179839578,64408.72217196647,53482.928347145826,44717.91272956285,50629.97772963031,43947.362689911024,43263.005255006676,54690.42397812803,37375.546649884636],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":0,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":1.1360000000000001,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":1.1360000000000001,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":2.124,"name":"breath_of_sindragosa","spellName":"Breath of Sindragosa","target":"Fluffy_Pillow"},{"timeSec":2.124,"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","target":"Fluffy_Pillow"},{"timeSec":2.13,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":3.116,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":3.116,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":4.072,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":4.072,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":5.014,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":5.956,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":6.897,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":7.839,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":8.781,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":9.722,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":10.663,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":11.603,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":12.542,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":13.483,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":14.424,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":15.364,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":16.399,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":17.434,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":18.47,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":19.661,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":20.884,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":20.884,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":22.074,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":23.281,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":24.486,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":25.692,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":26.916,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":28.123,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":28.123,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":29.364,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":30.586000000000002,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":31.810000000000002,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":33.071,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":34.294000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":35.534,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":36.756,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":37.998,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":39.221000000000004,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":40.410000000000004,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":40.410000000000004,"name":"howling_blast","spellName":"Howling Blast","target":"Fluffy_Pillow"},{"timeSec":42.002,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":43.591,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":45.157000000000004,"name":"pillar_of_frost","spellName":"Pillar of Frost","target":"none"},{"timeSec":45.157000000000004,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":45.157000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":46.746,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":48.333,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":49.922000000000004,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":51.467,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":53.034,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":54.601,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":56.19,"name":"frost_strike","spellName":"Frost Strike","target":"Fluffy_Pillow"},{"timeSec":57.758,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"},{"timeSec":59.370000000000005,"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","target":"Fluffy_Pillow"},{"timeSec":59.370000000000005,"name":"obliterate","spellName":"Obliterate","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":9.295395627047572,"executesPerFight":181.17717717717719,"intervalSec":1.9829239325050163,"critPercent":31.90448411737513,"avgHit":24815.91776815082,"totalDamageMean":4496077.93029452,"isSkipped":false},"empower_rune_weapon":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.8541462726163296,"executesPerFight":31.64064064064064,"intervalSec":9.541162889330701,"critPercent":31.398500031511944,"avgHit":30541.8225680461,"totalDamageMean":966362.8323857549,"isSkipped":false},"frost_fever":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.8625614577742207,"executesPerFight":56.090090090090094,"intervalSec":5.312882535003689,"critPercent":null,"avgHit":17279.559755976483,"totalDamageMean":969212.063429816,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":181.17717717717719,"intervalSec":1.9829239325050163,"critPercent":0,"avgHit":11547.887800803333,"totalDamageMean":2092213.7141083085,"isSkipped":true},"frost_strike":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":5.072988267273142,"executesPerFight":59.44044044044044,"intervalSec":4.959648639242684,"critPercent":31.96149459985242,"avgHit":28896.53907132859,"totalDamageMean":1717623.0096041672,"isSkipped":false},"frostreaper":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.9497373600301917,"executesPerFight":28.75975975975976,"intervalSec":10.22940613983548,"critPercent":32.04310763046642,"avgHit":34726.58574463829,"totalDamageMean":998728.263292495,"isSkipped":false},"frostwyrms_fury":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":2.245488935773887,"executesPerFight":7.465465465465465,"intervalSec":90.58615529411772,"critPercent":32.28304405874499,"avgHit":101839.91312511562,"totalDamageMean":760282.3544415538,"isSkipped":false},"howling_blast":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.018774592438853,"executesPerFight":35.273273273273276,"intervalSec":8.269105524665786,"critPercent":31.81034239022873,"avgHit":38575.52775204051,"totalDamageMean":1360685.132058462,"isSkipped":false},"hyperpyrexia":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.5639046031654584,"executesPerFight":86.26126126126127,"intervalSec":3.4447565071770567,"critPercent":null,"avgHit":6138.446082785032,"totalDamageMean":529510.1012852854,"isSkipped":false},"icy_death_torrent":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.8107630702080413,"executesPerFight":57.806806806806804,"intervalSec":5.4241747727273,"critPercent":31.707864005657804,"avgHit":16463.01031444259,"totalDamageMean":951674.0567054505,"isSkipped":false},"obliterate":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.290787067317456,"executesPerFight":101.3993993993994,"intervalSec":2.9478238128011216,"critPercent":97.80056632713257,"avgHit":47807.804833176575,"totalDamageMean":4847682.696687808,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.0648031232252366,"executesPerFight":7.032032032032032,"intervalSec":45.68886522911044,"critPercent":31.490146037147316,"avgHit":51268.71913468598,"totalDamageMean":360523.27519636543,"isSkipped":false}}},"abilities":[{"key":"obliterate","displayName":"Obliterate","simc":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.595894363111803,"executesPerFight":116.57557557557557,"intervalSec":2.5690575420153383,"critPercent":97.89282843313322,"avgHit":48908.037790967974,"totalDamageMean":5701482.655754093,"isSkipped":false},"assistedHighlight":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.523355735952464,"executesPerFight":118.13513513513513,"intervalSec":2.5246826465106595,"critPercent":95.53893933767681,"avgHit":47211.53096071697,"totalDamageMean":5577340.589980915,"isSkipped":false},"oneButton":{"name":"obliterate","spellName":"Obliterate","portionPercent":14.290787067317456,"executesPerFight":101.3993993993994,"intervalSec":2.9478238128011216,"critPercent":97.80056632713257,"avgHit":47807.804833176575,"totalDamageMean":4847682.696687808,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":14.595894363111803},{"key":"auto_attack_mh","displayName":"","simc":{"name":"auto_attack_mh","spellName":"","portionPercent":8.40052619535651,"executesPerFight":184.39739739739738,"intervalSec":1.9424435779336318,"critPercent":31.772370911057042,"avgHit":25375.895245771262,"totalDamageMean":4679249.03994921,"isSkipped":false},"assistedHighlight":{"name":"auto_attack_mh","spellName":"","portionPercent":8.493090964237753,"executesPerFight":183.92392392392392,"intervalSec":1.951167003564018,"critPercent":31.660911845535907,"avgHit":25230.388525334132,"totalDamageMean":4640472.059704598,"isSkipped":false},"oneButton":{"name":"auto_attack_mh","spellName":"","portionPercent":9.295395627047572,"executesPerFight":181.17717717717719,"intervalSec":1.9829239325050163,"critPercent":31.90448411737513,"avgHit":24815.91776815082,"totalDamageMean":4496077.93029452,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":8.40052619535651},{"key":"frost_strike","displayName":"Frost Strike","simc":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":6.261224656928512,"executesPerFight":82.22522522522523,"intervalSec":3.5872356010633224,"critPercent":31.776618966771768,"avgHit":29690.801713629444,"totalDamageMean":2441332.858020684,"isSkipped":false},"assistedHighlight":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":6.248251938640792,"executesPerFight":80.990990990991,"intervalSec":3.6575745889993874,"critPercent":31.518688137095584,"avgHit":29506.401403466632,"totalDamageMean":2389752.69024473,"isSkipped":false},"oneButton":{"name":"frost_strike","spellName":"Frost Strike","portionPercent":5.072988267273142,"executesPerFight":59.44044044044044,"intervalSec":4.959648639242684,"critPercent":31.96149459985242,"avgHit":28896.53907132859,"totalDamageMean":1717623.0096041672,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.261224656928512},{"key":"howling_blast","displayName":"Howling Blast","simc":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.981978166938155,"executesPerFight":49.05605605605606,"intervalSec":5.99707762366313,"critPercent":31.693289436247614,"avgHit":39598.332683186665,"totalDamageMean":1942538.0278327619,"isSkipped":false},"assistedHighlight":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.966807397541374,"executesPerFight":48.248248248248245,"intervalSec":6.065690461958872,"critPercent":31.53175488616173,"avgHit":39372.246535490085,"totalDamageMean":1899641.9249355576,"isSkipped":false},"oneButton":{"name":"howling_blast","spellName":"Howling Blast","portionPercent":4.018774592438853,"executesPerFight":35.273273273273276,"intervalSec":8.269105524665786,"critPercent":31.81034239022873,"avgHit":38575.52775204051,"totalDamageMean":1360685.132058462,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.981978166938155},{"key":"empower_rune_weapon","displayName":"Empower Rune Weapon","simc":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.962822228278603,"executesPerFight":35.691691691691695,"intervalSec":8.643668963059731,"critPercent":31.597619912283154,"avgHit":32367.277474644583,"totalDamageMean":1155242.8885244518,"isSkipped":false},"assistedHighlight":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.8853309189865395,"executesPerFight":35.31831831831832,"intervalSec":8.53985506904283,"critPercent":31.763908883055297,"avgHit":31245.68425095809,"totalDamageMean":1103545.0224490033,"isSkipped":false},"oneButton":{"name":"empower_rune_weapon","spellName":"Empower Rune Weapon","portionPercent":2.8541462726163296,"executesPerFight":31.64064064064064,"intervalSec":9.541162889330701,"critPercent":31.398500031511944,"avgHit":30541.8225680461,"totalDamageMean":966362.8323857549,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.962822228278603},{"key":"frostreaper","displayName":"Frostreaper","simc":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.89239534573541,"executesPerFight":31.86786786786787,"intervalSec":9.279947052686474,"critPercent":32.07257938370092,"avgHit":35389.33123807666,"totalDamageMean":1127782.5318272358,"isSkipped":false},"assistedHighlight":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.8929856237658353,"executesPerFight":31.52052052052052,"intervalSec":9.287363205684937,"critPercent":31.82608695652174,"avgHit":35103.24954132228,"totalDamageMean":1106472.6975042014,"isSkipped":false},"oneButton":{"name":"frostreaper","spellName":"Frostreaper","portionPercent":2.9497373600301917,"executesPerFight":28.75975975975976,"intervalSec":10.22940613983548,"critPercent":32.04310763046642,"avgHit":34726.58574463829,"totalDamageMean":998728.263292495,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.89239534573541},{"key":"frostwyrms_fury","displayName":"Frostwyrm\u0027s Fury","simc":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":2.739850993630679,"executesPerFight":7.331331331331332,"intervalSec":92.44681709145432,"critPercent":30.99510603588907,"avgHit":145717.53183085113,"totalDamageMean":1068303.5066357895,"isSkipped":false},"assistedHighlight":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":1.9930287462613168,"executesPerFight":7.4774774774774775,"intervalSec":90.46353009259262,"critPercent":32.231404958677686,"avgHit":101941.9356781152,"totalDamageMean":762268.5280435642,"isSkipped":false},"oneButton":{"name":"frostwyrms_fury","spellName":"Frostwyrm\u0027s Fury","portionPercent":2.245488935773887,"executesPerFight":7.465465465465465,"intervalSec":90.58615529411772,"critPercent":32.28304405874499,"avgHit":101839.91312511562,"totalDamageMean":760282.3544415538,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.739850993630679},{"key":"frost_fever","displayName":"Frost Fever","simc":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.57148243956121,"executesPerFight":69.88888888888889,"intervalSec":4.291111104644379,"critPercent":null,"avgHit":14346.406637794265,"totalDamageMean":1002654.4194636215,"isSkipped":false},"assistedHighlight":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.594476988152502,"executesPerFight":69.15315315315316,"intervalSec":4.304682014814792,"critPercent":null,"avgHit":14349.351110090473,"totalDamageMean":992302.8749644547,"isSkipped":false},"oneButton":{"name":"frost_fever","spellName":"Frost Fever","portionPercent":2.8625614577742207,"executesPerFight":56.090090090090094,"intervalSec":5.312882535003689,"critPercent":null,"avgHit":17279.559755976483,"totalDamageMean":969212.063429816,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.57148243956121},{"key":"icy_death_torrent","displayName":"Icy Death Torrent","simc":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.5343447322135932,"executesPerFight":58.589589589589586,"intervalSec":5.330617043121158,"critPercent":31.606623215288533,"avgHit":16866.03288550462,"totalDamageMean":988173.9447662372,"isSkipped":false},"assistedHighlight":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.546678657519537,"executesPerFight":58.228228228228225,"intervalSec":5.349476215290702,"critPercent":31.76907668338783,"avgHit":16727.652570454935,"totalDamageMean":974021.5715949585,"isSkipped":false},"oneButton":{"name":"icy_death_torrent","spellName":"Icy Death Torrent","portionPercent":2.8107630702080413,"executesPerFight":57.806806806806804,"intervalSec":5.4241747727273,"critPercent":31.707864005657804,"avgHit":16463.01031444259,"totalDamageMean":951674.0567054505,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.5343447322135932},{"key":"hyperpyrexia","displayName":"Hyperpyrexia","simc":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.7532974681602915,"executesPerFight":107.83083083083083,"intervalSec":2.7800673983555866,"critPercent":null,"avgHit":6339.870161219051,"totalDamageMean":683633.4668438437,"isSkipped":false},"assistedHighlight":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.7205910521875374,"executesPerFight":104.54754754754755,"intervalSec":2.818302911490687,"critPercent":null,"avgHit":6294.456505548482,"totalDamageMean":658069.9907997999,"isSkipped":false},"oneButton":{"name":"hyperpyrexia","spellName":"Hyperpyrexia","portionPercent":1.5639046031654584,"executesPerFight":86.26126126126127,"intervalSec":3.4447565071770567,"critPercent":null,"avgHit":6138.446082785032,"totalDamageMean":529510.1012852854,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.7532974681602915},{"key":"reapers_mark","displayName":"Reaper\u0027s Mark","simc":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":0.70452395104834,"executesPerFight":7.018018018018018,"intervalSec":46.01700796812749,"critPercent":30.885068901832646,"avgHit":39142.53897041452,"totalDamageMean":274703.0437653415,"isSkipped":false},"assistedHighlight":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":0.9798597942182996,"executesPerFight":7.044044044044044,"intervalSec":45.59558929765882,"critPercent":32.59731068648266,"avgHit":53203.02203382225,"totalDamageMean":374764.4304824897,"isSkipped":false},"oneButton":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.0648031232252366,"executesPerFight":7.032032032032032,"intervalSec":45.68886522911044,"critPercent":31.490146037147316,"avgHit":51268.71913468598,"totalDamageMean":360523.27519636543,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.70452395104834},{"key":"frost_shield","displayName":"Frost Shield","simc":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":184.39739739739738,"intervalSec":1.9424435779336318,"critPercent":0,"avgHit":11927.306481034451,"totalDamageMean":2199364.273063863,"isSkipped":true},"assistedHighlight":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":183.92392392392392,"intervalSec":1.951167003564018,"critPercent":0,"avgHit":11815.032724589093,"totalDamageMean":2173067.179995996,"isSkipped":true},"oneButton":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":181.17717717717719,"intervalSec":1.9829239325050163,"critPercent":0,"avgHit":11547.887800803333,"totalDamageMean":2092213.7141083085,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 129996.24034519916,
+    ahDps: 127533.59324596389,
+    obDps: 112855.56410104438,
+    likelyBroken: false,
+    deltaPct: -1.8943987092979162,
+    obDeltaPct: -13.185516903133879,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

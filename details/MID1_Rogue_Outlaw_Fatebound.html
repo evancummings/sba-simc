@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rogue Outlaw — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Rogue Outlaw <span style="color:#71717a;font-weight:500">· Fatebound</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Rogue_Outlaw</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Rogue_Outlaw_Fatebound","class":"Rogue","spec":"Outlaw","heroTalent":"Fatebound","simcProfileName":"MID1_Rogue_Outlaw","playerName":"MID1_Rogue_Outlaw_Fatebound","talents":"CQQAAAAAAAAAAAAAAAAAAAAAAAgx2MGjZmZmtZmZmZMmFGmZZaZw2MAAAAAgZbbmZGmZmZGzMzyAAAAwAYgNYGjGzGgtJswAgZmBG","simc":{"dps":127437.29315275638,"fightLengthSec":300.0529199199199,"profileSource":"default","timeline":[113213.55800349597,143165.28969047253,254429.65585402027,155863.95292525683,133126.75783278284,341149.6126825047,319437.74330445816,175746.5534167781,184389.6876659345,206047.930449578,176804.23123255113,106394.42274806053,103741.47725713754,105227.60574490495,102070.0784605291,100003.79605225907,141294.7634437769,156959.1552407129,117063.98115289594,118344.46967388735,132261.40612943424,146604.94431910344,109329.04213138096,108782.70002121925,97603.02145686245,103444.61585744123,86746.39449836142,115525.14853387685,124079.88720664105,127059.61402831535,132023.95377945833,132409.2335585347,125952.4219093578,112878.34364205321,107476.33215740172,97585.82889385862,101348.50903986182,102388.86135346841,126081.85627784338,133029.16251330034,129395.1765922105,126183.33131920388,125987.156630388,128318.92985422275,123908.24079004742,117523.57048205852,115748.47610735505,109812.02565785947,110015.3745076458,116047.58213589687,114701.70310483541,119465.7422637216,121690.734139857,122221.99349854022,124510.27188520838,121714.0886501067,115665.15855977312,111370.76324436795,111649.83148071988,108039.24077748653,110041.6341171226,123189.04896601685,125428.04160469984,127875.89922786987,124590.43373609007,128210.33168408928,116793.78665825861,117979.44365091716,110904.02450892654,109727.99006413462,109093.08244845565,97247.40736371935,120064.86703637177,109556.05452825312,116941.12585565887,113226.70448925796,122768.43872729795,116924.01072397921,119359.21602931233,117332.18011171439,114981.68136352175,103772.28097258923,164118.85890764135,153957.1330843455,143667.09879380057,147563.8759634699,145628.38793800527,136896.37912055154,137923.9042986569,127330.31298993215,122514.9428518229,108944.09149905696,108950.11847153337,118122.24170018133,117254.34562492951,118427.85293843715,122577.14101071573,123604.55916084103,112861.17930233163,125456.67805679941,111595.76299772567,140931.09065337447,143341.43063728095,147948.73585957495,137636.33869656397,141950.73013775292,153021.1402121658,146992.09943568092,147439.1642803059,140528.04965797198,142139.61784757543,122023.0554384956,121216.76282157602,126408.63158451006,115760.96903627932,125078.4578915832,103195.28001240572,105255.64405652555,94416.77688655398,81877.76248593976],"sampleActions":[{"timeSec":0,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":0.812,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0.812,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":1.617,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":2.422,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":3.227,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":4.032,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":4.835,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":5.638,"name":"preparation","spellName":"Preparation","target":"none"},{"timeSec":6.644,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":7.448,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":8.253,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":9.06,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":9.864,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":10.669,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":11.474,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":12.277000000000001,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":13.081,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":13.886000000000001,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":14.691,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":15.696,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":15.696,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":16.501,"name":"roll_the_bones","spellName":"Roll the Bones","target":"none"},{"timeSec":17.305,"name":"keep_it_rolling","spellName":"Keep It Rolling","target":"none"},{"timeSec":17.305,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":18.111,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":18.915,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":19.721,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":20.528,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":21.333000000000002,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":22.14,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":22.944,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":23.748,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":24.552,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":25.356,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":26.161,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":26.966,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":27.771,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":28.575,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":29.378,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":30.32,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":31.124000000000002,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":32.128,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":33.133,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":34.136,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":35.139,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":36.144,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":37.148,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":38.32,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":39.323,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":40.328,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":41.332,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":42.335,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":43.34,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":44.343,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":45.348,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":46.353,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":47.357,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":48.362,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":49.366,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":49.366,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":50.179,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":50.992000000000004,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":51.805,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":52.618,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":53.43,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":54.241,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":55.056000000000004,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":55.870000000000005,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":56.684000000000005,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":57.497,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":58.31,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":59.123000000000005,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":59.936,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"}],"abilitiesByKey":{"between_the_eyes":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":23.894657751705044,"executesPerFight":53.8008008008008,"intervalSec":5.522113992762219,"critPercent":68.63032235342095,"avgHit":242660.09770941586,"totalDamageMean":13055307.57916714,"isSkipped":false},"blade_rush":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":7.150038177657049,"executesPerFight":28.524524524524523,"intervalSec":10.91604810012064,"critPercent":47.98839526023279,"avgHit":136954.4791365267,"totalDamageMean":3906561.398873338,"isSkipped":false},"dispatch":{"name":"dispatch","spellName":"Dispatch","portionPercent":14.237813935146937,"executesPerFight":92.1901901901902,"intervalSec":3.1612935321200752,"critPercent":47.86896947018936,"avgHit":84381.04429967335,"totalDamageMean":7779104.52243375,"isSkipped":false},"instant_poison":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.204775073615631,"executesPerFight":0,"intervalSec":null,"critPercent":47.9297826641479,"avgHit":0,"totalDamageMean":843234.9992045944,"isSkipped":true},"main_gauche":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":7.382858105642014,"executesPerFight":0,"intervalSec":null,"critPercent":47.724676313785224,"avgHit":0,"totalDamageMean":4033767.061410454,"isSkipped":true},"pistol_shot":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.977463123982905,"executesPerFight":55.62062062062062,"intervalSec":5.327848438187346,"critPercent":52.997060299706035,"avgHit":29248.045838383383,"totalDamageMean":1626794.461471244,"isSkipped":false},"sinister_strike":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.331125766040362,"executesPerFight":94.29529529529529,"intervalSec":3.190940254946438,"critPercent":52.96717238462758,"avgHit":19301.332777667987,"totalDamageMean":1820024.8738629648,"isSkipped":false}}},"assistedHighlight":{"dps":116569.07354177115,"fightLengthSec":300.0511111111111,"profileSource":"default","timeline":[189838.3822260484,83769.51819228,133393.33221813312,219570.4699977777,148403.1504764841,141428.01191994574,140994.52920713247,232362.84897533315,191068.7357309028,179264.65340811355,181630.6506788937,156434.916684461,141040.1892181412,125691.68141179153,101662.28400970403,100993.64948086659,85559.8047457029,92288.6962809718,98289.97866542422,121215.1471590809,125399.77250907745,128744.46360532971,132129.53301375444,124278.47160496567,111341.6546620315,110808.14892686452,101507.91260506744,103537.9107000068,103225.69576722254,112208.21376139561,114479.46798888007,107854.61649941053,112473.7027255185,115266.02542545367,112625.44596949496,115859.83959226808,111755.24042908402,113935.09461875778,111882.38729233222,107953.96450397625,73780.87278159607,85595.70145323027,112236.82964699678,111028.03904848894,112386.42850042116,117760.01766095021,117435.46805934826,115632.66936442327,111818.0813495321,112537.18362128947,108567.08819545376,78251.88270828068,104922.01814867987,110148.91248484414,102933.4114661366,105169.8179662088,105249.19582985993,108129.98760412105,106541.23301224981,113435.5305616376,111569.2929147658,80972.81370210524,114267.07338968867,107929.05450408708,112268.63943220362,111177.5621785512,109494.64412477033,111871.63473273114,111529.40187823483,117213.1139341529,113113.41158699249,87251.99195957568,112419.97995111125,111277.7669909591,105559.13868493373,104692.6551142857,108411.75448691387,106698.22444971312,108415.74429839423,108790.7670025006,98907.02925543992,93812.36962348707,113051.86425211604,111149.02919765848,111892.96382912951,111399.6512429162,104564.44005645941,140711.02098005448,158708.8943538036,138159.94076938403,138208.72921909994,110504.45332027016,127168.96511569952,120327.94802723137,103871.50137004108,95628.93210826885,93408.92429167278,87377.46665037626,96669.67146665171,98350.11359042097,87522.63188774607,150653.5294809479,143052.3542139388,160599.0647165314,149209.33007100152,146799.50529901657,143637.82934201902,130912.5073451673,126018.7945876542,129535.75976568612,130974.17200805825,103083.35959074112,87180.72893563664,112520.29739327147,107497.80021915823,95737.21467452892,105952.03589719442,119721.90600763865,99974.59436150671,79824.79074770918],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":0,"name":"vanish","spellName":"Vanish","target":"none"},{"timeSec":0,"name":"roll_the_bones","spellName":"Roll the Bones","target":"none"},{"timeSec":0.803,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":1.608,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":2.4130000000000003,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":3.219,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":4.024,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":4.828,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":5.632,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":6.438,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":7.245,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":8.049,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":8.852,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":9.656,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":10.461,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":11.265,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":12.07,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":12.876,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":13.68,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":14.483,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":15.287,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":16.292,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":17.297,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":18.3,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":19.305,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":20.31,"name":"preparation","spellName":"Preparation","target":"none"},{"timeSec":21.313,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":21.313,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":22.118000000000002,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":22.922,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":23.727,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":24.533,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":25.338,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":26.141000000000002,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":26.946,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":27.751,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":28.557000000000002,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":29.362000000000002,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":30.166,"name":"roll_the_bones","spellName":"Roll the Bones","target":"none"},{"timeSec":30.973,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":31.777,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":32.583,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":33.387,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":34.192,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":34.995,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":35.800000000000004,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":36.604,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":37.61,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":38.615,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":39.621,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":40.624,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":41.63,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":42.635,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":43.641,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":44.647,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":45.652,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":46.657000000000004,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":47.660000000000004,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":48.665,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":49.67,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":50.675000000000004,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":51.679,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":52.683,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":53.688,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":54.693,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":55.696,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":56.698,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":57.702,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":58.706,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":59.712,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"}],"abilitiesByKey":{"ambush":{"name":"ambush","spellName":"Ambush","portionPercent":0.07694026214489506,"executesPerFight":1.019019019019019,"intervalSec":120.18761111111114,"critPercent":49.609375,"avgHit":37742.18804538919,"totalDamageMean":38460.00743764384,"isSkipped":true},"between_the_eyes":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":20.33999117039556,"executesPerFight":52.991991991991995,"intervalSec":5.644850700097555,"critPercent":68.89758594088096,"avgHit":191865.20284586234,"totalDamageMean":10167319.292749858,"isSkipped":false},"blade_rush":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":5.8244738526733775,"executesPerFight":22.09009009009009,"intervalSec":12.944912580385852,"critPercent":47.92418772563177,"avgHit":131799.84973694637,"totalDamageMean":2911470.5545494817,"isSkipped":false},"dispatch":{"name":"dispatch","spellName":"Dispatch","portionPercent":15.663818559963962,"executesPerFight":100.75975975975976,"intervalSec":2.9483315684695577,"critPercent":48.08980536892829,"avgHit":77708.0879010959,"totalDamageMean":7829848.268304718,"isSkipped":false},"instant_poison":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.2989539808472808,"executesPerFight":0,"intervalSec":null,"critPercent":48.19097964863779,"avgHit":0,"totalDamageMean":804422.1492899819,"isSkipped":true},"main_gauche":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":7.6462155089445165,"executesPerFight":0,"intervalSec":null,"critPercent":48.20315342631898,"avgHit":0,"totalDamageMean":3822101.681822062,"isSkipped":true},"pistol_shot":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.9664218306031587,"executesPerFight":53.05705705705706,"intervalSec":5.586388609034711,"critPercent":53.33070259503542,"avgHit":27947.660162903172,"totalDamageMean":1482820.5998743942,"isSkipped":false},"sinister_strike":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.264727522900564,"executesPerFight":88.87787787787788,"intervalSec":3.3668179795926774,"critPercent":53.44297605959299,"avgHit":18361.534214866704,"totalDamageMean":1631934.1955993993,"isSkipped":false}}},"oneButton":{"dps":90484.60376556354,"fightLengthSec":299.9348338338338,"profileSource":"default","timeline":[26504.50184038015,163844.45258191944,113450.79173869289,110302.4499663844,127342.77835432412,172333.3390275884,130443.74469396584,125748.0294698176,151154.7342204678,90194.59417816829,146598.61496283827,99693.23795789422,109271.04306435038,116660.73623348617,87859.00092784064,109490.08906287773,88573.68559448689,96279.54130537398,77328.8255348082,86785.24628049153,90026.24912651435,49490.2250995066,102292.7171506666,104677.46641398448,100246.26514597742,101196.11844231721,79491.7481760666,98658.04497289943,85088.91139946491,87504.74612621454,85523.74144761787,57428.404680803724,92829.8874447604,58005.55049719053,88758.05093338415,94391.0416267629,78550.33100461059,96800.24525194004,65944.65632636091,91786.11245019012,85686.64543621324,62245.584993191245,101500.76467583257,86588.33189457658,96923.53872066097,80804.07132333732,81933.84815413834,92896.64188211698,76237.9439062845,95096.32809886709,75453.05835393938,65744.97598631769,95167.7006669874,75886.55899059301,94008.84415661525,82075.0936802663,85750.1016082962,88289.83614737037,74694.40543959448,93124.55950669156,79969.12582537839,76312.5996472151,80051.48464207372,82661.8989194143,94954.94005536227,76806.68230532415,88808.46986221975,85825.18590558447,85278.50789165011,93912.40540880169,74566.75927062336,87613.30518963691,73252.88409330389,84283.30122652819,87591.9203050033,77030.55409619535,90882.66242397384,82497.29393934185,84161.65720243027,89343.14515366669,78011.62742202723,92067.85082212143,63764.28459753801,88065.08002019185,92016.67450424374,77173.78448969129,92665.00111306878,78915.80739781342,101673.40892198119,101079.31632287579,95692.64113439934,97328.28735280276,70383.02964091927,96575.25822438532,93142.55702534536,94430.49096975726,88889.3042140364,80534.77025020376,90742.782264521,81962.15180966227,73424.91413776642,108631.68362289238,86337.53561731847,122519.22646072319,110096.61839509389,112909.2276793484,122257.54570278965,121137.27439820571,119798.54573025333,113129.672445228,112186.27667005543,79461.92443229049,63310.87617327078,78774.82439863228,82755.37689513697,77863.5356191771,70794.4277858006,64445.33969709423,100713.1987851051,78601.76145856199],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":0,"name":"vanish","spellName":"Vanish","target":"none"},{"timeSec":0,"name":"roll_the_bones","spellName":"Roll the Bones","target":"none"},{"timeSec":1.054,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":2.108,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":3.162,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":4.2170000000000005,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":5.272,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":6.328,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":7.383,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":8.437,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":9.492,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":10.548,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":11.602,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":12.655000000000001,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":13.708,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":14.763,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":15.818,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":17.071,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":18.323,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":19.577,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":20.832,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":22.086000000000002,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":23.34,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":24.593,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":25.847,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":27.102,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":28.357,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":29.611,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":30.866,"name":"roll_the_bones","spellName":"Roll the Bones","target":"none"},{"timeSec":32.121,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":33.376,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":34.63,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":35.884,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":37.14,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":38.395,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":39.649,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":40.905,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":42.159,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":43.413000000000004,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":44.666000000000004,"name":"blade_rush","spellName":"Blade Rush","target":"Fluffy_Pillow"},{"timeSec":45.923,"name":"preparation","spellName":"Preparation","target":"none"},{"timeSec":47.177,"name":"adrenaline_rush","spellName":"Adrenaline Rush","target":"none"},{"timeSec":47.177,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"},{"timeSec":48.242000000000004,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":49.305,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":50.368,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":51.431000000000004,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":52.495000000000005,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":53.558,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":54.622,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":55.686,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":56.749,"name":"sinister_strike","spellName":"Sinister Strike","target":"Fluffy_Pillow"},{"timeSec":57.811,"name":"dispatch","spellName":"Dispatch","target":"Fluffy_Pillow"},{"timeSec":58.875,"name":"pistol_shot","spellName":"Pistol Shot","target":"Fluffy_Pillow"},{"timeSec":59.938,"name":"between_the_eyes","spellName":"Between the Eyes","target":"Fluffy_Pillow"}],"abilitiesByKey":{"ambush":{"name":"ambush","spellName":"Ambush","portionPercent":0.09744257224942351,"executesPerFight":1.057057057057057,"intervalSec":120.41175362318843,"critPercent":49.43502824858757,"avgHit":35767.58371929813,"totalDamageMean":37808.37678436319,"isSkipped":true},"between_the_eyes":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":20.674599643711304,"executesPerFight":42.95495495495496,"intervalSec":7.046885776888503,"critPercent":70.97957288765087,"avgHit":186751.0846865029,"totalDamageMean":8021884.430497711,"isSkipped":false},"blade_rush":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":4.298618690684609,"executesPerFight":13.273273273273274,"intervalSec":20.765516409266407,"critPercent":48.410849800886616,"avgHit":125658.01050461992,"totalDamageMean":1667893.1124036638,"isSkipped":false},"dispatch":{"name":"dispatch","spellName":"Dispatch","portionPercent":14.511678437647857,"executesPerFight":77.03303303303304,"intervalSec":3.8494772491168674,"critPercent":47.69921581821476,"avgHit":73093.69911822252,"totalDamageMean":5630629.338680613,"isSkipped":false},"instant_poison":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.4638444049766974,"executesPerFight":0,"intervalSec":null,"critPercent":47.70932706969711,"avgHit":0,"totalDamageMean":669191.8000078113,"isSkipped":true},"main_gauche":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":8.167002745042131,"executesPerFight":0,"intervalSec":null,"critPercent":47.67318750821737,"avgHit":0,"totalDamageMean":3168852.2773505533,"isSkipped":true},"pistol_shot":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.7812041325243197,"executesPerFight":41.389389389389386,"intervalSec":7.168165605719256,"critPercent":52.70130308066575,"avgHit":26072.52780037256,"totalDamageMean":1079126.0054952998,"isSkipped":false},"sinister_strike":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.062585937785286,"executesPerFight":69.85785785785785,"intervalSec":4.238750443186202,"critPercent":52.73015374512855,"avgHit":17010.31329375094,"totalDamageMean":1188304.048192483,"isSkipped":false}}},"abilities":[{"key":"between_the_eyes","displayName":"Between the Eyes","simc":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":23.894657751705044,"executesPerFight":53.8008008008008,"intervalSec":5.522113992762219,"critPercent":68.63032235342095,"avgHit":242660.09770941586,"totalDamageMean":13055307.57916714,"isSkipped":false},"assistedHighlight":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":20.33999117039556,"executesPerFight":52.991991991991995,"intervalSec":5.644850700097555,"critPercent":68.89758594088096,"avgHit":191865.20284586234,"totalDamageMean":10167319.292749858,"isSkipped":false},"oneButton":{"name":"between_the_eyes","spellName":"Between the Eyes","portionPercent":20.674599643711304,"executesPerFight":42.95495495495496,"intervalSec":7.046885776888503,"critPercent":70.97957288765087,"avgHit":186751.0846865029,"totalDamageMean":8021884.430497711,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":23.894657751705044},{"key":"dispatch","displayName":"Dispatch","simc":{"name":"dispatch","spellName":"Dispatch","portionPercent":14.237813935146937,"executesPerFight":92.1901901901902,"intervalSec":3.1612935321200752,"critPercent":47.86896947018936,"avgHit":84381.04429967335,"totalDamageMean":7779104.52243375,"isSkipped":false},"assistedHighlight":{"name":"dispatch","spellName":"Dispatch","portionPercent":15.663818559963962,"executesPerFight":100.75975975975976,"intervalSec":2.9483315684695577,"critPercent":48.08980536892829,"avgHit":77708.0879010959,"totalDamageMean":7829848.268304718,"isSkipped":false},"oneButton":{"name":"dispatch","spellName":"Dispatch","portionPercent":14.511678437647857,"executesPerFight":77.03303303303304,"intervalSec":3.8494772491168674,"critPercent":47.69921581821476,"avgHit":73093.69911822252,"totalDamageMean":5630629.338680613,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":14.237813935146937},{"key":"main_gauche","displayName":"Main Gauche","simc":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":7.382858105642014,"executesPerFight":0,"intervalSec":null,"critPercent":47.724676313785224,"avgHit":0,"totalDamageMean":4033767.061410454,"isSkipped":true},"assistedHighlight":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":7.6462155089445165,"executesPerFight":0,"intervalSec":null,"critPercent":48.20315342631898,"avgHit":0,"totalDamageMean":3822101.681822062,"isSkipped":true},"oneButton":{"name":"main_gauche","spellName":"Main Gauche","portionPercent":8.167002745042131,"executesPerFight":0,"intervalSec":null,"critPercent":47.67318750821737,"avgHit":0,"totalDamageMean":3168852.2773505533,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.382858105642014},{"key":"blade_rush","displayName":"Blade Rush","simc":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":7.150038177657049,"executesPerFight":28.524524524524523,"intervalSec":10.91604810012064,"critPercent":47.98839526023279,"avgHit":136954.4791365267,"totalDamageMean":3906561.398873338,"isSkipped":false},"assistedHighlight":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":5.8244738526733775,"executesPerFight":22.09009009009009,"intervalSec":12.944912580385852,"critPercent":47.92418772563177,"avgHit":131799.84973694637,"totalDamageMean":2911470.5545494817,"isSkipped":false},"oneButton":{"name":"blade_rush","spellName":"Blade Rush","portionPercent":4.298618690684609,"executesPerFight":13.273273273273274,"intervalSec":20.765516409266407,"critPercent":48.410849800886616,"avgHit":125658.01050461992,"totalDamageMean":1667893.1124036638,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.150038177657049},{"key":"sinister_strike","displayName":"Sinister Strike","simc":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.331125766040362,"executesPerFight":94.29529529529529,"intervalSec":3.190940254946438,"critPercent":52.96717238462758,"avgHit":19301.332777667987,"totalDamageMean":1820024.8738629648,"isSkipped":false},"assistedHighlight":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.264727522900564,"executesPerFight":88.87787787787788,"intervalSec":3.3668179795926774,"critPercent":53.44297605959299,"avgHit":18361.534214866704,"totalDamageMean":1631934.1955993993,"isSkipped":false},"oneButton":{"name":"sinister_strike","spellName":"Sinister Strike","portionPercent":3.062585937785286,"executesPerFight":69.85785785785785,"intervalSec":4.238750443186202,"critPercent":52.73015374512855,"avgHit":17010.31329375094,"totalDamageMean":1188304.048192483,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.331125766040362},{"key":"pistol_shot","displayName":"Pistol Shot","simc":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.977463123982905,"executesPerFight":55.62062062062062,"intervalSec":5.327848438187346,"critPercent":52.997060299706035,"avgHit":29248.045838383383,"totalDamageMean":1626794.461471244,"isSkipped":false},"assistedHighlight":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.9664218306031587,"executesPerFight":53.05705705705706,"intervalSec":5.586388609034711,"critPercent":53.33070259503542,"avgHit":27947.660162903172,"totalDamageMean":1482820.5998743942,"isSkipped":false},"oneButton":{"name":"pistol_shot","spellName":"Pistol Shot","portionPercent":2.7812041325243197,"executesPerFight":41.389389389389386,"intervalSec":7.168165605719256,"critPercent":52.70130308066575,"avgHit":26072.52780037256,"totalDamageMean":1079126.0054952998,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.977463123982905},{"key":"instant_poison","displayName":"Instant Poison","simc":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.204775073615631,"executesPerFight":0,"intervalSec":null,"critPercent":47.9297826641479,"avgHit":0,"totalDamageMean":843234.9992045944,"isSkipped":true},"assistedHighlight":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.2989539808472808,"executesPerFight":0,"intervalSec":null,"critPercent":48.19097964863779,"avgHit":0,"totalDamageMean":804422.1492899819,"isSkipped":true},"oneButton":{"name":"instant_poison","spellName":"Instant Poison","portionPercent":2.4638444049766974,"executesPerFight":0,"intervalSec":null,"critPercent":47.70932706969711,"avgHit":0,"totalDamageMean":669191.8000078113,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.204775073615631},{"key":"ambush","displayName":"Ambush","simc":null,"assistedHighlight":{"name":"ambush","spellName":"Ambush","portionPercent":0.07694026214489506,"executesPerFight":1.019019019019019,"intervalSec":120.18761111111114,"critPercent":49.609375,"avgHit":37742.18804538919,"totalDamageMean":38460.00743764384,"isSkipped":true},"oneButton":{"name":"ambush","spellName":"Ambush","portionPercent":0.09744257224942351,"executesPerFight":1.057057057057057,"intervalSec":120.41175362318843,"critPercent":49.43502824858757,"avgHit":35767.58371929813,"totalDamageMean":37808.37678436319,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.07694026214489506}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 127437.29315275638,
+    ahDps: 116569.07354177115,
+    obDps: 90484.60376556354,
+    likelyBroken: false,
+    deltaPct: -8.528288181668861,
+    obDeltaPct: -28.996762621831923,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

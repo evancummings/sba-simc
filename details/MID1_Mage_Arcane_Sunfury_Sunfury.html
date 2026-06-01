@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mage Arcane — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Mage Arcane <span style="color:#71717a;font-weight:500">· Sunfury</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Mage_Arcane_Sunfury</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Mage_Arcane_Sunfury_Sunfury","class":"Mage","spec":"Arcane","heroTalent":"Sunfury","simcProfileName":"MID1_Mage_Arcane_Sunfury","playerName":"MID1_Mage_Arcane_Sunfury","talents":"C4DAAAAAAAAAAAAAAAAAAAAAAYGmZZmZmFmZGamxAAAwAAmZmmlltZAgYDAgNmZmxYzyMzMLzMGjZmxYhZmZMDAwAAAMAzMgZAwwA","simc":{"dps":109143.07873049862,"fightLengthSec":299.92906406406394,"profileSource":"default","timeline":[147698.72075574877,137020.78828559964,140343.91265653688,162699.41539188856,280348.0224612352,248777.37766994745,206552.69242907828,290418.10395946074,451514.7870415376,226879.76374375029,184013.7394829829,79131.64413734531,85928.7870492014,88132.4982067402,68485.59965878574,67309.16540968222,66215.93152718607,63864.73133055696,57112.09258433432,68311.32580778416,88361.07142090483,74092.42810798064,66674.22420204073,134864.94698384806,93921.17136085186,94915.95746836023,61267.27942157254,61973.72020660685,63696.83038465032,54730.89654453753,56141.925300748095,113038.09802963998,115519.7333717721,107622.68074946916,121815.16991714513,154385.70765036397,154391.7157987644,141041.64743460045,184830.1634173718,295290.6915877836,155313.82880308665,135384.54455520312,62525.54630586703,65794.14388705678,63380.84349437799,62849.969578217,64960.29428322075,71268.07706760282,69116.35179674745,55709.71918444024,63174.70951821714,91958.15523406866,77133.9169654045,68106.69229585241,126362.45070863247,96713.77369491315,98414.34470435692,66267.23920284842,65737.58589445303,65881.1837795221,55043.58398358512,49720.78024428552,126530.52119256362,112560.94277690367,106598.14815358463,120800.62005948313,201180.7521154493,141187.46714314265,151254.91695243499,172713.5009646549,314689.5690170997,146500.4065746161,120080.48332097247,76151.074213257,69974.35352994714,60971.70952834608,61384.16454524042,65262.38082794698,67579.33757677357,65894.12307509528,55252.42257110633,91252.72253425204,95300.3465230225,71615.93571079755,77096.13238539867,172985.99127879052,95325.61901855601,97131.55933106327,65467.89420973206,65424.83140118538,64807.88830622118,56148.11596561905,35731.68837158784,113151.52208296109,108753.61558090287,113203.22824806819,120820.61337643977,190838.8758401481,125792.41022379667,162829.5282594984,174676.31775968903,274068.87613482465,154563.48438853223,109983.66173340642,81549.52634314737,82845.81772453508,75906.62059658571,84251.29292794874,77582.31081900002,76737.55737807453,73315.24374851992,69558.55073533703,130731.4871495232,115302.12738290157,92810.4564501446,107398.60366252714,216824.08477864967,124312.60809215505,100631.13439416616,83211.50092551042],"sampleActions":[{"timeSec":0,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":1.229,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":2.165,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":3.758,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":4.815,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":5.752,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":7.243,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":8.171,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":8.171,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":9.1,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":10.027000000000001,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":10.946,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":12.489,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":12.539,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":13.458,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":14.513,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":15.779,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":17.546,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":18.353,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":19.166,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":19.98,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":20.79,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":21.612000000000002,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":22.44,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":23.84,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":24.795,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":25.900000000000002,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":27.735,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":29.287,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":30.242,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":31.192,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":32.12,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":33.043,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":34.095,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":35.038000000000004,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":35.96,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":37.38,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":38.297000000000004,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":39.216,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":40.263,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":41.480000000000004,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":42.678000000000004,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":44.571,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":45.764,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":47.417,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":48.79,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":50.011,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":51.228,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":52.446,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":53.668,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":54.891,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":56.114000000000004,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":57.333,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":58.546,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":58.596000000000004,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":59.785000000000004,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"}],"abilitiesByKey":{"arcane_assault":{"name":"arcane_assault","spellName":"Arcane Assault","portionPercent":0.7347826434649516,"executesPerFight":211.94194194194193,"intervalSec":1.4032565311065044,"critPercent":23.5788055891758,"avgHit":1135.002194124948,"totalDamageMean":240554.5691312064,"isSkipped":false},"arcane_barrage":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":23.39552758233475,"executesPerFight":53.546546546546544,"intervalSec":5.63146050965496,"critPercent":36.518368722615435,"avgHit":143039.53774137504,"totalDamageMean":7659273.26566504,"isSkipped":false},"arcane_blast":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":24.64117430918769,"executesPerFight":108.52052052052052,"intervalSec":2.7010061532653395,"critPercent":24.271345244109675,"avgHit":74336.86709273313,"totalDamageMean":8067075.510768152,"isSkipped":false},"arcane_missiles":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":24.901158326406676,"executesPerFight":55.014014014014016,"intervalSec":5.42967746065208,"critPercent":null,"avgHit":148183.87149985146,"totalDamageMean":8152189.58334368,"isSkipped":false},"arcane_surge":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":0.7725443072040578,"executesPerFight":2.684684684684685,"intervalSec":92.44438129496402,"critPercent":22.72112523667839,"avgHit":94207.359769614,"totalDamageMean":252917.05595806282,"isSkipped":false}}},"assistedHighlight":{"dps":93220.57439458361,"fightLengthSec":299.928955955956,"profileSource":"default","timeline":[0,250823.2342954713,158116.84305241038,261511.6981960482,184532.12432978637,211644.0330766689,225562.2224620265,137111.2807661475,183639.96622018583,102742.91346745608,101091.8653996239,76266.78463529058,75451.02276154468,77360.06344305331,61268.613478109924,62371.93159666158,92211.64794694884,63072.76076924799,64503.84318566035,67940.11961873884,98178.66653151772,87031.87542374077,56338.43120153789,58141.42311557357,57011.710669714084,56906.81832930797,50501.09673416394,54684.879685238775,51949.887451539566,51350.046210739405,53485.41434199439,40027.27025767946,161283.7456543762,129914.9976958586,130299.18849496094,178256.90651646894,141400.09360027063,103306.2069399139,88145.46338194092,93283.76594864979,67236.45679015896,60094.33894337487,55085.4957399922,61309.43821128137,62819.64034241912,57125.131249942766,82065.02763226426,87419.77701529351,63898.191758765446,71299.32134034416,128373.30448928672,95759.24137809286,72561.39455239319,58631.36388599464,59709.44205194003,59198.6135105918,56204.829433835,56128.59751648839,56123.74670268064,56517.75338033368,50638.200124140596,77573.76696937198,54677.08950877115,151003.15816811527,125521.90736465131,204848.18003322402,154889.24722041067,120411.03012990401,84257.45275637315,86634.39878129763,94878.70575903753,66505.481911785,60637.98503930983,55993.68032312482,60519.92477030733,61118.66376530025,65850.59185927917,89113.02084480923,67329.37812874159,72481.35313289377,128094.11831253498,99744.1582705139,88468.17258201867,60775.11713416827,61598.260443472056,58159.13049162112,57514.25376662998,57669.38393379881,53824.856833737445,55336.986155594466,52054.19747360665,67467.12266662598,90833.19540963101,66825.30935011042,131516.9447669621,179297.2015003125,164690.68910475218,144513.21564776098,106710.13796812754,88928.09265629451,86760.42706806041,116828.46055122092,83840.13460751658,74745.38755530768,76480.45956012388,69606.03533243653,80406.66189660788,101321.1766812494,92512.50061682628,86226.45394007624,116282.21229929013,111427.36412455952,101193.19967139237,67310.32911123797,60514.90557333113,60994.59483042696,58023.357834184666,44850.743230053944,59150.32652763069,60490.049118675415],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":0,"name":"arcane_surge","spellName":"Arcane Surge","target":"Fluffy_Pillow"},{"timeSec":1.591,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":3.146,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":4.0840000000000005,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":5.013,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":6.606,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":8.084,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":8.993,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":9.901,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":11.334,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":12.885,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":13.833,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":14.780000000000001,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":15.717,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":16.636,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":17.902,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":18.94,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":19.752,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":20.561,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":21.372,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":22.68,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":23.477,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":24.569,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":25.477,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":26.415,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":27.365000000000002,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":28.311,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":29.263,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":30.212,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":31.163,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":32.732,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":33.671,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":34.605000000000004,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":35.678,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":36.638,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":37.599000000000004,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":38.56,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":39.52,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":41.142,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":42.363,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":44.055,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":46.017,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":47.246,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":47.246,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":48.5,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":50.378,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":52.304,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":53.54,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":54.769,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":56.72,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":57.965,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":59.205,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"}],"abilitiesByKey":{"arcane_barrage":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":19.664293079735952,"executesPerFight":39.73873873873874,"intervalSec":7.451384406354537,"critPercent":36.386691776522284,"avgHit":138364.86332094768,"totalDamageMean":5498445.154132434,"isSkipped":false},"arcane_blast":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":27.548883575415807,"executesPerFight":110.72672672672672,"intervalSec":2.657849243803656,"critPercent":23.973127043164236,"avgHit":69568.5739517771,"totalDamageMean":7703100.476726501,"isSkipped":false},"arcane_missiles":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":26.991612882150573,"executesPerFight":50.953953953953956,"intervalSec":5.813631730769229,"critPercent":null,"avgHit":148119.59139232122,"totalDamageMean":7547278.83948281,"isSkipped":false},"arcane_surge":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":1.2886463416550755,"executesPerFight":3.665665665665666,"intervalSec":92.76712917933128,"critPercent":23.953235454051114,"avgHit":98297.4954503058,"totalDamageMean":360325.75409311295,"isSkipped":false}}},"oneButton":{"dps":83680.31932113128,"fightLengthSec":299.9317187187186,"profileSource":"default","timeline":[0,245144.5350896265,134739.77910239313,150443.02715422626,139070.15478172517,179499.12719610313,194755.8430263882,115555.59196049714,168332.2054954003,98290.13338554848,88336.76147388875,65236.85966579475,70482.61047625577,68427.80591886031,51645.819164559245,48280.55726916625,82887.32090606976,62009.42744389353,61501.96167574621,60067.29062654814,88923.14404462642,79892.06355957687,55497.76297144007,51968.70146721706,49520.69466425858,49779.74740261244,47171.5250998917,50783.61063688478,50393.34136722935,48079.554521068276,52063.25618689483,42003.163646163994,156196.87986807543,119955.27772869745,119362.33377348541,170169.1420288021,146760.79689638736,86181.15343951306,69622.55316819712,77368.53987383818,63169.244534353384,56476.30067156698,52426.51035007485,50341.83425047114,51482.91107068055,52852.13996218489,61741.170199232685,82332.75402883248,59493.785043497985,59306.82755789948,111123.9335998496,87467.59081319923,68197.79962658184,52271.771111186456,54981.146472125285,49795.1050387893,52473.98234995625,50179.140721321106,50713.26850114874,52778.42769611356,47770.467016907125,67663.0112011634,58292.470415022886,148036.66690828695,111548.78147168014,173854.74109391423,145271.53533382286,122013.65457770822,79887.81725729322,71940.08649741669,69527.52342396682,61441.590773308926,52921.992903372535,52588.850510353,48216.451803851465,53107.69849929366,58531.68661304909,76403.98298451117,64693.11751227516,62003.04251357632,95135.4906101118,95600.30896825474,79975.16376840718,61816.03071788377,52627.683946951365,49122.560802108695,51251.385347955096,52218.62217345152,53137.36281268522,52174.04006256536,48380.82247603573,55562.236071709915,80492.90499699076,66228.29377223442,129996.38623907928,146757.61637013996,157707.9446116983,132535.18125554084,102519.81113648516,76019.71391966706,65194.36852800343,82170.31375898629,74971.19336607784,63819.533644535484,67412.62604601662,60055.14250840224,69083.94916473136,80860.75630862956,89298.05546906021,80448.9362422701,87183.61387051882,100483.16761124838,86210.78503305546,84626.55680326151,55977.029721816274,50765.40088875156,55181.61874099966,49957.73465441497,66877.53131915141,31907.163290754896],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":0,"name":"arcane_surge","spellName":"Arcane Surge","target":"Fluffy_Pillow"},{"timeSec":1.589,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":3.101,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":4.271,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":5.428,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":6.973,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":8.119,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":9.659,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":10.795,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":12.297,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":13.455,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":14.612,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":15.77,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":16.929000000000002,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":18.074,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":19.22,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":20.576,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":21.573,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":22.586000000000002,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":23.602,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":24.613,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":25.77,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":27.196,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":28.93,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":30.111,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":31.297,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":32.482,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":33.656,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":34.949,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":36.533,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":37.691,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":39.166000000000004,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":40.313,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":41.96,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":43.45,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":44.946,"name":"touch_of_the_magi","spellName":"Touch of the Magi","target":"Fluffy_Pillow"},{"timeSec":45,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":46.504,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":48.461,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":49.966,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":51.47,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":52.968,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"},{"timeSec":54.464,"name":"arcane_barrage","spellName":"Arcane Barrage","target":"Fluffy_Pillow"},{"timeSec":55.962,"name":"arcane_orb","spellName":"Arcane Orb","target":"Fluffy_Pillow"},{"timeSec":57.46,"name":"arcane_missiles","spellName":"Arcane Missiles","target":"Fluffy_Pillow"},{"timeSec":59.354,"name":"arcane_blast","spellName":"Arcane Blast","target":"Fluffy_Pillow"}],"abilitiesByKey":{"arcane_barrage":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":18.91693326035805,"executesPerFight":31.18118118118118,"intervalSec":9.478917270613973,"critPercent":36.55748727307655,"avgHit":152189.16143077318,"totalDamageMean":4745437.816384969,"isSkipped":false},"arcane_blast":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":27.004019922861715,"executesPerFight":97.14914914914915,"intervalSec":3.0021761098635253,"critPercent":24.212945860526208,"avgHit":69729.24672351358,"totalDamageMean":6774136.990000441,"isSkipped":false},"arcane_missiles":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":27.34138521169804,"executesPerFight":45.97597597597598,"intervalSec":6.532336783733849,"critPercent":null,"avgHit":149181.5488043171,"totalDamageMean":6858767.303886171,"isSkipped":false},"arcane_surge":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":1.5676476782402538,"executesPerFight":3.665665665665666,"intervalSec":92.90391304347827,"critPercent":24.415443175638934,"avgHit":107280.59339435158,"totalDamageMean":393254.7877979134,"isSkipped":false}}},"abilities":[{"key":"arcane_missiles","displayName":"Arcane Missiles","simc":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":24.901158326406676,"executesPerFight":55.014014014014016,"intervalSec":5.42967746065208,"critPercent":null,"avgHit":148183.87149985146,"totalDamageMean":8152189.58334368,"isSkipped":false},"assistedHighlight":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":26.991612882150573,"executesPerFight":50.953953953953956,"intervalSec":5.813631730769229,"critPercent":null,"avgHit":148119.59139232122,"totalDamageMean":7547278.83948281,"isSkipped":false},"oneButton":{"name":"arcane_missiles","spellName":"Arcane Missiles","portionPercent":27.34138521169804,"executesPerFight":45.97597597597598,"intervalSec":6.532336783733849,"critPercent":null,"avgHit":149181.5488043171,"totalDamageMean":6858767.303886171,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":24.901158326406676},{"key":"arcane_blast","displayName":"Arcane Blast","simc":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":24.64117430918769,"executesPerFight":108.52052052052052,"intervalSec":2.7010061532653395,"critPercent":24.271345244109675,"avgHit":74336.86709273313,"totalDamageMean":8067075.510768152,"isSkipped":false},"assistedHighlight":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":27.548883575415807,"executesPerFight":110.72672672672672,"intervalSec":2.657849243803656,"critPercent":23.973127043164236,"avgHit":69568.5739517771,"totalDamageMean":7703100.476726501,"isSkipped":false},"oneButton":{"name":"arcane_blast","spellName":"Arcane Blast","portionPercent":27.004019922861715,"executesPerFight":97.14914914914915,"intervalSec":3.0021761098635253,"critPercent":24.212945860526208,"avgHit":69729.24672351358,"totalDamageMean":6774136.990000441,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":24.64117430918769},{"key":"arcane_barrage","displayName":"Arcane Barrage","simc":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":23.39552758233475,"executesPerFight":53.546546546546544,"intervalSec":5.63146050965496,"critPercent":36.518368722615435,"avgHit":143039.53774137504,"totalDamageMean":7659273.26566504,"isSkipped":false},"assistedHighlight":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":19.664293079735952,"executesPerFight":39.73873873873874,"intervalSec":7.451384406354537,"critPercent":36.386691776522284,"avgHit":138364.86332094768,"totalDamageMean":5498445.154132434,"isSkipped":false},"oneButton":{"name":"arcane_barrage","spellName":"Arcane Barrage","portionPercent":18.91693326035805,"executesPerFight":31.18118118118118,"intervalSec":9.478917270613973,"critPercent":36.55748727307655,"avgHit":152189.16143077318,"totalDamageMean":4745437.816384969,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":23.39552758233475},{"key":"arcane_surge","displayName":"Arcane Surge","simc":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":0.7725443072040578,"executesPerFight":2.684684684684685,"intervalSec":92.44438129496402,"critPercent":22.72112523667839,"avgHit":94207.359769614,"totalDamageMean":252917.05595806282,"isSkipped":false},"assistedHighlight":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":1.2886463416550755,"executesPerFight":3.665665665665666,"intervalSec":92.76712917933128,"critPercent":23.953235454051114,"avgHit":98297.4954503058,"totalDamageMean":360325.75409311295,"isSkipped":false},"oneButton":{"name":"arcane_surge","spellName":"Arcane Surge","portionPercent":1.5676476782402538,"executesPerFight":3.665665665665666,"intervalSec":92.90391304347827,"critPercent":24.415443175638934,"avgHit":107280.59339435158,"totalDamageMean":393254.7877979134,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.7725443072040578},{"key":"arcane_assault","displayName":"Arcane Assault","simc":{"name":"arcane_assault","spellName":"Arcane Assault","portionPercent":0.7347826434649516,"executesPerFight":211.94194194194193,"intervalSec":1.4032565311065044,"critPercent":23.5788055891758,"avgHit":1135.002194124948,"totalDamageMean":240554.5691312064,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":0.7347826434649516}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 109143.07873049862,
+    ahDps: 93220.57439458361,
+    obDps: 83680.31932113128,
+    likelyBroken: false,
+    deltaPct: -14.588652364509178,
+    obDeltaPct: -23.3297060203343,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

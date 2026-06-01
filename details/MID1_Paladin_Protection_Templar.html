@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paladin Protection — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Paladin Protection <span style="color:#71717a;font-weight:500">· Templar</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Paladin_Protection</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Paladin_Protection_Templar","class":"Paladin","spec":"Protection","heroTalent":"Templar","simcProfileName":"MID1_Paladin_Protection","playerName":"MID1_Paladin_Protection","talents":"CIEAAAAAAAAAAAAAAAAAAAAAAsMzAzyMLmZMDLLDzYmFbzYAAAAAAAAg0MziZMmxYmt2AgBADsNAAwMTbzMbzAEYzADWMzMAzMAALzAMzAG","simc":{"dps":73732.12363634791,"fightLengthSec":299.935075075075,"profileSource":"default","timeline":[57.01159696795969,490713.02690170135,174315.97923888656,97201.77228676181,143432.56580366593,85906.78200583179,101019.44853426561,123263.41271160456,159371.9953703702,99547.73481668398,73109.60645701761,41364.594790842675,45027.140993096495,36185.00332641136,34806.487808564,30933.907824253794,42653.54515512999,41783.41704384378,52037.72740420754,36714.32486567926,39036.411903886445,230206.91497517115,133034.85439346934,78978.73466026508,110258.38500725407,75268.37706807545,95453.7539070298,79880.12433044042,61377.223683781114,37398.13593227524,35672.54176577747,32961.77138590334,36308.77668055278,30032.931106261978,39023.08607360338,31060.745308625617,35382.631017009124,34569.95820450054,33405.5116360238,33482.71663762501,31563.567853349665,48333.2856525886,257283.32428275477,121365.21675642476,129129.61767646762,91488.76144860574,110629.53573331633,85117.04498475952,69960.26772071555,51657.11665978019,40337.699289291464,38558.40093653446,40293.7193113928,34223.647966815464,36326.611962887524,33471.86217752919,32792.22681477339,34895.1556172818,32661.096318082276,30697.458999416605,30369.336622351937,41187.655165956625,190771.49648363816,114459.91642741916,106403.61889305575,102604.71401890508,85884.74127827268,75662.00458940247,71016.53712048514,46509.89109242168,39151.498755775705,41049.814326489904,40371.95180214502,38922.842425112765,37460.46459491161,35899.7441730832,31610.332793776408,33322.46190330033,30268.063758997454,31898.200093740048,32022.04359562078,31115.197855707906,257952.004159831,145587.03336316228,98272.083092227,172363.49210689132,93748.63769005367,109454.47003478563,84015.12925613162,55853.085019952436,40976.740629572094,37678.262241084274,42085.38955217083,38304.748126897604,38666.93630283931,35662.49992583301,33108.01767370242,32775.47254849686,31755.82552368853,30473.708648482447,31373.349160451075,33674.60341189896,235165.40444710813,194876.414843411,118712.3140210598,163362.02847829764,109110.39602409024,122494.8842136957,84445.79985861927,78021.25702624986,49389.20688724537,45701.480052583334,47859.3730228766,43578.68198742847,38972.06924601135,31724.909304272107,38790.71543847874,33602.50085189342,30292.800999124927,27128.37200076939],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_item_algethar_puzzle_box","spellName":"use_item_algethar_puzzle_box","target":"Fluffy_Pillow"},{"timeSec":1.119,"name":"avenging_wrath","spellName":"Avenging Wrath","target":"none"},{"timeSec":1.119,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.119,"name":"divine_toll","spellName":"Divine Toll","target":"Fluffy_Pillow"},{"timeSec":1.426,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":1.961,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":1.985,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":2.827,"name":"hammer_of_light","spellName":"Hammer of Light","target":"Fluffy_Pillow"},{"timeSec":3.67,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":4.054,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":4.424,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":4.553,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":5.178,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":5.178,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":5.6770000000000005,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":5.934,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":6.688,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":7.442,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":7.442,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":8.196,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":9.187,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":9.601,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":10.029,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":10.16,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":10.719,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":11.004,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":11.278,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":11.847,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":12.688,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":13.773,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":13.773,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":14.615,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":15.46,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":15.699,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":16.543,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":17.619,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":18.017,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":18.463,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":18.576,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":19.135,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":19.42,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":20.417,"name":"word_of_glory","spellName":"Word of Glory","target":"none"},{"timeSec":21.26,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":21.26,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":22.103,"name":"hammer_of_light","spellName":"Hammer of Light","target":"Fluffy_Pillow"},{"timeSec":22.948,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":23.703,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":24.034,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":24.457,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":24.533,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":25.212,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":25.965,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":26.719,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":26.93,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":27.684,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":28.439,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":28.747,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":29.283,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":29.306,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":29.865000000000002,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":30.127,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":30.972,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":31.815,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":32.053,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":32.897,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":33.742,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":34.142,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":34.585,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":35.428,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":35.428,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":36.272,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":37.114000000000004,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":38.205,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":38.205,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":39.048,"name":"word_of_glory","spellName":"Word of Glory","target":"none"},{"timeSec":39.048,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":39.892,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":41.26,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":42.356,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":43.452,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":43.787,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":44.548,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":44.548,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":45.645,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":46.741,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":47.836,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":47.836,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":48.932,"name":"hammer_of_light","spellName":"Hammer of Light","target":"Fluffy_Pillow"},{"timeSec":50.027,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":51.005,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":51.985,"name":"word_of_glory","spellName":"Word of Glory","target":"none"},{"timeSec":51.985,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":52.634,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":52.964,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":53.283,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":53.932,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":54.184000000000005,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":54.581,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":55.163000000000004,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":56.258,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":57.354,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":58.542,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":58.542,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":59.637,"name":"word_of_glory","spellName":"Word of Glory","target":"none"}],"abilitiesByKey":{"avengers_shield":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":4.044078061574641,"executesPerFight":34.17717717717718,"intervalSec":8.81126994163422,"critPercent":36.42333848982808,"avgHit":26169.497734066514,"totalDamageMean":894399.5606949279,"isSkipped":false},"empyrean_hammer":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":19.378550802406885,"executesPerFight":503.93593593593596,"intervalSec":0.5961007526894635,"critPercent":38.33606027092636,"avgHit":8504.680713522084,"totalDamageMean":4285814.235205055,"isSkipped":false},"hammer_of_light":{"name":"hammer_of_light","spellName":"Hammer of Light","portionPercent":14.702750228252354,"executesPerFight":14.721721721721721,"intervalSec":20.589257819351047,"critPercent":42.739095096179895,"avgHit":220877.7768462513,"totalDamageMean":3251701.165243061,"isSkipped":false},"hammer_of_the_righteous":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":2.9218097400439693,"executesPerFight":81.27327327327328,"intervalSec":3.6290242609173857,"critPercent":35.3276003778353,"avgHit":11358.426926695396,"totalDamageMean":923136.5355678204,"isSkipped":false},"hammer_of_wrath":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":9.244796043495072,"executesPerFight":45.62262262262262,"intervalSec":6.35628950206724,"critPercent":48.4192575101666,"avgHit":44815.591654302654,"totalDamageMean":2044604.8256538059,"isSkipped":false},"judgment":{"name":"judgment","spellName":"Judgment","portionPercent":4.718706745602052,"executesPerFight":56.14114114114114,"intervalSec":4.787586357993106,"critPercent":25.435261512222855,"avgHit":18588.904626003205,"totalDamageMean":1043602.3182676573,"isSkipped":false},"melee":{"name":"melee","spellName":"","portionPercent":7.502642902350676,"executesPerFight":209.27027027027026,"intervalSec":1.7150724372633992,"critPercent":36.086707956169604,"avgHit":11327.152514801961,"totalDamageMean":2370436.2681651777,"isSkipped":false},"refining_fire":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":10.800065712218823,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2388572.5946456445,"isSkipped":true},"sacrosanct_crusade_heal":{"name":"sacrosanct_crusade_heal","spellName":"Sacrosanct Crusade","portionPercent":11.766365396989526,"executesPerFight":14.721721721721721,"intervalSec":20.589257819351047,"critPercent":0,"avgHit":107005,"totalDamageMean":1575297.8328328328,"isSkipped":false},"shield_of_the_righteous":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":7.627041129520961,"executesPerFight":135.81181181181182,"intervalSec":2.200159692646651,"critPercent":39.101580566302296,"avgHit":12420.257291269472,"totalDamageMean":1686817.6458961733,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.9540027847437819,"executesPerFight":16.593593593593592,"intervalSec":17.289579498977496,"critPercent":36.010580738246965,"avgHit":12715.142752436803,"totalDamageMean":210989.91131846333,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.4779488629560908,"executesPerFight":40.95495495495496,"intervalSec":7.165213773171355,"critPercent":36.016949152542374,"avgHit":2580.994192452576,"totalDamageMean":105704.5008908956,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.3399706912817655,"executesPerFight":8.674674674674675,"intervalSec":31.697340802501284,"critPercent":null,"avgHit":8667.629300714365,"totalDamageMean":75188.86438437506,"isSkipped":false},"word_of_glory":{"name":"word_of_glory","spellName":"Word of Glory","portionPercent":75.26406484136673,"executesPerFight":27.27827827827828,"intervalSec":10.539192020709606,"critPercent":33.051962288971716,"avgHit":348697.2007326825,"totalDamageMean":9511859.276442774,"isSkipped":false}}},"assistedHighlight":{"dps":42499.170532525895,"fightLengthSec":300.05093593593597,"profileSource":"default","timeline":[36.280107161428894,200975.38063910813,121460.95429371437,88177.34918275315,126604.82337541088,74809.19116775671,58304.1594773444,54235.48198491054,44988.43286210687,40563.316031017224,31629.259685368437,22083.45969591099,21642.4264119098,26711.31819290032,18567.990281357324,20240.795782452453,17969.778788200096,20983.916049849417,32823.39545634765,18959.061315359606,17538.005073280157,147035.38203451864,62539.71864062976,50006.16013399175,64886.885386421,36810.9708565939,33590.820304734305,35354.13097790727,26987.51059529264,30737.821867440398,18610.098499919182,19723.708207303454,28360.5223741902,18389.524240157145,22786.081961350577,27989.71719504964,19845.789562512902,18066.62776784537,31064.369270730414,21689.00783952736,18884.135199269273,40922.07318863939,67451.06217665707,79509.83346094425,55658.30586756505,43507.88038266579,56596.19619748185,46647.56846874593,49745.044118244,26104.458397443083,19413.884032768045,28992.10508856874,19641.257109017115,17676.808583949012,31462.469149761986,17526.942348029555,20387.14008531425,30469.753916879963,18878.392780412567,21342.165103792355,30676.017181522795,34652.290453713824,65844.34000488359,73509.32103536313,50697.48367511775,44020.225825485315,45082.10312144552,40053.11582155206,54757.28380552568,24205.549831451415,18766.64592472534,30179.23220806986,20166.52417268348,18176.626473685945,32377.972794933623,17894.063670164574,20928.400021819325,29088.335190816157,18865.607002472716,22045.03166804155,28246.53400464326,23345.43409003253,195856.98621877952,73553.89391962567,61966.58917942507,69525.99202608906,47064.90635340146,59953.64931681968,40683.36260193291,33101.49881021797,31319.19562245165,20962.320895344827,20941.052735146866,27715.78230812679,21479.304520933416,18889.248726918886,31000.598870442886,20109.37365735275,19840.153094861802,29792.500903200667,19503.894048212343,33633.05736343913,185171.16237486774,81341.70229232174,71780.01174492763,68390.57592758702,51042.8338198343,68437.23926783675,47446.554718276886,43299.039265597865,33270.324552192484,19055.36136791667,21722.084352864324,24665.766104259626,20196.571056410325,20011.115452019403,24271.382053763988,16717.015832042292,22761.688446195833,21860.462773605035],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.119,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.119,"name":"avenging_wrath","spellName":"Avenging Wrath","target":"none"},{"timeSec":1.119,"name":"divine_toll","spellName":"Divine Toll","target":"Fluffy_Pillow"},{"timeSec":1.963,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":2.807,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":3.649,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":4.494,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":5.337,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":6.42,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":7.266,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":8.109,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":8.952,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":9.797,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":10.639,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":11.73,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":12.574,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":13.439,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":14.496,"name":"unknown","spellName":"unknown","target":""},{"timeSec":15.182,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":16.236,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":17.081,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":17.924,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.025000000000002,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":19.034,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":20.034,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":20.876,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":21.179000000000002,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":21.832,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":22.803,"name":"unknown","spellName":"unknown","target":""},{"timeSec":23.536,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":24.626,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":25.472,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":25.679000000000002,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":26.315,"name":"unknown","spellName":"unknown","target":""},{"timeSec":26.406,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":27.424,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":28.341,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":29.183,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":30.027,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":30.248,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":30.878,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":31.722,"name":"unknown","spellName":"unknown","target":""},{"timeSec":31.93,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":33.018,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":33.861000000000004,"name":"unknown","spellName":"unknown","target":""},{"timeSec":34.066,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":34.824,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":34.908,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":35.815,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":36.657000000000004,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":37.579,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":38.611000000000004,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":39.326,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":39.455,"name":"unknown","spellName":"unknown","target":""},{"timeSec":40.49,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":41.827,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":42.923,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":43.829,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":44.018,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":45.115,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":46.211,"name":"unknown","spellName":"unknown","target":""},{"timeSec":46.31,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":47.619,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":48.414,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":48.715,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":49.812,"name":"unknown","spellName":"unknown","target":""},{"timeSec":49.912,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":51.22,"name":"unknown","spellName":"unknown","target":""},{"timeSec":51.429,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":52.742000000000004,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":52.933,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":53.836,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":54.932,"name":"unknown","spellName":"unknown","target":""},{"timeSec":55.035000000000004,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":56.377,"name":"unknown","spellName":"unknown","target":""},{"timeSec":57.081,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":57.497,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":58.418,"name":"unknown","spellName":"unknown","target":""},{"timeSec":58.736000000000004,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"}],"abilitiesByKey":{"avengers_shield":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":6.670033457005628,"executesPerFight":34.61761761761762,"intervalSec":8.705261413843607,"critPercent":36.027886609817934,"avgHit":24566.01259454794,"totalDamageMean":850416.8303876391,"isSkipped":false},"empyrean_hammer":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":2.2654122245233483,"executesPerFight":43.008008008008005,"intervalSec":6.483894679909484,"critPercent":28.60089935561634,"avgHit":6715.861730132764,"totalDamageMean":288835.8350702244,"isSkipped":false},"hammer_of_the_righteous":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":5.186379398970654,"executesPerFight":83.01501501501501,"intervalSec":3.551191056501314,"critPercent":35.54306576355863,"avgHit":11379.244447389412,"totalDamageMean":944648.1486595583,"isSkipped":false},"hammer_of_wrath":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":14.877960921438465,"executesPerFight":42.14314314314314,"intervalSec":6.856112977867174,"critPercent":48.89104551802495,"avgHit":45011.17235329609,"totalDamageMean":1896912.2795256444,"isSkipped":false},"judgment":{"name":"judgment","spellName":"Judgment","portionPercent":8.264528017847631,"executesPerFight":56.32432432432432,"intervalSec":4.768506821739917,"critPercent":25.941993058998513,"avgHit":18707.937055877144,"totalDamageMean":1053711.9141742694,"isSkipped":false},"melee":{"name":"melee","spellName":"","portionPercent":12.53495396513839,"executesPerFight":202.2862862862863,"intervalSec":1.7777666189621302,"critPercent":35.67887240648563,"avgHit":11286.573034395975,"totalDamageMean":2283118.9440269032,"isSkipped":false},"refining_fire":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":17.740459305787567,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2261875.486786787,"isSkipped":true},"shield_of_the_righteous":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":4.163561618348916,"executesPerFight":43.008008008008005,"intervalSec":6.483894679909484,"critPercent":28.948588382550643,"avgHit":12342.9651482535,"totalDamageMean":530846.3439386502,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.5984693305277229,"executesPerFight":16.116116116116117,"intervalSec":17.791570308274732,"critPercent":35.23479552063355,"avgHit":12645.84209016303,"totalDamageMean":203801.85951113596,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.7994819684341119,"executesPerFight":39.6016016016016,"intervalSec":7.359140987758898,"critPercent":35.64416251321553,"avgHit":2573.9479295349756,"totalDamageMean":101932.46044871141,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5330273047313981,"executesPerFight":8.045045045045045,"intervalSec":33.454705577918354,"critPercent":null,"avgHit":8447.434068422906,"totalDamageMean":67959.9875955104,"isSkipped":false}}},"oneButton":{"dps":41213.903561033585,"fightLengthSec":300.0541761761764,"profileSource":"default","timeline":[31.097234709796197,149342.72553393996,74883.9949933077,66019.61464093057,110845.36069581499,74263.78120146578,76218.31207780547,54317.84920068796,44101.6674095327,39941.720006289965,36471.021005677685,25227.787391670267,23011.936472337173,22222.2254215607,18710.946165744608,23989.588918856294,21467.753165182898,17886.627222897194,26675.587517858687,18970.748105434872,19370.432979537603,169109.02522794277,60897.655169186444,47659.969577445656,53743.94035699493,37422.544227358965,42619.50146826442,38430.77034184022,24162.86481351381,30208.076768837396,17860.18023121816,20764.606544006456,31219.556944582975,17100.145016797695,21232.032691951208,28176.625859851534,20985.62244695952,18801.839194415763,30665.27131724927,19768.436756562183,17010.69939999139,27640.006811969342,78202.46622441933,79696.05551698526,51502.3042756736,44321.334950608645,48296.24923393114,45394.41707488123,59062.99176644329,22959.140508420194,17131.473288574016,29914.55750628734,19277.696600625408,18053.26834302642,31756.801207508797,16530.68717066038,19978.990492701025,30154.626333799293,18059.89208297265,19273.543547653502,28672.64875929684,23809.594175507245,90619.66826404295,72506.91265403616,48663.45175521229,51106.381204791884,38936.23351658757,39458.69485956701,55848.65637276284,24248.028261779433,20356.03466211625,27853.177177210146,19807.457684144218,20188.68389411923,28715.760254965906,17256.16490397279,23561.182546957636,25654.63372902896,17868.42952016574,24833.623088843266,22939.33332723608,22044.83535517562,152830.49602066106,77527.59665467918,63863.879188571904,55970.30890317307,46001.462125686565,60232.870676159364,44391.493916072264,40681.27043412986,26959.397099462243,19616.29826409027,23156.495186551423,24307.036550953726,21210.59770568416,20342.747502829796,27843.49483272816,18398.000620775125,23749.385532316854,25556.301234308252,17349.928747184746,33864.26954854934,103864.52864921952,93343.75059232925,79370.46491354294,62927.191692057604,49093.50038559793,64536.77884283442,47620.30687120027,61438.8811183904,28850.0165678817,18763.824611588618,26644.456539648145,20074.074105406955,20821.101865783814,22535.33401306029,18630.93358338082,20612.0898874331,21540.96697113089,18155.309316883635],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.119,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.119,"name":"avenging_wrath","spellName":"Avenging Wrath","target":"none"},{"timeSec":1.119,"name":"divine_toll","spellName":"Divine Toll","target":"Fluffy_Pillow"},{"timeSec":2.172,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":3.225,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":4.2780000000000005,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":5.329,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":6.383,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":7.4350000000000005,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":8.489,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":9.542,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":10.596,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":11.649000000000001,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":12.701,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":13.754,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":14.808,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":15.862,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":16.915,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":17.968,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":19.02,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":20.072,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":21.126,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":21.126,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":22.178,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":23.232,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":24.284,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":25.337,"name":"hammer_of_wrath","spellName":"Hammer of Wrath","target":"Fluffy_Pillow"},{"timeSec":25.653000000000002,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":26.388,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":27.442,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":28.497,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":29.551000000000002,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":30.174,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":30.604,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":31.657,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":32.709,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":33.761,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":34.728,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":34.815,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":35.868,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":36.919000000000004,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":37.971000000000004,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":39.023,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":39.237,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":40.075,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":41.443,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":42.809,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":43.768,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":44.177,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":45.542,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":46.908,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":48.276,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":48.276,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":49.643,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":51.01,"name":"consecration","spellName":"Consecration","target":"none"},{"timeSec":52.378,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":52.872,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":53.745000000000005,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":55.112,"name":"avengers_shield","spellName":"Avenger\u0027s Shield","target":"Fluffy_Pillow"},{"timeSec":56.481,"name":"judgment","spellName":"Judgment","target":"Fluffy_Pillow"},{"timeSec":57.453,"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","target":"Fluffy_Pillow"},{"timeSec":57.848,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"},{"timeSec":59.216,"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","target":"Fluffy_Pillow"}],"abilitiesByKey":{"avengers_shield":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":6.646032234748983,"executesPerFight":33.44244244244244,"intervalSec":9.036831064436704,"critPercent":36.11939408396946,"avgHit":24565.55840839903,"totalDamageMean":821532.2731393424,"isSkipped":false},"empyrean_hammer":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":2.328728844340968,"executesPerFight":43.17717717717718,"intervalSec":6.455843238930988,"critPercent":28.64630232504445,"avgHit":6666.9448461198235,"totalDamageMean":287859.85885138385,"isSkipped":false},"hammer_of_the_righteous":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":4.520584084112889,"executesPerFight":71.70170170170171,"intervalSec":4.0876597852523835,"critPercent":34.17045596762755,"avgHit":11133.436444829616,"totalDamageMean":798286.3388820275,"isSkipped":false},"hammer_of_wrath":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":14.38676742702985,"executesPerFight":39.34134134134134,"intervalSec":7.369128968471985,"critPercent":49.174549235411966,"avgHit":45203.93538511318,"totalDamageMean":1778383.4519576759,"isSkipped":false},"judgment":{"name":"judgment","spellName":"Judgment","portionPercent":8.330487917832361,"executesPerFight":54.889889889889886,"intervalSec":4.936580529315318,"critPercent":25.883870498891753,"avgHit":18760.32098763727,"totalDamageMean":1029751.9533104,"isSkipped":false},"melee":{"name":"melee","spellName":"","portionPercent":12.919423948331774,"executesPerFight":202.3053053053053,"intervalSec":1.777602347984575,"critPercent":35.518255872975196,"avgHit":11277.167300013292,"totalDamageMean":2281430.7736081947,"isSkipped":false},"refining_fire":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":18.028417835030698,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2228536.751248248,"isSkipped":true},"shield_of_the_righteous":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":4.255129228028086,"executesPerFight":43.17717717717718,"intervalSec":6.455843238930988,"critPercent":28.729422086767798,"avgHit":12182.058871007817,"totalDamageMean":525986.9142563075,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.6323617341697338,"executesPerFight":15.95995995995996,"intervalSec":18.381113142857142,"critPercent":35.22947236965345,"avgHit":12642.902641770248,"totalDamageMean":201780.21994032516,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.8257195605352516,"executesPerFight":39.75875875875876,"intervalSec":7.382713840198219,"critPercent":35.32141155225602,"avgHit":2567.2132215928573,"totalDamageMean":102069.2111596063,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5537901024652919,"executesPerFight":8.068068068068069,"intervalSec":34.401148923444964,"critPercent":null,"avgHit":8484.725991349473,"totalDamageMean":68455.34683711387,"isSkipped":false}}},"abilities":[{"key":"word_of_glory","displayName":"Word of Glory","simc":{"name":"word_of_glory","spellName":"Word of Glory","portionPercent":75.26406484136673,"executesPerFight":27.27827827827828,"intervalSec":10.539192020709606,"critPercent":33.051962288971716,"avgHit":348697.2007326825,"totalDamageMean":9511859.276442774,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":75.26406484136673},{"key":"empyrean_hammer","displayName":"Empyrean Hammer","simc":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":19.378550802406885,"executesPerFight":503.93593593593596,"intervalSec":0.5961007526894635,"critPercent":38.33606027092636,"avgHit":8504.680713522084,"totalDamageMean":4285814.235205055,"isSkipped":false},"assistedHighlight":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":2.2654122245233483,"executesPerFight":43.008008008008005,"intervalSec":6.483894679909484,"critPercent":28.60089935561634,"avgHit":6715.861730132764,"totalDamageMean":288835.8350702244,"isSkipped":false},"oneButton":{"name":"empyrean_hammer","spellName":"Empyrean Hammer","portionPercent":2.328728844340968,"executesPerFight":43.17717717717718,"intervalSec":6.455843238930988,"critPercent":28.64630232504445,"avgHit":6666.9448461198235,"totalDamageMean":287859.85885138385,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":19.378550802406885},{"key":"hammer_of_light","displayName":"Hammer of Light","simc":{"name":"hammer_of_light","spellName":"Hammer of Light","portionPercent":14.702750228252354,"executesPerFight":14.721721721721721,"intervalSec":20.589257819351047,"critPercent":42.739095096179895,"avgHit":220877.7768462513,"totalDamageMean":3251701.165243061,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":14.702750228252354},{"key":"sacrosanct_crusade_heal","displayName":"Sacrosanct Crusade","simc":{"name":"sacrosanct_crusade_heal","spellName":"Sacrosanct Crusade","portionPercent":11.766365396989526,"executesPerFight":14.721721721721721,"intervalSec":20.589257819351047,"critPercent":0,"avgHit":107005,"totalDamageMean":1575297.8328328328,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":11.766365396989526},{"key":"refining_fire","displayName":"Refining Fire","simc":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":10.800065712218823,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2388572.5946456445,"isSkipped":true},"assistedHighlight":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":17.740459305787567,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2261875.486786787,"isSkipped":true},"oneButton":{"name":"refining_fire","spellName":"Refining Fire","portionPercent":18.028417835030698,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2228536.751248248,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.800065712218823},{"key":"hammer_of_wrath","displayName":"Hammer of Wrath","simc":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":9.244796043495072,"executesPerFight":45.62262262262262,"intervalSec":6.35628950206724,"critPercent":48.4192575101666,"avgHit":44815.591654302654,"totalDamageMean":2044604.8256538059,"isSkipped":false},"assistedHighlight":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":14.877960921438465,"executesPerFight":42.14314314314314,"intervalSec":6.856112977867174,"critPercent":48.89104551802495,"avgHit":45011.17235329609,"totalDamageMean":1896912.2795256444,"isSkipped":false},"oneButton":{"name":"hammer_of_wrath","spellName":"Hammer of Wrath","portionPercent":14.38676742702985,"executesPerFight":39.34134134134134,"intervalSec":7.369128968471985,"critPercent":49.174549235411966,"avgHit":45203.93538511318,"totalDamageMean":1778383.4519576759,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.244796043495072},{"key":"shield_of_the_righteous","displayName":"Shield of the Righteous","simc":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":7.627041129520961,"executesPerFight":135.81181181181182,"intervalSec":2.200159692646651,"critPercent":39.101580566302296,"avgHit":12420.257291269472,"totalDamageMean":1686817.6458961733,"isSkipped":false},"assistedHighlight":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":4.163561618348916,"executesPerFight":43.008008008008005,"intervalSec":6.483894679909484,"critPercent":28.948588382550643,"avgHit":12342.9651482535,"totalDamageMean":530846.3439386502,"isSkipped":false},"oneButton":{"name":"shield_of_the_righteous","spellName":"Shield of the Righteous","portionPercent":4.255129228028086,"executesPerFight":43.17717717717718,"intervalSec":6.455843238930988,"critPercent":28.729422086767798,"avgHit":12182.058871007817,"totalDamageMean":525986.9142563075,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.627041129520961},{"key":"melee","displayName":"","simc":{"name":"melee","spellName":"","portionPercent":7.502642902350676,"executesPerFight":209.27027027027026,"intervalSec":1.7150724372633992,"critPercent":36.086707956169604,"avgHit":11327.152514801961,"totalDamageMean":2370436.2681651777,"isSkipped":false},"assistedHighlight":{"name":"melee","spellName":"","portionPercent":12.53495396513839,"executesPerFight":202.2862862862863,"intervalSec":1.7777666189621302,"critPercent":35.67887240648563,"avgHit":11286.573034395975,"totalDamageMean":2283118.9440269032,"isSkipped":false},"oneButton":{"name":"melee","spellName":"","portionPercent":12.919423948331774,"executesPerFight":202.3053053053053,"intervalSec":1.777602347984575,"critPercent":35.518255872975196,"avgHit":11277.167300013292,"totalDamageMean":2281430.7736081947,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.502642902350676},{"key":"judgment","displayName":"Judgment","simc":{"name":"judgment","spellName":"Judgment","portionPercent":4.718706745602052,"executesPerFight":56.14114114114114,"intervalSec":4.787586357993106,"critPercent":25.435261512222855,"avgHit":18588.904626003205,"totalDamageMean":1043602.3182676573,"isSkipped":false},"assistedHighlight":{"name":"judgment","spellName":"Judgment","portionPercent":8.264528017847631,"executesPerFight":56.32432432432432,"intervalSec":4.768506821739917,"critPercent":25.941993058998513,"avgHit":18707.937055877144,"totalDamageMean":1053711.9141742694,"isSkipped":false},"oneButton":{"name":"judgment","spellName":"Judgment","portionPercent":8.330487917832361,"executesPerFight":54.889889889889886,"intervalSec":4.936580529315318,"critPercent":25.883870498891753,"avgHit":18760.32098763727,"totalDamageMean":1029751.9533104,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.718706745602052},{"key":"avengers_shield","displayName":"Avenger\u0027s Shield","simc":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":4.044078061574641,"executesPerFight":34.17717717717718,"intervalSec":8.81126994163422,"critPercent":36.42333848982808,"avgHit":26169.497734066514,"totalDamageMean":894399.5606949279,"isSkipped":false},"assistedHighlight":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":6.670033457005628,"executesPerFight":34.61761761761762,"intervalSec":8.705261413843607,"critPercent":36.027886609817934,"avgHit":24566.01259454794,"totalDamageMean":850416.8303876391,"isSkipped":false},"oneButton":{"name":"avengers_shield","spellName":"Avenger\u0027s Shield","portionPercent":6.646032234748983,"executesPerFight":33.44244244244244,"intervalSec":9.036831064436704,"critPercent":36.11939408396946,"avgHit":24565.55840839903,"totalDamageMean":821532.2731393424,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.044078061574641},{"key":"hammer_of_the_righteous","displayName":"Hammer of the Righteous","simc":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":2.9218097400439693,"executesPerFight":81.27327327327328,"intervalSec":3.6290242609173857,"critPercent":35.3276003778353,"avgHit":11358.426926695396,"totalDamageMean":923136.5355678204,"isSkipped":false},"assistedHighlight":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":5.186379398970654,"executesPerFight":83.01501501501501,"intervalSec":3.551191056501314,"critPercent":35.54306576355863,"avgHit":11379.244447389412,"totalDamageMean":944648.1486595583,"isSkipped":false},"oneButton":{"name":"hammer_of_the_righteous","spellName":"Hammer of the Righteous","portionPercent":4.520584084112889,"executesPerFight":71.70170170170171,"intervalSec":4.0876597852523835,"critPercent":34.17045596762755,"avgHit":11133.436444829616,"totalDamageMean":798286.3388820275,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.9218097400439693},{"key":"twilight_barrage","displayName":"Twilight Barrage","simc":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.9540027847437819,"executesPerFight":16.593593593593592,"intervalSec":17.289579498977496,"critPercent":36.010580738246965,"avgHit":12715.142752436803,"totalDamageMean":210989.91131846333,"isSkipped":false},"assistedHighlight":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.5984693305277229,"executesPerFight":16.116116116116117,"intervalSec":17.791570308274732,"critPercent":35.23479552063355,"avgHit":12645.84209016303,"totalDamageMean":203801.85951113596,"isSkipped":false},"oneButton":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.6323617341697338,"executesPerFight":15.95995995995996,"intervalSec":18.381113142857142,"critPercent":35.22947236965345,"avgHit":12642.902641770248,"totalDamageMean":201780.21994032516,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.9540027847437819},{"key":"voidclaw","displayName":"Voidclaw","simc":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.4779488629560908,"executesPerFight":40.95495495495496,"intervalSec":7.165213773171355,"critPercent":36.016949152542374,"avgHit":2580.994192452576,"totalDamageMean":105704.5008908956,"isSkipped":false},"assistedHighlight":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.7994819684341119,"executesPerFight":39.6016016016016,"intervalSec":7.359140987758898,"critPercent":35.64416251321553,"avgHit":2573.9479295349756,"totalDamageMean":101932.46044871141,"isSkipped":false},"oneButton":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.8257195605352516,"executesPerFight":39.75875875875876,"intervalSec":7.382713840198219,"critPercent":35.32141155225602,"avgHit":2567.2132215928573,"totalDamageMean":102069.2111596063,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.4779488629560908},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.3399706912817655,"executesPerFight":8.674674674674675,"intervalSec":31.697340802501284,"critPercent":null,"avgHit":8667.629300714365,"totalDamageMean":75188.86438437506,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5330273047313981,"executesPerFight":8.045045045045045,"intervalSec":33.454705577918354,"critPercent":null,"avgHit":8447.434068422906,"totalDamageMean":67959.9875955104,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5537901024652919,"executesPerFight":8.068068068068069,"intervalSec":34.401148923444964,"critPercent":null,"avgHit":8484.725991349473,"totalDamageMean":68455.34683711387,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.3399706912817655}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 73732.12363634791,
+    ahDps: 42499.170532525895,
+    obDps: 41213.903561033585,
+    likelyBroken: false,
+    deltaPct: -42.360034627329014,
+    obDeltaPct: -44.10319203024248,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

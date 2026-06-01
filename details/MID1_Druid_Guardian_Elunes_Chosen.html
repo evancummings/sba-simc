@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Druid Guardian — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Druid Guardian <span style="color:#71717a;font-weight:500">· Elune's Chosen</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Druid_Guardian</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Druid_Guardian_Elunes_Chosen","class":"Druid","spec":"Guardian","heroTalent":"Elune\u0027s Chosen","simcProfileName":"MID1_Druid_Guardian","playerName":"MID1_Druid_Guardian","talents":"CgGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgZmxsYmZMzmZZgZbZgxMMaimZmFzMzMLjZeADAAAAgZYGLzAAAAQNzysMzMDAgFMDgFzgBsYZbAwMbwA","simc":{"dps":79400.52954307671,"fightLengthSec":299.93314914914913,"profileSource":"default","timeline":[29601.4996946786,215532.84631788003,270513.8089043117,369333.09135955095,437784.48946919583,154439.23615553195,167465.9468252474,92448.88247992157,113141.05461325657,66216.69105110117,114809.33045780874,20275.56352757725,105103.14589072672,73924.50047917415,71513.57511997788,40695.43472145058,72703.53491802032,25003.783165668916,52977.03851667794,51662.52568860837,20094.377536004293,25394.87547171002,90132.05210037503,70888.68286283438,86412.97665749383,20602.211213654915,35095.10377192128,45328.96182745602,37492.797524476584,34314.61957153771,51951.944485334905,26120.0090399934,86112.66186960995,65304.82547666769,56024.570321539184,76138.12376520783,63997.61329486695,17608.7175255313,44039.228664489056,58694.01401848702,12026.132089622482,82115.33760916942,127412.33429456607,166512.97078123412,128298.46738517797,241720.33987980432,163165.1678597761,108653.72496021402,80234.72841063708,78323.4968335163,67333.40263756119,38062.81701197158,62217.51065617371,65780.78299891259,54090.12688221244,61462.74983291379,41348.903758463355,33438.11583961078,41771.93117520159,46282.89569751731,30147.925226263444,41887.852314722564,62883.63489952494,91144.90488494512,67628.69966196793,51630.24011340609,44008.362909291405,48981.73342851314,32262.238818602807,44045.548854249064,31931.94980079714,33521.54914846378,48510.79773554055,50606.33689825909,47322.91653350637,61501.76752611109,52180.315131200165,25405.91843957706,36869.130156062885,46410.41674790416,36194.20986394786,17247.12373000755,73627.38362038763,251335.72293837278,260120.42135031713,159332.30488692224,173293.4864756133,159806.98949117112,96524.90529884823,80051.59497509978,74590.02621300564,59721.876484531684,55469.30328719244,57487.85899899612,61631.228371815356,62594.43809013175,52818.16079527438,42357.578157847165,43498.16846179666,38924.92802369169,35400.00672585966,25834.361238751608,77824.64432618293,72806.97288854574,103011.32380056454,78538.72952835128,74381.18792812728,70724.13064715934,37146.42665634038,61246.01688644104,53821.263501592395,32912.19683610931,36999.3255280814,35973.13084002698,52940.39657691283,56473.44184090124,46984.20201998493,33665.927576204886,32845.2551228516,46895.65195129768],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"lunar_beam","spellName":"Lunar Beam","target":"Fluffy_Pillow"},{"timeSec":0.891,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0.891,"name":"heart_of_the_wild","spellName":"Heart of the Wild","target":"none"},{"timeSec":0.891,"name":"incarnation_guardian_of_ursoc","spellName":"Incarnation: Guardian of Ursoc","target":"none"},{"timeSec":0.891,"name":"barkskin\u002Bbrambles","spellName":"Barkskin","target":"none"},{"timeSec":0.891,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":1.784,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":2.484,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":2.676,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":3.569,"name":"wild_guardian","spellName":"Wild Guardian","target":"Fluffy_Pillow"},{"timeSec":3.569,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":4.462,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":5.355,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":6.246,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":7.141,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":8.033,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":8.925,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":9.817,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":10.71,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":11.499,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":11.602,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":12.495000000000001,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":13.386000000000001,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":14.277000000000001,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":15.169,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":16.062,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":16.956,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":17.849,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":18.742,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":19.634,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":20.528,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":20.528,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":21.422,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":22.317,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":23.207,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":24.098,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":24.991,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":25.883,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":26.775000000000002,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":27.669,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":28.563,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":29.455000000000002,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":30.348,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":31.242,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":32.134,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":33.026,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":33.026,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":33.92,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":34.812,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":35.091,"name":"barkskin\u002Bbrambles","spellName":"Barkskin","target":"none"},{"timeSec":35.772,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":36.666000000000004,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":37.557,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":38.45,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":39.343,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":40.236000000000004,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":41.397,"name":"bristling_fur","spellName":"Bristling Fur","target":"none"},{"timeSec":42.12,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":42.559,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":43.748,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":44.907000000000004,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":46.066,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":47.225,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":48.385,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":49.544000000000004,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":50.703,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":51.127,"name":"ironfur","spellName":"Ironfur","target":"none"},{"timeSec":51.863,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":53.023,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":54.182,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":55.339,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":56.499,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":57.658,"name":"swipe_bear","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":58.818,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":59.977000000000004,"name":"lunar_beam","spellName":"Lunar Beam","target":"Fluffy_Pillow"}],"abilitiesByKey":{"after_the_wildfire":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":5.988074777455088,"executesPerFight":11.793793793793794,"intervalSec":25.12384323204419,"critPercent":24.759087066779376,"avgHit":41726.043070322725,"totalDamageMean":492108.3478023447,"isSkipped":false},"barkskin":{"name":"barkskin","spellName":"Barkskin","portionPercent":0.33025860693411213,"executesPerFight":9.278278278278279,"intervalSec":34.19999999999857,"critPercent":25.43880281069003,"avgHit":8461.94359790804,"totalDamageMean":78512.26747648611,"isSkipped":false},"bear_melee":{"name":"bear_melee","spellName":"","portionPercent":5.067487758970997,"executesPerFight":184.63463463463464,"intervalSec":1.9471229478209722,"critPercent":25.19293394611351,"avgHit":9321.050747750696,"totalDamageMean":1720988.799221838,"isSkipped":false},"brambles":{"name":"brambles","spellName":"Brambles","portionPercent":1.367795082691489,"executesPerFight":210.0970970970971,"intervalSec":1.4183563193660016,"critPercent":25.748360846425193,"avgHit":1547.6913730065937,"totalDamageMean":325165.46467090584,"isSkipped":false},"cat_melee":{"name":"cat_melee","spellName":"","portionPercent":0.050121745378098694,"executesPerFight":2.987987987987988,"intervalSec":132.92266339066336,"critPercent":32.9219479653102,"avgHit":5696.8223184424605,"totalDamageMean":17022.03665720795,"isSkipped":true},"galactic_guardian":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":4.333447098095899,"executesPerFight":42.57757757757758,"intervalSec":7.020944174320233,"critPercent":26.083495282024867,"avgHit":24195.57379263697,"totalDamageMean":1030188.9201900036,"isSkipped":false},"heart_of_the_wild_cat":{"name":"heart_of_the_wild_cat","spellName":"Heart of the Wild","portionPercent":9.053865777916647,"executesPerFight":2.956956956956957,"intervalSec":122.21156538461531,"critPercent":null,"avgHit":750477.3947204782,"totalDamageMean":2219129.3533576503,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":14.358959019596007,"executesPerFight":269.32332332332334,"intervalSec":1.1113996553011918,"critPercent":0,"avgHit":4433.974938859328,"totalDamageMean":1194172.8660659236,"isSkipped":false},"lunar_beam":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":1.4920703623348373,"executesPerFight":5.448448448448448,"intervalSec":60.84515434782612,"critPercent":27.476631178530837,"avgHit":65102.824855789426,"totalDamageMean":354709.38507513696,"isSkipped":false},"lunar_beam_heal":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":11.204037225822033,"executesPerFight":42.995995995996,"intervalSec":6.551598040961708,"critPercent":27.966042724932155,"avgHit":20139.606104460432,"totalDamageMean":865922.4234283173,"isSkipped":false},"lunar_wrath_heal":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":11.117372670975122,"executesPerFight":41.67767767767768,"intervalSec":13.120563708563681,"critPercent":25.86895677343731,"avgHit":22321.359780223644,"totalDamageMean":930302.4382476393,"isSkipped":false},"mangle":{"name":"mangle","spellName":"Mangle","portionPercent":10.621114705541178,"executesPerFight":87.36736736736736,"intervalSec":3.4231797125295116,"critPercent":35.46749127090988,"avgHit":41286.32104134346,"totalDamageMean":3607077.177666123,"isSkipped":false},"maul":{"name":"maul","spellName":"Maul","portionPercent":2.7480789271585175,"executesPerFight":16.86986986986987,"intervalSec":16.631263443396282,"critPercent":25.47270148900969,"avgHit":55322.62832366332,"totalDamageMean":933285.5406793773,"isSkipped":false},"moonless_night":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":7.12089053563728,"executesPerFight":219.02402402402402,"intervalSec":1.836313896128332,"critPercent":0,"avgHit":7729.046701675551,"totalDamageMean":1692846.9104705895,"isSkipped":false},"natures_guardian":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":6.200594665092934,"executesPerFight":53.471471471471475,"intervalSec":9.600224286248725,"critPercent":0,"avgHit":10703.208351027633,"totalDamageMean":572316.2999951893,"isSkipped":false},"rake":{"name":"rake","spellName":"Rake","portionPercent":0.1887145219454355,"executesPerFight":1.9639639639639639,"intervalSec":122.15121960784306,"critPercent":35.099685204616996,"avgHit":22843.107415704213,"totalDamageMean":44863.03978940107,"isSkipped":false},"red_moon":{"name":"red_moon","spellName":"Red Moon","portionPercent":7.219203871006408,"executesPerFight":10.227227227227226,"intervalSec":30.66136404040405,"critPercent":null,"avgHit":167808.81743109666,"totalDamageMean":1716218.9066001147,"isSkipped":false},"strike_for_the_heart":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":48.8710122889893,"executesPerFight":87.36736736736736,"intervalSec":3.4231797125295116,"critPercent":0,"avgHit":44741.58521012733,"totalDamageMean":3908954.5116515644,"isSkipped":false},"swipe_bear":{"name":"swipe_bear","spellName":"Swipe","portionPercent":1.4185735078864257,"executesPerFight":51.850850850850854,"intervalSec":4.986263222900636,"critPercent":24.02207777222201,"avgHit":9291.402911810123,"totalDamageMean":481767.146575428,"isSkipped":false},"thrash":{"name":"thrash","spellName":"Thrash","portionPercent":6.873828870052885,"executesPerFight":55.51451451451452,"intervalSec":5.423888995477845,"critPercent":25.133344108614835,"avgHit":29435.77978032458,"totalDamageMean":1634113.0238608818,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.8107299086205931,"executesPerFight":14.954954954954955,"intervalSec":19.143899139322176,"critPercent":25.213390237396638,"avgHit":12887.671604645251,"totalDamageMean":192734.54832172178,"isSkipped":false},"twin_claw":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":1.5028011945935023,"executesPerFight":18.72172172172172,"intervalSec":15.544069614896408,"critPercent":24.82692512514645,"avgHit":27260.955980649782,"totalDamageMean":510372.03173783066,"isSkipped":false}}},"assistedHighlight":{"dps":48823.53419876632,"fightLengthSec":300.05519619619633,"profileSource":"default","timeline":[0,55190.96881500142,65859.20778495488,96305.02782983078,90546.3832952607,49978.50897255483,73069.21754106197,71197.71032400461,30246.735134171726,52709.76569105453,49519.274790999945,6885.119569307738,66763.66471698272,112501.86887097778,39115.275039964145,36938.7012745701,52121.28446331117,34251.43616424979,40375.884933522764,36940.14961676568,35276.649028583684,28896.684724870043,47609.80830455547,113179.95652514565,62052.53274730016,51349.68548209008,16903.81066416819,63081.285389433775,29475.15570581011,63105.986607439896,52125.22329117451,24620.365076478556,42157.015262654466,70124.30459410974,78131.85985346281,38742.43490151488,24588.537846285413,57833.20396568973,11289.499311701273,31837.22161310406,33834.35015979033,25013.820602629366,43985.2228858418,65556.72653484491,124803.17255831821,65580.47880692908,60007.28922531885,52334.82327901555,39538.192622671566,19382.26938082109,41084.11463945412,27721.951715102798,7208.104672922406,47653.06563016779,24738.018427131574,42402.08050152609,58462.544721879385,58163.79432867965,25460.95303297663,40967.36159008808,47747.03716931648,27739.29826789841,18707.668319586894,71143.4898756735,109763.44468684711,92750.07317496078,22107.598280022776,34213.86472155531,39394.38085622815,40887.30581027499,22852.885929831897,60214.1518671819,8717.13364516469,29625.106962724803,64052.49281819213,33629.66731166052,34790.733528055076,55720.22193600875,21914.42490341524,37589.344341162025,46105.51074380919,53974.558154416576,9052.343485164429,79998.19180663694,125098.61252085857,94810.92141785461,45164.067696826205,38217.07000672728,48021.17780032484,42101.16162305078,39821.995399727675,35636.1657102862,33911.080639191816,52916.505271699134,52243.618571604195,37901.83580321078,28082.529836557824,44207.005208757604,33652.3338205822,30153.1605218698,33044.46105500442,54820.9449573914,65938.62941526194,31428.396483696983,110457.37816003867,54248.83452815463,128392.88755413194,55188.450541694234,42082.31973317723,61309.746811732766,62842.437868835645,20850.453940811796,45165.41469801651,8318.404210027802,91382.68403073482,33953.1867373947,39195.822829103345,25435.98979881851,57931.0167533519,14464.233667044846],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.185,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.185,"name":"incarnation_guardian_of_ursoc","spellName":"Incarnation: Guardian of Ursoc","target":"none"},{"timeSec":1.185,"name":"lunar_beam","spellName":"Lunar Beam","target":"Fluffy_Pillow"},{"timeSec":2.078,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":2.971,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":3.864,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":4.757,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":5.65,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":6.542,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":7.434,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":8.328,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":9.221,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":10.116,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":11.009,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":11.901,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":12.794,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":13.686,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":14.578000000000001,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":15.47,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":16.363,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":17.257,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":18.148,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":19.042,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":19.936,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":20.827,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":21.719,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":22.612000000000002,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":23.505,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":24.399,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":25.29,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":26.182000000000002,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":27.075,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":27.968,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":28.861,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":29.753,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":30.647000000000002,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":31.538,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":32.513,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":33.407000000000004,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":34.298,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":35.191,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":36.082,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":36.974000000000004,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":37.866,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":38.76,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":39.655,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":40.547000000000004,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":41.707,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":43.007,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":44.168,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":45.327,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":46.486000000000004,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":47.644,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":48.804,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":49.964,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":51.125,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":52.284,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":53.443,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":54.602000000000004,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":55.761,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":56.92,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":58.081,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":59.24,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"}],"abilitiesByKey":{"after_the_wildfire":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":4.367562077272092,"executesPerFight":7.636636636636637,"intervalSec":34.37306742925949,"critPercent":25.767271777458532,"avgHit":36913.13894031256,"totalDamageMean":281892.22920484934,"isSkipped":false},"bear_melee":{"name":"bear_melee","spellName":"","portionPercent":7.816783161691482,"executesPerFight":182.5835835835836,"intervalSec":1.956253787076533,"critPercent":25.358757617456263,"avgHit":8965.794591278132,"totalDamageMean":1637006.9061498726,"isSkipped":false},"brambles":{"name":"brambles","spellName":"Brambles","portionPercent":2.156732157304764,"executesPerFight":210.33933933933935,"intervalSec":1.4157493957414182,"critPercent":25.7987599074671,"avgHit":1503.1287971757688,"totalDamageMean":316167.118139887,"isSkipped":false},"galactic_guardian":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":6.556620701310435,"executesPerFight":39.65965965965966,"intervalSec":7.55261035422342,"critPercent":25.246989617637443,"avgHit":24235.476586218854,"totalDamageMean":961170.7530990901,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":10.55884905900996,"executesPerFight":267.5125125125125,"intervalSec":1.1132903661457723,"critPercent":0,"avgHit":2569.107111273648,"totalDamageMean":687268.2982505766,"isSkipped":false},"lunar_beam":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":2.337894138478953,"executesPerFight":5.398398398398398,"intervalSec":61.16949090909085,"critPercent":27.210932189485032,"avgHit":63486.35553529372,"totalDamageMean":342724.6400418809,"isSkipped":false},"lunar_beam_heal":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":12.744099623375401,"executesPerFight":42.545545545545544,"intervalSec":6.600487579433844,"critPercent":27.370320886951223,"avgHit":19615.82114727239,"totalDamageMean":834565.8120345528,"isSkipped":false},"lunar_wrath_heal":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":7.2286499316301605,"executesPerFight":24.134134134134133,"intervalSec":14.192161245674878,"critPercent":25.447406488943997,"avgHit":19331.675154541786,"totalDamageMean":466553.2412172197,"isSkipped":false},"mangle":{"name":"mangle","spellName":"Mangle","portionPercent":16.548606350181885,"executesPerFight":88.21821821821821,"intervalSec":3.380480768349442,"critPercent":35.4453409270685,"avgHit":39284.89441678932,"totalDamageMean":3465643.388339983,"isSkipped":false},"maul":{"name":"maul","spellName":"Maul","portionPercent":5.93247085361151,"executesPerFight":30.9009009009009,"intervalSec":8.533520188425385,"critPercent":25.63175730192028,"avgHit":40205.634362870194,"totalDamageMean":1242390.3231049078,"isSkipped":false},"moonless_night":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":8.613359158391964,"executesPerFight":195.2012012012012,"intervalSec":1.956068780801784,"critPercent":0,"avgHit":6468.6038924253735,"totalDamageMean":1262679.2498961985,"isSkipped":false},"natures_guardian":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":3.921697536175897,"executesPerFight":31.77077077077077,"intervalSec":11.515035845588343,"critPercent":0,"avgHit":7966.918268820811,"totalDamageMean":253115.1340681719,"isSkipped":false},"red_moon":{"name":"red_moon","spellName":"Red Moon","portionPercent":10.931696549359643,"executesPerFight":10.244244244244245,"intervalSec":30.598774458874452,"critPercent":null,"avgHit":156432.9121363567,"totalDamageMean":1602536.9597632377,"isSkipped":false},"strike_for_the_heart":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":58.55269270641257,"executesPerFight":88.21821821821821,"intervalSec":3.380480768349442,"critPercent":0,"avgHit":43977.11974738404,"totalDamageMean":3879583.1464834386,"isSkipped":false},"swipe_bear":{"name":"swipe_bear","spellName":"Swipe","portionPercent":1.5343406977101204,"executesPerFight":35.354354354354356,"intervalSec":7.1835386408673445,"critPercent":24.4055845437879,"avgHit":9088.69105436205,"totalDamageMean":321324.8041531664,"isSkipped":false},"thrash":{"name":"thrash","spellName":"Thrash","portionPercent":13.198139178043943,"executesPerFight":77.12612612612612,"intervalSec":3.836583596049022,"critPercent":25.01518774639695,"avgHit":25086.01469894439,"totalDamageMean":1934787.1336726388,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.3212600032176953,"executesPerFight":15.098098098098099,"intervalSec":18.599087714443822,"critPercent":24.62371270134671,"avgHit":12828.814705579356,"totalDamageMean":193690.7029071606,"isSkipped":false},"twin_claw":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":2.6485348015510684,"executesPerFight":21.37837837837838,"intervalSec":13.712058275520413,"critPercent":25.20749790170661,"avgHit":25944.98185641518,"totalDamageMean":554661.6391466056,"isSkipped":false},"vicious_brambles":{"name":"vicious_brambles","spellName":"Vicious Brambles","portionPercent":5.17045574384209,"executesPerFight":67.8028028028028,"intervalSec":3.868009445241487,"critPercent":null,"avgHit":11178.966767948496,"totalDamageMean":757965.2793062977,"isSkipped":false}}},"oneButton":{"dps":45770.06894501288,"fightLengthSec":300.05459559559563,"profileSource":"default","timeline":[0,11152.198254640913,88127.06211798405,68165.62557686958,57746.27968130196,80360.18556987964,83443.61405537771,36860.0593017169,58179.00053540282,48244.73789991733,30078.5862021594,6917.634887344355,39420.13190080032,97810.24143671825,31759.892368238045,48670.134527038936,59777.599450885114,25104.910014741065,44307.535276012284,21353.810968231017,54505.53665607745,15622.593003591675,57026.28080894768,107006.37078977977,49864.83504293058,58733.22972999065,41677.01257532496,29848.51816409283,37784.58608691278,39948.01086957017,34478.70603594449,32165.25818122466,57289.171982229906,44817.32039850692,53363.85486119565,46661.703241859286,38396.46394355618,39542.769571496465,35412.674051644935,31547.262509342498,32692.864529598435,15792.585706022683,52454.4716013315,60397.70331942166,105217.5354426592,58272.12529574997,43650.00039661498,44753.7675839394,37312.18037147122,25065.879166986226,32180.48399039717,22420.64975151271,19260.854674938662,38177.13858019705,41991.59317245337,40106.076369188166,39929.80187057072,52630.41823675356,59845.53376368799,41661.12533164382,25069.416134738818,41422.981128755295,33816.93878668774,62898.51381274644,91142.59520789227,56980.301012208365,48104.8959711502,36680.28400706556,36758.39030292627,41116.74659743856,33502.91572572418,36029.25841502615,26420.563547722195,52974.439763907896,50938.14758141141,51825.05382117901,38126.38264026821,35736.95860495358,33139.82632988183,44905.88711736521,27326.98625897099,38130.07501795357,20273.06916809012,70786.88993940256,64504.51273148719,79319.22645470742,63113.27346698665,44201.84731001092,46537.21281845328,39802.265164231576,39565.14380959107,30141.932535129454,45597.4686243941,39967.44794246961,46592.41171451398,39736.21761332514,40408.27219925063,36680.22192518352,27619.108434951148,29376.34792798253,25169.34508817873,32484.72569983625,33781.1344043553,37796.233655792865,82333.12174400069,104149.94424544445,81498.60520672498,49301.071523643994,41689.63429234237,51631.02428529939,42010.638066591986,38937.12576845498,38688.58391460598,24822.10621634101,46285.74274097391,48322.584571457,50098.86569999822,33476.27282844221,31950.461374523504,30135.246196248376],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.185,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.185,"name":"incarnation_guardian_of_ursoc","spellName":"Incarnation: Guardian of Ursoc","target":"none"},{"timeSec":1.185,"name":"lunar_beam","spellName":"Lunar Beam","target":"Fluffy_Pillow"},{"timeSec":2.299,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":3.414,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":4.53,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":5.6450000000000005,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":6.76,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":8.084,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":9.197000000000001,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":10.312,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":11.638,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":12.752,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":13.865,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":15.191,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":16.306,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":17.42,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":18.745,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":19.86,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":20.974,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":22.299,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":23.414,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":24.527,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":25.854,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":26.969,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":28.082,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":29.409,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":30.525000000000002,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":31.64,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":32.754,"name":"red_moon","spellName":"Red Moon","target":"Fluffy_Pillow"},{"timeSec":33.868,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":34.982,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":36.309,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":37.425000000000004,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":38.318,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":39.432,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":40.732,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":42.178000000000004,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":43.624,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":44.784,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":46.231,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":47.677,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":49.125,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":50.573,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":51.731,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":53.182,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"},{"timeSec":54.816,"name":"maul","spellName":"Maul","target":"Fluffy_Pillow"},{"timeSec":55.976,"name":"swipe","spellName":"Swipe","target":"Fluffy_Pillow"},{"timeSec":57.136,"name":"thrash","spellName":"Thrash","target":"Fluffy_Pillow"},{"timeSec":58.583,"name":"mangle","spellName":"Mangle","target":"Fluffy_Pillow"}],"abilitiesByKey":{"after_the_wildfire":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":4.049430397160654,"executesPerFight":7.161161161161161,"intervalSec":35.368989427860676,"critPercent":23.851294903926483,"avgHit":35410.63460595782,"totalDamageMean":253581.26123225447,"isSkipped":false},"bear_melee":{"name":"bear_melee","spellName":"","portionPercent":8.265018918872642,"executesPerFight":181.75575575575576,"intervalSec":1.9620945358826714,"critPercent":25.01700456380551,"avgHit":8923.175056250024,"totalDamageMean":1621838.4260896314,"isSkipped":false},"brambles":{"name":"brambles","spellName":"Brambles","portionPercent":2.2898427910935113,"executesPerFight":210.3783783783784,"intervalSec":1.4136784300001843,"critPercent":25.44859095519304,"avgHit":1495.0865606677128,"totalDamageMean":314533.88616858044,"isSkipped":false},"galactic_guardian":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":6.823204041940981,"executesPerFight":37.5055055055055,"intervalSec":7.78392421557383,"critPercent":25.033879839502564,"avgHit":24989.358598534567,"totalDamageMean":937238.5264963895,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":10.222318586071712,"executesPerFight":266.98198198198196,"intervalSec":1.1153833198397343,"critPercent":0,"avgHit":2416.961503411508,"totalDamageMean":645285.1725549554,"isSkipped":false},"lunar_beam":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":2.476399316836558,"executesPerFight":5.4174174174174174,"intervalSec":60.82984508268054,"critPercent":27.309826967025792,"avgHit":62789.95180827682,"totalDamageMean":340159.3785649591,"isSkipped":false},"lunar_beam_heal":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":12.824053383758613,"executesPerFight":42.76476476476476,"intervalSec":6.560296166927101,"critPercent":27.16757613917261,"avgHit":19365.347684450884,"totalDamageMean":828154.5383134241,"isSkipped":false},"lunar_wrath_heal":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":6.6685932601373965,"executesPerFight":21.996996996996998,"intervalSec":17.81131947978513,"critPercent":25.218810938279447,"avgHit":18981.50603415679,"totalDamageMean":417536.13123182737,"isSkipped":false},"mangle":{"name":"mangle","spellName":"Mangle","portionPercent":17.466259503349875,"executesPerFight":87.48048048048048,"intervalSec":3.405715168764014,"critPercent":35.6790390773684,"avgHit":39178.922022045794,"totalDamageMean":3427390.9231958436,"isSkipped":false},"maul":{"name":"maul","spellName":"Maul","portionPercent":5.7109690213554964,"executesPerFight":24.485485485485487,"intervalSec":10.513133982157244,"critPercent":25.02544891892992,"avgHit":45768.30394151788,"totalDamageMean":1120659.1418553242,"isSkipped":false},"moonless_night":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":8.931810879886992,"executesPerFight":181.52852852852854,"intervalSec":2.084488983144161,"critPercent":0,"avgHit":6758.594732055203,"totalDamageMean":1226877.7566306456,"isSkipped":false},"natures_guardian":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":3.0957375860945926,"executesPerFight":29.15815815815816,"intervalSec":12.151128668171534,"critPercent":0,"avgHit":6648.279232072911,"totalDamageMean":193851.57732838023,"isSkipped":false},"red_moon":{"name":"red_moon","spellName":"Red Moon","portionPercent":11.451592997392696,"executesPerFight":10.242242242242241,"intervalSec":30.572172212978366,"critPercent":null,"avgHit":153579.28273524676,"totalDamageMean":1572996.2171642089,"isSkipped":false},"strike_for_the_heart":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":60.43280941993445,"executesPerFight":87.48048048048048,"intervalSec":3.405715168764014,"critPercent":0,"avgHit":43827.71310177864,"totalDamageMean":3834069.4005042445,"isSkipped":false},"swipe_bear":{"name":"swipe_bear","spellName":"Swipe","portionPercent":0.8698432686547214,"executesPerFight":18.81181181181181,"intervalSec":13.604900981461235,"critPercent":24.02755696873344,"avgHit":9073.484785855644,"totalDamageMean":170688.68826885396,"isSkipped":false},"thrash":{"name":"thrash","spellName":"Thrash","portionPercent":10.48020938142126,"executesPerFight":53.626626626626624,"intervalSec":5.487017314435891,"critPercent":24.788517671556324,"avgHit":26844.248760660932,"totalDamageMean":1439566.5053602483,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.3998127008802708,"executesPerFight":14.91991991991992,"intervalSec":19.277604986149584,"critPercent":25.227151256012824,"avgHit":12887.397122683444,"totalDamageMean":192278.93304664336,"isSkipped":false},"twin_claw":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":2.6558597159504136,"executesPerFight":20.145145145145147,"intervalSec":14.413304958843476,"critPercent":25.280815478252265,"avgHit":25870.121278852035,"totalDamageMean":521157.34808498225,"isSkipped":false},"vicious_brambles":{"name":"vicious_brambles","spellName":"Vicious Brambles","portionPercent":5.481530077702977,"executesPerFight":59.25925925925926,"intervalSec":4.36973386295928,"critPercent":null,"avgHit":12705.956286958715,"totalDamageMean":752945.5577457016,"isSkipped":false}}},"abilities":[{"key":"strike_for_the_heart","displayName":"Strike for the Heart","simc":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":48.8710122889893,"executesPerFight":87.36736736736736,"intervalSec":3.4231797125295116,"critPercent":0,"avgHit":44741.58521012733,"totalDamageMean":3908954.5116515644,"isSkipped":false},"assistedHighlight":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":58.55269270641257,"executesPerFight":88.21821821821821,"intervalSec":3.380480768349442,"critPercent":0,"avgHit":43977.11974738404,"totalDamageMean":3879583.1464834386,"isSkipped":false},"oneButton":{"name":"strike_for_the_heart","spellName":"Strike for the Heart","portionPercent":60.43280941993445,"executesPerFight":87.48048048048048,"intervalSec":3.405715168764014,"critPercent":0,"avgHit":43827.71310177864,"totalDamageMean":3834069.4005042445,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":48.8710122889893},{"key":"leech","displayName":"Leech","simc":{"name":"leech","spellName":"Leech","portionPercent":14.358959019596007,"executesPerFight":269.32332332332334,"intervalSec":1.1113996553011918,"critPercent":0,"avgHit":4433.974938859328,"totalDamageMean":1194172.8660659236,"isSkipped":false},"assistedHighlight":{"name":"leech","spellName":"Leech","portionPercent":10.55884905900996,"executesPerFight":267.5125125125125,"intervalSec":1.1132903661457723,"critPercent":0,"avgHit":2569.107111273648,"totalDamageMean":687268.2982505766,"isSkipped":false},"oneButton":{"name":"leech","spellName":"Leech","portionPercent":10.222318586071712,"executesPerFight":266.98198198198196,"intervalSec":1.1153833198397343,"critPercent":0,"avgHit":2416.961503411508,"totalDamageMean":645285.1725549554,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":14.358959019596007},{"key":"lunar_beam_heal","displayName":"Lunar Beam","simc":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":11.204037225822033,"executesPerFight":42.995995995996,"intervalSec":6.551598040961708,"critPercent":27.966042724932155,"avgHit":20139.606104460432,"totalDamageMean":865922.4234283173,"isSkipped":false},"assistedHighlight":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":12.744099623375401,"executesPerFight":42.545545545545544,"intervalSec":6.600487579433844,"critPercent":27.370320886951223,"avgHit":19615.82114727239,"totalDamageMean":834565.8120345528,"isSkipped":false},"oneButton":{"name":"lunar_beam_heal","spellName":"Lunar Beam","portionPercent":12.824053383758613,"executesPerFight":42.76476476476476,"intervalSec":6.560296166927101,"critPercent":27.16757613917261,"avgHit":19365.347684450884,"totalDamageMean":828154.5383134241,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":11.204037225822033},{"key":"lunar_wrath_heal","displayName":"Lunar Wrath","simc":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":11.117372670975122,"executesPerFight":41.67767767767768,"intervalSec":13.120563708563681,"critPercent":25.86895677343731,"avgHit":22321.359780223644,"totalDamageMean":930302.4382476393,"isSkipped":false},"assistedHighlight":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":7.2286499316301605,"executesPerFight":24.134134134134133,"intervalSec":14.192161245674878,"critPercent":25.447406488943997,"avgHit":19331.675154541786,"totalDamageMean":466553.2412172197,"isSkipped":false},"oneButton":{"name":"lunar_wrath_heal","spellName":"Lunar Wrath","portionPercent":6.6685932601373965,"executesPerFight":21.996996996996998,"intervalSec":17.81131947978513,"critPercent":25.218810938279447,"avgHit":18981.50603415679,"totalDamageMean":417536.13123182737,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":11.117372670975122},{"key":"mangle","displayName":"Mangle","simc":{"name":"mangle","spellName":"Mangle","portionPercent":10.621114705541178,"executesPerFight":87.36736736736736,"intervalSec":3.4231797125295116,"critPercent":35.46749127090988,"avgHit":41286.32104134346,"totalDamageMean":3607077.177666123,"isSkipped":false},"assistedHighlight":{"name":"mangle","spellName":"Mangle","portionPercent":16.548606350181885,"executesPerFight":88.21821821821821,"intervalSec":3.380480768349442,"critPercent":35.4453409270685,"avgHit":39284.89441678932,"totalDamageMean":3465643.388339983,"isSkipped":false},"oneButton":{"name":"mangle","spellName":"Mangle","portionPercent":17.466259503349875,"executesPerFight":87.48048048048048,"intervalSec":3.405715168764014,"critPercent":35.6790390773684,"avgHit":39178.922022045794,"totalDamageMean":3427390.9231958436,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.621114705541178},{"key":"heart_of_the_wild_cat","displayName":"Heart of the Wild","simc":{"name":"heart_of_the_wild_cat","spellName":"Heart of the Wild","portionPercent":9.053865777916647,"executesPerFight":2.956956956956957,"intervalSec":122.21156538461531,"critPercent":null,"avgHit":750477.3947204782,"totalDamageMean":2219129.3533576503,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":9.053865777916647},{"key":"red_moon","displayName":"Red Moon","simc":{"name":"red_moon","spellName":"Red Moon","portionPercent":7.219203871006408,"executesPerFight":10.227227227227226,"intervalSec":30.66136404040405,"critPercent":null,"avgHit":167808.81743109666,"totalDamageMean":1716218.9066001147,"isSkipped":false},"assistedHighlight":{"name":"red_moon","spellName":"Red Moon","portionPercent":10.931696549359643,"executesPerFight":10.244244244244245,"intervalSec":30.598774458874452,"critPercent":null,"avgHit":156432.9121363567,"totalDamageMean":1602536.9597632377,"isSkipped":false},"oneButton":{"name":"red_moon","spellName":"Red Moon","portionPercent":11.451592997392696,"executesPerFight":10.242242242242241,"intervalSec":30.572172212978366,"critPercent":null,"avgHit":153579.28273524676,"totalDamageMean":1572996.2171642089,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.219203871006408},{"key":"moonless_night","displayName":"Moonless Night","simc":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":7.12089053563728,"executesPerFight":219.02402402402402,"intervalSec":1.836313896128332,"critPercent":0,"avgHit":7729.046701675551,"totalDamageMean":1692846.9104705895,"isSkipped":false},"assistedHighlight":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":8.613359158391964,"executesPerFight":195.2012012012012,"intervalSec":1.956068780801784,"critPercent":0,"avgHit":6468.6038924253735,"totalDamageMean":1262679.2498961985,"isSkipped":false},"oneButton":{"name":"moonless_night","spellName":"Moonless Night","portionPercent":8.931810879886992,"executesPerFight":181.52852852852854,"intervalSec":2.084488983144161,"critPercent":0,"avgHit":6758.594732055203,"totalDamageMean":1226877.7566306456,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.12089053563728},{"key":"thrash","displayName":"Thrash","simc":{"name":"thrash","spellName":"Thrash","portionPercent":6.873828870052885,"executesPerFight":55.51451451451452,"intervalSec":5.423888995477845,"critPercent":25.133344108614835,"avgHit":29435.77978032458,"totalDamageMean":1634113.0238608818,"isSkipped":false},"assistedHighlight":{"name":"thrash","spellName":"Thrash","portionPercent":13.198139178043943,"executesPerFight":77.12612612612612,"intervalSec":3.836583596049022,"critPercent":25.01518774639695,"avgHit":25086.01469894439,"totalDamageMean":1934787.1336726388,"isSkipped":false},"oneButton":{"name":"thrash","spellName":"Thrash","portionPercent":10.48020938142126,"executesPerFight":53.626626626626624,"intervalSec":5.487017314435891,"critPercent":24.788517671556324,"avgHit":26844.248760660932,"totalDamageMean":1439566.5053602483,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.873828870052885},{"key":"natures_guardian","displayName":"Nature\u0027s Guardian","simc":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":6.200594665092934,"executesPerFight":53.471471471471475,"intervalSec":9.600224286248725,"critPercent":0,"avgHit":10703.208351027633,"totalDamageMean":572316.2999951893,"isSkipped":false},"assistedHighlight":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":3.921697536175897,"executesPerFight":31.77077077077077,"intervalSec":11.515035845588343,"critPercent":0,"avgHit":7966.918268820811,"totalDamageMean":253115.1340681719,"isSkipped":false},"oneButton":{"name":"natures_guardian","spellName":"Nature\u0027s Guardian","portionPercent":3.0957375860945926,"executesPerFight":29.15815815815816,"intervalSec":12.151128668171534,"critPercent":0,"avgHit":6648.279232072911,"totalDamageMean":193851.57732838023,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.200594665092934},{"key":"after_the_wildfire","displayName":"After the Wildfire","simc":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":5.988074777455088,"executesPerFight":11.793793793793794,"intervalSec":25.12384323204419,"critPercent":24.759087066779376,"avgHit":41726.043070322725,"totalDamageMean":492108.3478023447,"isSkipped":false},"assistedHighlight":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":4.367562077272092,"executesPerFight":7.636636636636637,"intervalSec":34.37306742925949,"critPercent":25.767271777458532,"avgHit":36913.13894031256,"totalDamageMean":281892.22920484934,"isSkipped":false},"oneButton":{"name":"after_the_wildfire","spellName":"After the Wildfire","portionPercent":4.049430397160654,"executesPerFight":7.161161161161161,"intervalSec":35.368989427860676,"critPercent":23.851294903926483,"avgHit":35410.63460595782,"totalDamageMean":253581.26123225447,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.988074777455088},{"key":"vicious_brambles","displayName":"Vicious Brambles","simc":null,"assistedHighlight":{"name":"vicious_brambles","spellName":"Vicious Brambles","portionPercent":5.17045574384209,"executesPerFight":67.8028028028028,"intervalSec":3.868009445241487,"critPercent":null,"avgHit":11178.966767948496,"totalDamageMean":757965.2793062977,"isSkipped":false},"oneButton":{"name":"vicious_brambles","spellName":"Vicious Brambles","portionPercent":5.481530077702977,"executesPerFight":59.25925925925926,"intervalSec":4.36973386295928,"critPercent":null,"avgHit":12705.956286958715,"totalDamageMean":752945.5577457016,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.17045574384209},{"key":"bear_melee","displayName":"","simc":{"name":"bear_melee","spellName":"","portionPercent":5.067487758970997,"executesPerFight":184.63463463463464,"intervalSec":1.9471229478209722,"critPercent":25.19293394611351,"avgHit":9321.050747750696,"totalDamageMean":1720988.799221838,"isSkipped":false},"assistedHighlight":{"name":"bear_melee","spellName":"","portionPercent":7.816783161691482,"executesPerFight":182.5835835835836,"intervalSec":1.956253787076533,"critPercent":25.358757617456263,"avgHit":8965.794591278132,"totalDamageMean":1637006.9061498726,"isSkipped":false},"oneButton":{"name":"bear_melee","spellName":"","portionPercent":8.265018918872642,"executesPerFight":181.75575575575576,"intervalSec":1.9620945358826714,"critPercent":25.01700456380551,"avgHit":8923.175056250024,"totalDamageMean":1621838.4260896314,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.067487758970997},{"key":"galactic_guardian","displayName":"Galactic Guardian","simc":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":4.333447098095899,"executesPerFight":42.57757757757758,"intervalSec":7.020944174320233,"critPercent":26.083495282024867,"avgHit":24195.57379263697,"totalDamageMean":1030188.9201900036,"isSkipped":false},"assistedHighlight":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":6.556620701310435,"executesPerFight":39.65965965965966,"intervalSec":7.55261035422342,"critPercent":25.246989617637443,"avgHit":24235.476586218854,"totalDamageMean":961170.7530990901,"isSkipped":false},"oneButton":{"name":"galactic_guardian","spellName":"Galactic Guardian","portionPercent":6.823204041940981,"executesPerFight":37.5055055055055,"intervalSec":7.78392421557383,"critPercent":25.033879839502564,"avgHit":24989.358598534567,"totalDamageMean":937238.5264963895,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.333447098095899},{"key":"maul","displayName":"Maul","simc":{"name":"maul","spellName":"Maul","portionPercent":2.7480789271585175,"executesPerFight":16.86986986986987,"intervalSec":16.631263443396282,"critPercent":25.47270148900969,"avgHit":55322.62832366332,"totalDamageMean":933285.5406793773,"isSkipped":false},"assistedHighlight":{"name":"maul","spellName":"Maul","portionPercent":5.93247085361151,"executesPerFight":30.9009009009009,"intervalSec":8.533520188425385,"critPercent":25.63175730192028,"avgHit":40205.634362870194,"totalDamageMean":1242390.3231049078,"isSkipped":false},"oneButton":{"name":"maul","spellName":"Maul","portionPercent":5.7109690213554964,"executesPerFight":24.485485485485487,"intervalSec":10.513133982157244,"critPercent":25.02544891892992,"avgHit":45768.30394151788,"totalDamageMean":1120659.1418553242,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.7480789271585175},{"key":"twin_claw","displayName":"Twin Claw","simc":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":1.5028011945935023,"executesPerFight":18.72172172172172,"intervalSec":15.544069614896408,"critPercent":24.82692512514645,"avgHit":27260.955980649782,"totalDamageMean":510372.03173783066,"isSkipped":false},"assistedHighlight":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":2.6485348015510684,"executesPerFight":21.37837837837838,"intervalSec":13.712058275520413,"critPercent":25.20749790170661,"avgHit":25944.98185641518,"totalDamageMean":554661.6391466056,"isSkipped":false},"oneButton":{"name":"twin_claw","spellName":"Twin Claw","portionPercent":2.6558597159504136,"executesPerFight":20.145145145145147,"intervalSec":14.413304958843476,"critPercent":25.280815478252265,"avgHit":25870.121278852035,"totalDamageMean":521157.34808498225,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.5028011945935023},{"key":"lunar_beam","displayName":"Lunar Beam","simc":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":1.4920703623348373,"executesPerFight":5.448448448448448,"intervalSec":60.84515434782612,"critPercent":27.476631178530837,"avgHit":65102.824855789426,"totalDamageMean":354709.38507513696,"isSkipped":false},"assistedHighlight":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":2.337894138478953,"executesPerFight":5.398398398398398,"intervalSec":61.16949090909085,"critPercent":27.210932189485032,"avgHit":63486.35553529372,"totalDamageMean":342724.6400418809,"isSkipped":false},"oneButton":{"name":"lunar_beam","spellName":"Lunar Beam","portionPercent":2.476399316836558,"executesPerFight":5.4174174174174174,"intervalSec":60.82984508268054,"critPercent":27.309826967025792,"avgHit":62789.95180827682,"totalDamageMean":340159.3785649591,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.4920703623348373},{"key":"swipe_bear","displayName":"Swipe","simc":{"name":"swipe_bear","spellName":"Swipe","portionPercent":1.4185735078864257,"executesPerFight":51.850850850850854,"intervalSec":4.986263222900636,"critPercent":24.02207777222201,"avgHit":9291.402911810123,"totalDamageMean":481767.146575428,"isSkipped":false},"assistedHighlight":{"name":"swipe_bear","spellName":"Swipe","portionPercent":1.5343406977101204,"executesPerFight":35.354354354354356,"intervalSec":7.1835386408673445,"critPercent":24.4055845437879,"avgHit":9088.69105436205,"totalDamageMean":321324.8041531664,"isSkipped":false},"oneButton":{"name":"swipe_bear","spellName":"Swipe","portionPercent":0.8698432686547214,"executesPerFight":18.81181181181181,"intervalSec":13.604900981461235,"critPercent":24.02755696873344,"avgHit":9073.484785855644,"totalDamageMean":170688.68826885396,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.4185735078864257},{"key":"brambles","displayName":"Brambles","simc":{"name":"brambles","spellName":"Brambles","portionPercent":1.367795082691489,"executesPerFight":210.0970970970971,"intervalSec":1.4183563193660016,"critPercent":25.748360846425193,"avgHit":1547.6913730065937,"totalDamageMean":325165.46467090584,"isSkipped":false},"assistedHighlight":{"name":"brambles","spellName":"Brambles","portionPercent":2.156732157304764,"executesPerFight":210.33933933933935,"intervalSec":1.4157493957414182,"critPercent":25.7987599074671,"avgHit":1503.1287971757688,"totalDamageMean":316167.118139887,"isSkipped":false},"oneButton":{"name":"brambles","spellName":"Brambles","portionPercent":2.2898427910935113,"executesPerFight":210.3783783783784,"intervalSec":1.4136784300001843,"critPercent":25.44859095519304,"avgHit":1495.0865606677128,"totalDamageMean":314533.88616858044,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.367795082691489},{"key":"twilight_barrage","displayName":"Twilight Barrage","simc":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.8107299086205931,"executesPerFight":14.954954954954955,"intervalSec":19.143899139322176,"critPercent":25.213390237396638,"avgHit":12887.671604645251,"totalDamageMean":192734.54832172178,"isSkipped":false},"assistedHighlight":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.3212600032176953,"executesPerFight":15.098098098098099,"intervalSec":18.599087714443822,"critPercent":24.62371270134671,"avgHit":12828.814705579356,"totalDamageMean":193690.7029071606,"isSkipped":false},"oneButton":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":1.3998127008802708,"executesPerFight":14.91991991991992,"intervalSec":19.277604986149584,"critPercent":25.227151256012824,"avgHit":12887.397122683444,"totalDamageMean":192278.93304664336,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.8107299086205931},{"key":"barkskin","displayName":"Barkskin","simc":{"name":"barkskin","spellName":"Barkskin","portionPercent":0.33025860693411213,"executesPerFight":9.278278278278279,"intervalSec":34.19999999999857,"critPercent":25.43880281069003,"avgHit":8461.94359790804,"totalDamageMean":78512.26747648611,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":0.33025860693411213},{"key":"rake","displayName":"Rake","simc":{"name":"rake","spellName":"Rake","portionPercent":0.1887145219454355,"executesPerFight":1.9639639639639639,"intervalSec":122.15121960784306,"critPercent":35.099685204616996,"avgHit":22843.107415704213,"totalDamageMean":44863.03978940107,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":0.1887145219454355},{"key":"cat_melee","displayName":"","simc":{"name":"cat_melee","spellName":"","portionPercent":0.050121745378098694,"executesPerFight":2.987987987987988,"intervalSec":132.92266339066336,"critPercent":32.9219479653102,"avgHit":5696.8223184424605,"totalDamageMean":17022.03665720795,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":0.050121745378098694}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 79400.52954307671,
+    ahDps: 48823.53419876632,
+    obDps: 45770.06894501288,
+    likelyBroken: false,
+    deltaPct: -38.509812869348224,
+    obDeltaPct: -42.355461344648205,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

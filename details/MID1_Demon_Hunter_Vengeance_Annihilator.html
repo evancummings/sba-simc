@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demon Hunter Vengeance — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Demon Hunter Vengeance <span style="color:#71717a;font-weight:500">· Annihilator</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Demon_Hunter_Vengeance</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Demon_Hunter_Vengeance_Annihilator","class":"Demon Hunter","spec":"Vengeance","heroTalent":"Annihilator","simcProfileName":"MID1_Demon_Hunter_Vengeance","playerName":"MID1_Demon_Hunter_Vengeance_Annihilator","talents":"CUkAAAAAAAAAAAAAAAAAAAAAAAAYMzMjhZkZmZGDzMzMDGzMmxMmhxMmZsMmZZMmBAAAAAAAgZmxGAAAAGYmZmZ2abmZGAYAAAAMA","simc":{"dps":75434.24330427016,"fightLengthSec":300.04750850850843,"profileSource":"default","timeline":[35355.53270961877,33112.60425137493,90679.42398596386,152592.62358089696,101712.56465760634,98586.41901793078,100716.72208202333,101385.93031443337,145320.6354783213,80589.13181075215,105004.63241689546,117794.96528956645,106474.3557897988,86330.6222852703,78765.33617414137,66785.32202742487,66919.73370659485,57677.937264582906,55769.84171902822,65010.5267640246,70713.59706265696,83508.9277019899,76084.21546522602,95114.73545677363,72208.75377436938,58185.06798414536,73727.74318290736,67497.88764460375,63895.654902322465,70612.0053486496,79361.45093930663,68408.42756082286,64382.996055935626,65991.00288434111,87825.49606775792,70365.17059286954,73711.16579692013,75163.84189065256,73338.95771462441,77363.36602046169,63914.709977008526,62582.50804366889,59677.973356852155,59034.07526147287,48749.19461409503,58892.04406048755,55088.0851098436,62011.25920048312,57024.809277806904,67429.33550338272,85994.86236124084,79946.20801567296,85935.16220747826,90407.04514951172,87803.20727989028,82203.02091269675,80617.67764347073,70356.25820495577,71832.0355521248,64829.61854545889,62945.53775479878,67338.80248999062,57802.98302634514,60517.99508891703,55636.844386337114,65162.52484902568,81385.69070739427,81132.28983646912,74304.94982281509,77219.04360928693,65165.669560207614,67826.60797507344,59573.757481533234,61193.711093213155,65168.195873861136,67531.8516350208,64023.236074684864,69018.33645043179,63380.229227170435,59475.19427922545,60410.17022178164,71440.51509700429,90477.42197739918,89779.27513434754,83409.37454600005,94970.71036810451,84926.07356985155,82298.5814466292,66310.44299139,60174.48717461178,57474.28193955597,63652.767028835544,65573.00934990663,64753.66241544864,57839.99892580048,54119.73920059126,54168.8540340726,55162.347853718005,75772.3508177636,72496.38266579066,71721.9729803008,89605.6252610316,94861.30168283194,104351.59460012658,76722.84189281498,77389.01406816821,66780.86100661768,73663.87682138426,77168.5801830437,81894.06904049228,93473.8136896403,73879.92209366595,79989.85291851376,77815.87563982996,74135.5522520396,75335.08276073108,66989.6001295163,81287.23234636009,57785.50840092113,72320.5960593674],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":0,"name":"demon_spikes","spellName":"Demon Spikes","target":"none"},{"timeSec":0,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":0.903,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":1.111,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":1.807,"name":"fiery_brand","spellName":"Fiery Brand","target":"Fluffy_Pillow"},{"timeSec":2.711,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":2.711,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":3.616,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":4.519,"name":"felblade","spellName":"Felblade","target":"Fluffy_Pillow"},{"timeSec":5.024,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":5.912,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":5.912,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":6.545,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":6.753,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":7.5920000000000005,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":8.415000000000001,"name":"fel_devastation","spellName":"Fel Devastation","target":"Fluffy_Pillow"},{"timeSec":10.591000000000001,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":11.402000000000001,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"},{"timeSec":12.021,"name":"demon_spikes","spellName":"Demon Spikes","target":"none"},{"timeSec":12.196,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":12.469,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":12.989,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":13.783,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":14.578000000000001,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":15.374,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":16.228,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":17.102,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":17.976,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":18.586000000000002,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":18.847,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":19.718,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"},{"timeSec":20.604,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":21.489,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":22.376,"name":"felblade","spellName":"Felblade","target":"Fluffy_Pillow"},{"timeSec":22.881,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":23.765,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":24.073,"name":"demon_spikes","spellName":"Demon Spikes","target":"none"},{"timeSec":24.648,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":25.075,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":25.534,"name":"fiery_brand","spellName":"Fiery Brand","target":"Fluffy_Pillow"},{"timeSec":26.421,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":27.306,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":28.192,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":29.079,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"},{"timeSec":29.964000000000002,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":30.851,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":30.851,"name":"felblade","spellName":"Felblade","target":"Fluffy_Pillow"},{"timeSec":31.358,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":31.541,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":32.393,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":33.247,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":34.098,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":34.935,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":35.741,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":36.097,"name":"demon_spikes","spellName":"Demon Spikes","target":"none"},{"timeSec":36.546,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":37.339,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":37.534,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"},{"timeSec":38.312,"name":"felblade","spellName":"Felblade","target":"Fluffy_Pillow"},{"timeSec":38.816,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":39.594,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":40.357,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":41.351,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":42.394,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":43.466,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":44.271,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":44.538000000000004,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":45.651,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":46.723,"name":"felblade","spellName":"Felblade","target":"Fluffy_Pillow"},{"timeSec":47.228,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"},{"timeSec":48.300000000000004,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":48.68,"name":"demon_spikes","spellName":"Demon Spikes","target":"none"},{"timeSec":49.411,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":50.544000000000004,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":51.677,"name":"fiery_brand","spellName":"Fiery Brand","target":"Fluffy_Pillow"},{"timeSec":52.343,"name":"infernal_strike","spellName":"Infernal Strike","target":"Fluffy_Pillow"},{"timeSec":52.81,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":53.944,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":55.078,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":56.212,"name":"fel_devastation","spellName":"Fel Devastation","target":"Fluffy_Pillow"},{"timeSec":58.513,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":59.647,"name":"immolation_aura","spellName":"Immolation Aura","target":"MID1_Demon_Hunter_Vengeance_Annihilator"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":5.71696336367689,"executesPerFight":188.12112112112112,"intervalSec":1.8529537614218259,"critPercent":33.358940010538944,"avgHit":9823.054141602468,"totalDamageMean":1847923.9579517285,"isSkipped":false},"auto_attack_oh":{"name":"auto_attack_oh","spellName":"","portionPercent":2.797421979239703,"executesPerFight":184.84384384384384,"intervalSec":1.8855329394686673,"critPercent":33.28241322633666,"avgHit":4891.833632453952,"totalDamageMean":904225.3320673818,"isSkipped":false},"catastrophe":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":10.178390545442475,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2303010.0740668112,"isSkipped":true},"consume_soul_lesser":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":46.89954040382499,"executesPerFight":317.5975975975976,"intervalSec":2.369052756237646,"critPercent":0,"avgHit":25742.15426735937,"totalDamageMean":8175646.3523000805,"isSkipped":false},"fel_devastation":{"name":"fel_devastation","spellName":"Fel Devastation","portionPercent":2.9303257468936037,"executesPerFight":6.854854854854855,"intervalSec":46.3056994497936,"critPercent":null,"avgHit":96724.02585618761,"totalDamageMean":663029.1582213942,"isSkipped":false},"fel_devastation_heal":{"name":"fel_devastation_heal","spellName":"Fel Devastation","portionPercent":7.318712124377631,"executesPerFight":109.94094094094095,"intervalSec":2.509118326118074,"critPercent":27.63763963441172,"avgHit":18549.896401683804,"totalDamageMean":2039393.0647580922,"isSkipped":false},"fiery_brand":{"name":"fiery_brand","spellName":"Fiery Brand","portionPercent":1.0265688560481787,"executesPerFight":7.738738738738738,"intervalSec":41.00254420549577,"critPercent":29.00940358108978,"avgHit":30014.742817372608,"totalDamageMean":232276.2529740817,"isSkipped":false},"frailty":{"name":"frailty","spellName":"Frailty","portionPercent":18.778633671906547,"executesPerFight":296.7157157157157,"intervalSec":1.0074269906379036,"critPercent":0,"avgHit":12854.768728292895,"totalDamageMean":3814211.903575427,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":21.37882355382045,"executesPerFight":287.5645645645646,"intervalSec":1.0416691439352284,"critPercent":0,"avgHit":15339.298891687191,"totalDamageMean":4411038.806513735,"isSkipped":false},"prismatic_focusing_iris":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":2.4169099673710472,"executesPerFight":24.213213213213212,"intervalSec":12.111591219170913,"critPercent":null,"avgHit":22585.243301529885,"totalDamageMean":546861.3115322386,"isSkipped":false},"retaliation":{"name":"retaliation","spellName":"Demon Spikes","portionPercent":0.2982975169587977,"executesPerFight":43.829829829829826,"intervalSec":6.6456959879449995,"critPercent":28.94461384426341,"avgHit":2199.87771718951,"totalDamageMean":96420.26599085072,"isSkipped":false},"soul_cleave_heal":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":5.624290246070351,"executesPerFight":0,"intervalSec":null,"critPercent":27.753348368969473,"avgHit":0,"totalDamageMean":976456.4141110001,"isSkipped":true},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.6744941357873053,"executesPerFight":13.937937937937939,"intervalSec":20.78300785916375,"critPercent":null,"avgHit":10949.552713604218,"totalDamageMean":152614.18617039555,"isSkipped":false}}},"assistedHighlight":{"dps":52315.72290854347,"fightLengthSec":299.92894494494476,"profileSource":"default","timeline":[10983.77054435418,4729.504901381432,116005.89335069791,38068.20076864546,76879.4317318295,53558.72920048312,48490.42263560864,32224.81940240387,71886.22172566966,60789.375287958814,95844.89713749754,48142.164172499935,59697.78530053636,23130.308555706633,61467.808620195225,52482.73512210017,48742.66680379258,34005.48901529931,36775.502299235086,64434.85871888022,51601.2739185673,33047.291362468226,45484.481680390854,59556.8137838786,82865.03255592211,55197.555796107714,27286.20155604613,68920.03244675424,75604.84593243018,43233.20344810967,45407.35608697634,50659.54039981614,51730.077130317266,47884.68307038066,39621.882312290516,34604.64929153256,72821.57970409766,56158.03654592186,39152.234758576924,40259.757954870525,44400.28495677906,44748.489080511754,31531.199288456854,32309.01165988807,47394.076206961094,67150.61837184388,38020.64649596198,43920.22015303316,52495.23294806342,53453.636983340395,45877.080952747514,36753.778288935784,50438.78010295973,95483.44228453131,77398.5266897836,50093.60230621696,47211.461675818806,50042.606204248244,44524.236958578345,34175.93406676095,42476.64199645445,46640.84321701207,60510.08278647066,45684.844499857034,43686.828280722686,44188.465863605474,43864.75658466718,38299.17248561498,30740.72789715959,61278.975319815414,65407.2757967776,71743.56091153927,48083.333230284785,45167.73652433149,44887.592910691455,42945.953359026345,45752.790534126965,50096.15744533685,49706.78140597491,78133.00501087631,51761.04849216582,52945.78605946717,51765.866622118956,47695.05221039871,38271.73700193619,42531.92877157483,62005.35773055849,57466.01418701397,65568.29642237598,51106.17933899552,44020.289246349115,40214.4577278804,39948.48697684614,39199.248981175784,39744.081573533345,38929.86089797641,61481.93084524114,49783.90115947301,44010.40249419173,45661.331880878395,41498.79135969652,54980.62397966787,58753.03857557427,79668.93302233823,70087.22668434828,108243.6058460835,76926.81147070245,65567.19350434825,55944.00698539265,55299.80274507465,48513.63726057873,46344.956404987875,45864.34988167457,52130.31715687435,55369.21961912983,35946.20831275484,39089.223931181215,37386.639171201925,42045.20518372275,37918.83558094832],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":0,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":0.851,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":1.704,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":2.5580000000000003,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":3.412,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":4.265,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":5.133,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":5.968,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":6.804,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":7.642,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":8.462,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":9.281,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":10.102,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":10.922,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":11.743,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":12.578,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":13.463000000000001,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":14.35,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":15.235,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":16.12,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":17.007,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":17.892,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":18.777,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":19.663,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":20.548000000000002,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":21.433,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":22.317,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":23.203,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":24.072,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":24.94,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":25.810000000000002,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":26.677,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":27.547,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":28.414,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":29.267,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":30.117,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":30.954,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":31.788,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":32.624,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":33.46,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":34.298,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":35.136,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":35.974000000000004,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":36.795,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":37.631,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":38.516,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":39.385,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":40.254,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":41.382,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":42.509,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":42.509,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":43.618,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":44.726,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":45.833,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":46.92,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":48.005,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":49.09,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":50.177,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":51.263,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":52.348,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":53.434000000000005,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":54.562,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":55.735,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":56.885,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":58.035000000000004,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":59.186,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":8.495918491661469,"executesPerFight":193.92992992992993,"intervalSec":1.7954969919705828,"critPercent":33.444218567116366,"avgHit":9825.181856905197,"totalDamageMean":1905396.829058444,"isSkipped":false},"auto_attack_oh":{"name":"auto_attack_oh","spellName":"","portionPercent":4.157513050069573,"executesPerFight":190.97597597597598,"intervalSec":1.8202630092777423,"critPercent":33.31542886408634,"avgHit":4882.36207957649,"totalDamageMean":932413.863215216,"isSkipped":false},"catastrophe":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":9.722445311703844,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1526330.7363480004,"isSkipped":true},"consume_soul_lesser":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":61.54524781522499,"executesPerFight":268.87187187187186,"intervalSec":3.107000982841232,"critPercent":0,"avgHit":36588.88945905571,"totalDamageMean":9837723.198569309,"isSkipped":false},"frailty":{"name":"frailty","spellName":"Frailty","portionPercent":15.711857075004222,"executesPerFight":291.12812812812814,"intervalSec":1.02387467138795,"critPercent":0,"avgHit":8993.69618121083,"totalDamageMean":2618317.934189003,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":17.700597868360937,"executesPerFight":281.5065065065065,"intervalSec":1.0624140852494541,"critPercent":0,"avgHit":10538.264742461386,"totalDamageMean":2966590.0922909947,"isSkipped":false},"prismatic_focusing_iris":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":3.456557351371158,"executesPerFight":23.77077077077077,"intervalSec":12.552219961745813,"critPercent":null,"avgHit":22828.303826561107,"totalDamageMean":542646.3773466933,"isSkipped":false},"soul_cleave_heal":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":5.042297241409838,"executesPerFight":0,"intervalSec":null,"critPercent":27.9357854218855,"avgHit":0,"totalDamageMean":805502.6616887999,"isSkipped":true},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9748956674332744,"executesPerFight":14.052052052052051,"intervalSec":20.294379320531757,"critPercent":null,"avgHit":10891.59619202151,"totalDamageMean":153049.27662021818,"isSkipped":false}}},"oneButton":{"dps":51395.65996957682,"fightLengthSec":299.9311111111109,"profileSource":"default","timeline":[11136.148171761917,35093.21557973905,156310.78780121828,95026.4400797111,43418.161243833085,102065.44282199712,63618.11731754575,49654.78198379674,94934.52541819525,72528.7454338696,77415.04749155635,74688.58171098938,45465.93081368561,41536.57222087077,49837.36784025314,53243.1553927898,51245.84030766217,31973.795454466035,24434.363512818905,49937.85874114839,54387.02882287052,55122.764444592096,48553.25292724722,46606.49914252032,73766.93676114449,47221.377331886324,31696.98706567901,36763.07604522804,104777.80095549986,65639.57270144923,42933.39145760435,44800.64064439592,49624.79622256121,46077.393450903335,39115.02749832276,41640.43097524707,51760.09338995552,53344.94613433109,58629.32870724112,49252.517086329215,42173.99164638556,43152.49719974967,37868.610250102734,28631.83480421483,31214.01628959603,59712.472404809516,61567.19166071046,51336.609220753395,49373.341405570136,49732.97881094646,49369.597288846984,49094.268606848505,52077.98258185785,48967.7731827511,58611.55959085804,83076.06569976993,57456.02597812503,47693.05497006788,46242.70299322601,38152.888696400056,32975.790240127615,39212.692309357335,46865.32642864615,62323.633177379015,48592.77002197868,43711.25321502851,38934.52618257336,40799.24041003263,35669.04372235686,46898.10219789542,36941.75354552669,56923.72582728092,64683.227538229505,56807.326660755396,51460.59644313764,45325.859477281796,41828.7810584401,39380.92486399355,50604.2098408358,47213.733876464954,62966.973087724546,65787.92782542425,53040.10655474267,45818.865346670544,43376.97143806605,41858.81652939308,46646.65183906854,43586.2605467954,53446.76580349555,61920.44900983767,57082.48471706872,47831.1159593438,36106.20103289694,35248.3365097762,40646.9246848179,38659.53910677442,35078.55785583568,52051.10186952405,59864.53861145803,49503.3390664959,42915.126978559456,57275.32487176265,50647.964643244086,62586.60916426327,55176.141134673824,79324.81357691012,74366.49232570031,74824.21926639022,65030.191689903295,52230.148393882395,51767.79870116387,44725.66745793746,43192.28271305247,36182.80353498576,55430.75263569564,59486.8920217963,39757.95765335269,33842.75717016082,40310.715313059016,33961.73794928785],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":0,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":1.065,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":2.112,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":3.16,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":4.208,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":5.255,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":6.2860000000000005,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":7.315,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":8.345,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":9.375,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":10.574,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":11.603,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":12.633000000000001,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":13.699,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":14.789,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":15.877,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":16.967,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":18.264,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":19.333000000000002,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":20.400000000000002,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":21.468,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":22.514,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":23.562,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":24.592,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":25.749,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":26.759,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":27.768,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":28.777,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":29.787,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":30.796,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":31.823,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":33.124,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":34.213,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":34.213,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":35.261,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":36.31,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":37.374,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":38.419000000000004,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":39.449,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":40.641,"name":"spirit_bomb","spellName":"Spirit Bomb","target":"Fluffy_Pillow"},{"timeSec":41.976,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":43.311,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":44.648,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":46.009,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":47.453,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":48.896,"name":"throw_glaive","spellName":"Throw Glaive","target":"Fluffy_Pillow"},{"timeSec":50.338,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":51.782000000000004,"name":"sigil_of_spite","spellName":"Sigil of Spite","target":"Fluffy_Pillow"},{"timeSec":53.225,"name":"sigil_of_flame","spellName":"Sigil of Flame","target":"Fluffy_Pillow"},{"timeSec":54.666000000000004,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":56.108000000000004,"name":"fracture","spellName":"Fracture","target":"Fluffy_Pillow"},{"timeSec":57.762,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"},{"timeSec":59.205,"name":"metamorphosis","spellName":"Metamorphosis","target":"Fluffy_Pillow"},{"timeSec":59.205,"name":"soul_cleave","spellName":"Soul Cleave","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":8.658439050369294,"executesPerFight":194.1021021021021,"intervalSec":1.7989944375914382,"critPercent":33.44138502624551,"avgHit":9829.30011082481,"totalDamageMean":1907887.8137035207,"isSkipped":false},"auto_attack_oh":{"name":"auto_attack_oh","spellName":"","portionPercent":4.2236973742866555,"executesPerFight":190.6956956956957,"intervalSec":1.8238459905157376,"critPercent":33.29271950213691,"avgHit":4880.509170039903,"totalDamageMean":930692.0915299818,"isSkipped":false},"catastrophe":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":9.715556349610848,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1498576.5931316759,"isSkipped":true},"consume_soul_lesser":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":61.73318272854962,"executesPerFight":268.8088088088088,"intervalSec":3.0896728525122112,"critPercent":0,"avgHit":36519.178044357126,"totalDamageMean":9816676.748780442,"isSkipped":false},"frailty":{"name":"frailty","spellName":"Frailty","portionPercent":15.650964448266752,"executesPerFight":285.65965965965967,"intervalSec":1.0423572494235724,"critPercent":0,"avgHit":8991.388913037188,"totalDamageMean":2568477.0967658404,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":17.620546364892338,"executesPerFight":279.8178178178178,"intervalSec":1.070138627858895,"critPercent":0,"avgHit":10411.080382521375,"totalDamageMean":2913205.793763023,"isSkipped":false},"prismatic_focusing_iris":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":3.5358767673379066,"executesPerFight":24.001001001001,"intervalSec":12.058936645548497,"critPercent":null,"avgHit":22723.699389444675,"totalDamageMean":545391.5317925075,"isSkipped":false},"soul_cleave_heal":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":4.995306458291309,"executesPerFight":0,"intervalSec":null,"critPercent":27.77589343529339,"avgHit":0,"totalDamageMean":795179.4590074522,"isSkipped":true},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9545523280709168,"executesPerFight":13.651651651651651,"intervalSec":21.525109855618304,"critPercent":null,"avgHit":10785.140651244026,"totalDamageMean":147234.98318485086,"isSkipped":false}}},"abilities":[{"key":"consume_soul_lesser","displayName":"Consume Soul","simc":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":46.89954040382499,"executesPerFight":317.5975975975976,"intervalSec":2.369052756237646,"critPercent":0,"avgHit":25742.15426735937,"totalDamageMean":8175646.3523000805,"isSkipped":false},"assistedHighlight":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":61.54524781522499,"executesPerFight":268.87187187187186,"intervalSec":3.107000982841232,"critPercent":0,"avgHit":36588.88945905571,"totalDamageMean":9837723.198569309,"isSkipped":false},"oneButton":{"name":"consume_soul_lesser","spellName":"Consume Soul","portionPercent":61.73318272854962,"executesPerFight":268.8088088088088,"intervalSec":3.0896728525122112,"critPercent":0,"avgHit":36519.178044357126,"totalDamageMean":9816676.748780442,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":46.89954040382499},{"key":"leech","displayName":"Leech","simc":{"name":"leech","spellName":"Leech","portionPercent":21.37882355382045,"executesPerFight":287.5645645645646,"intervalSec":1.0416691439352284,"critPercent":0,"avgHit":15339.298891687191,"totalDamageMean":4411038.806513735,"isSkipped":false},"assistedHighlight":{"name":"leech","spellName":"Leech","portionPercent":17.700597868360937,"executesPerFight":281.5065065065065,"intervalSec":1.0624140852494541,"critPercent":0,"avgHit":10538.264742461386,"totalDamageMean":2966590.0922909947,"isSkipped":false},"oneButton":{"name":"leech","spellName":"Leech","portionPercent":17.620546364892338,"executesPerFight":279.8178178178178,"intervalSec":1.070138627858895,"critPercent":0,"avgHit":10411.080382521375,"totalDamageMean":2913205.793763023,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":21.37882355382045},{"key":"frailty","displayName":"Frailty","simc":{"name":"frailty","spellName":"Frailty","portionPercent":18.778633671906547,"executesPerFight":296.7157157157157,"intervalSec":1.0074269906379036,"critPercent":0,"avgHit":12854.768728292895,"totalDamageMean":3814211.903575427,"isSkipped":false},"assistedHighlight":{"name":"frailty","spellName":"Frailty","portionPercent":15.711857075004222,"executesPerFight":291.12812812812814,"intervalSec":1.02387467138795,"critPercent":0,"avgHit":8993.69618121083,"totalDamageMean":2618317.934189003,"isSkipped":false},"oneButton":{"name":"frailty","spellName":"Frailty","portionPercent":15.650964448266752,"executesPerFight":285.65965965965967,"intervalSec":1.0423572494235724,"critPercent":0,"avgHit":8991.388913037188,"totalDamageMean":2568477.0967658404,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":18.778633671906547},{"key":"catastrophe","displayName":"Catastrophe","simc":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":10.178390545442475,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":2303010.0740668112,"isSkipped":true},"assistedHighlight":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":9.722445311703844,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1526330.7363480004,"isSkipped":true},"oneButton":{"name":"catastrophe","spellName":"Catastrophe","portionPercent":9.715556349610848,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1498576.5931316759,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.178390545442475},{"key":"fel_devastation_heal","displayName":"Fel Devastation","simc":{"name":"fel_devastation_heal","spellName":"Fel Devastation","portionPercent":7.318712124377631,"executesPerFight":109.94094094094095,"intervalSec":2.509118326118074,"critPercent":27.63763963441172,"avgHit":18549.896401683804,"totalDamageMean":2039393.0647580922,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":7.318712124377631},{"key":"auto_attack_mh","displayName":"","simc":{"name":"auto_attack_mh","spellName":"","portionPercent":5.71696336367689,"executesPerFight":188.12112112112112,"intervalSec":1.8529537614218259,"critPercent":33.358940010538944,"avgHit":9823.054141602468,"totalDamageMean":1847923.9579517285,"isSkipped":false},"assistedHighlight":{"name":"auto_attack_mh","spellName":"","portionPercent":8.495918491661469,"executesPerFight":193.92992992992993,"intervalSec":1.7954969919705828,"critPercent":33.444218567116366,"avgHit":9825.181856905197,"totalDamageMean":1905396.829058444,"isSkipped":false},"oneButton":{"name":"auto_attack_mh","spellName":"","portionPercent":8.658439050369294,"executesPerFight":194.1021021021021,"intervalSec":1.7989944375914382,"critPercent":33.44138502624551,"avgHit":9829.30011082481,"totalDamageMean":1907887.8137035207,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.71696336367689},{"key":"soul_cleave_heal","displayName":"Soul Cleave","simc":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":5.624290246070351,"executesPerFight":0,"intervalSec":null,"critPercent":27.753348368969473,"avgHit":0,"totalDamageMean":976456.4141110001,"isSkipped":true},"assistedHighlight":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":5.042297241409838,"executesPerFight":0,"intervalSec":null,"critPercent":27.9357854218855,"avgHit":0,"totalDamageMean":805502.6616887999,"isSkipped":true},"oneButton":{"name":"soul_cleave_heal","spellName":"Soul Cleave","portionPercent":4.995306458291309,"executesPerFight":0,"intervalSec":null,"critPercent":27.77589343529339,"avgHit":0,"totalDamageMean":795179.4590074522,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.624290246070351},{"key":"fel_devastation","displayName":"Fel Devastation","simc":{"name":"fel_devastation","spellName":"Fel Devastation","portionPercent":2.9303257468936037,"executesPerFight":6.854854854854855,"intervalSec":46.3056994497936,"critPercent":null,"avgHit":96724.02585618761,"totalDamageMean":663029.1582213942,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":2.9303257468936037},{"key":"auto_attack_oh","displayName":"","simc":{"name":"auto_attack_oh","spellName":"","portionPercent":2.797421979239703,"executesPerFight":184.84384384384384,"intervalSec":1.8855329394686673,"critPercent":33.28241322633666,"avgHit":4891.833632453952,"totalDamageMean":904225.3320673818,"isSkipped":false},"assistedHighlight":{"name":"auto_attack_oh","spellName":"","portionPercent":4.157513050069573,"executesPerFight":190.97597597597598,"intervalSec":1.8202630092777423,"critPercent":33.31542886408634,"avgHit":4882.36207957649,"totalDamageMean":932413.863215216,"isSkipped":false},"oneButton":{"name":"auto_attack_oh","spellName":"","portionPercent":4.2236973742866555,"executesPerFight":190.6956956956957,"intervalSec":1.8238459905157376,"critPercent":33.29271950213691,"avgHit":4880.509170039903,"totalDamageMean":930692.0915299818,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.797421979239703},{"key":"prismatic_focusing_iris","displayName":"Prismatic Focusing Iris","simc":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":2.4169099673710472,"executesPerFight":24.213213213213212,"intervalSec":12.111591219170913,"critPercent":null,"avgHit":22585.243301529885,"totalDamageMean":546861.3115322386,"isSkipped":false},"assistedHighlight":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":3.456557351371158,"executesPerFight":23.77077077077077,"intervalSec":12.552219961745813,"critPercent":null,"avgHit":22828.303826561107,"totalDamageMean":542646.3773466933,"isSkipped":false},"oneButton":{"name":"prismatic_focusing_iris","spellName":"Prismatic Focusing Iris","portionPercent":3.5358767673379066,"executesPerFight":24.001001001001,"intervalSec":12.058936645548497,"critPercent":null,"avgHit":22723.699389444675,"totalDamageMean":545391.5317925075,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.4169099673710472},{"key":"fiery_brand","displayName":"Fiery Brand","simc":{"name":"fiery_brand","spellName":"Fiery Brand","portionPercent":1.0265688560481787,"executesPerFight":7.738738738738738,"intervalSec":41.00254420549577,"critPercent":29.00940358108978,"avgHit":30014.742817372608,"totalDamageMean":232276.2529740817,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":1.0265688560481787},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.6744941357873053,"executesPerFight":13.937937937937939,"intervalSec":20.78300785916375,"critPercent":null,"avgHit":10949.552713604218,"totalDamageMean":152614.18617039555,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9748956674332744,"executesPerFight":14.052052052052051,"intervalSec":20.294379320531757,"critPercent":null,"avgHit":10891.59619202151,"totalDamageMean":153049.27662021818,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9545523280709168,"executesPerFight":13.651651651651651,"intervalSec":21.525109855618304,"critPercent":null,"avgHit":10785.140651244026,"totalDamageMean":147234.98318485086,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.6744941357873053},{"key":"retaliation","displayName":"Demon Spikes","simc":{"name":"retaliation","spellName":"Demon Spikes","portionPercent":0.2982975169587977,"executesPerFight":43.829829829829826,"intervalSec":6.6456959879449995,"critPercent":28.94461384426341,"avgHit":2199.87771718951,"totalDamageMean":96420.26599085072,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":0.2982975169587977}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 75434.24330427016,
+    ahDps: 52315.72290854347,
+    obDps: 51395.65996957682,
+    likelyBroken: false,
+    deltaPct: -30.647249025189076,
+    obDeltaPct: -31.866937721813898,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

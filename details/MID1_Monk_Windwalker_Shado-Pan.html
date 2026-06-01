@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monk Windwalker — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Monk Windwalker <span style="color:#71717a;font-weight:500">· Shado-Pan</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Monk_Windwalker</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Monk_Windwalker_Shado-Pan","class":"Monk","spec":"Windwalker","heroTalent":"Shado-Pan","simcProfileName":"MID1_Monk_Windwalker","playerName":"MID1_Monk_Windwalker","talents":"C0QAAAAAAAAAAAAAAAAAAAAAAMzMD2mxgtZGbzAAAAAAAAAAAAsMMCzYbYAzYYmZmhZZYGmlZCAYxMbjhZmZGAAbAoZZWamZmFAMwMDAsMGwAG","simc":{"dps":118286.03812365372,"fightLengthSec":300.05111311311305,"profileSource":"default","timeline":[43521.92969805915,301376.53033971856,227490.3756507915,222195.45853001467,199911.056970566,245089.08880291946,173036.97705065258,247457.58821287664,202838.61843435862,208943.47370810644,188693.58321686817,155144.66925080432,130491.73473018201,113424.79599850789,85351.63912076932,85229.85099967544,79957.8203628925,75500.67977174024,76844.52295290094,74064.52291476067,75001.28148429426,189380.59077690638,159374.67139744337,127701.92429197283,129000.54321539389,124499.8872547877,114494.61507693812,85659.58333155375,76495.16441599723,80355.15458626955,85895.47152323353,80102.34641052435,81894.94736357298,84029.66958190876,108331.8996080147,111718.32341294902,87679.44316511186,75902.67783763085,73672.50918507432,72113.54037277731,70235.6717463243,38055.27265975796,182132.96519006602,181570.52924555851,161478.94542517464,150043.97218472423,161232.09938207033,119244.06208923638,97263.89324104678,81323.91178837641,77268.42806972416,77284.40016341752,72706.21528271664,82405.87669868712,79468.969958884,76580.32859606942,83602.26823315416,77932.80097524707,74593.48175155564,69222.05716437394,68062.89938411037,156412.38823118067,167566.91837499198,147570.18981347582,139172.08686080275,142471.61831875143,125580.69903539664,98944.19813094984,113128.33750012868,111457.87892745243,79511.99575586144,80596.1560632247,74423.27552613243,81766.55105730459,85604.23906267941,82551.3617816723,83361.17015350609,83329.42957319436,77268.00002170807,75385.4233497679,77580.46790951364,100968.78296272577,100477.14746719954,184544.26512019767,184647.08621667328,162439.2058121016,151886.1707112888,158600.49324644366,116868.98385873192,96395.2416734336,79311.95294899087,80621.51522037874,78919.7183895171,76527.89353203232,83020.57472915089,81462.16106173646,90490.30348836297,86064.0981273881,86274.23424316212,82456.63458019195,78822.65116881869,214526.05794748,199120.7078639133,180898.04698031192,177819.28399379892,161811.8395858058,161676.1983175617,129733.64441293865,120901.64807765647,112649.81887505099,107004.51266346445,99824.91726604053,89070.21269952437,81143.26317958166,74290.63966311516,76973.5965630961,79113.907642635,79528.78363758302,77988.54185384583,88805.46281928323],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"touch_of_karma","spellName":"Touch of Karma","target":"Fluffy_Pillow"},{"timeSec":0,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":1.004,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":1.004,"name":"use_item_algethar_puzzle_box","spellName":"use_item_algethar_puzzle_box","target":"Fluffy_Pillow"},{"timeSec":1.956,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":1.956,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":1.956,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":3.845,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":4.8500000000000005,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":5.853,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":7.7490000000000006,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":8.753,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":10.651,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":11.951,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":12.957,"name":"zenith_stomp_cast","spellName":"Zenith Stomp","target":"Fluffy_Pillow"},{"timeSec":13.961,"name":"zenith_stomp_cast","spellName":"Zenith Stomp","target":"Fluffy_Pillow"},{"timeSec":14.966000000000001,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":15.972,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":16.976,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":19.128,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":19.128,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":20.132,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":21.462,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":23.635,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":24.64,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":25.645,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":26.647000000000002,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":28.853,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":29.858,"name":"zenith_stomp_cast","spellName":"Zenith Stomp","target":"Fluffy_Pillow"},{"timeSec":30.863,"name":"zenith_stomp_cast","spellName":"Zenith Stomp","target":"Fluffy_Pillow"},{"timeSec":31.868000000000002,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":34.514,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":35.519,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":36.524,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":37.684,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":38.689,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":39.695,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":42.377,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":43.383,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":44.386,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":45.389,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":46.393,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":47.398,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":48.403,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":49.408,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":50.411,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":53.649,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":54.654,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":55.658,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":56.663000000000004,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":57.667,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":58.672000000000004,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":59.677,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"}],"abilitiesByKey":{"blackout_kick":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":4.199525360275917,"executesPerFight":47.77477477477478,"intervalSec":6.098356955823972,"critPercent":38.58159283910948,"avgHit":42923.83547550838,"totalDamageMean":2050676.5723119003,"isSkipped":false},"fists_of_fury":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":25.661487309826185,"executesPerFight":29.023023023023022,"intervalSec":10.417725382003393,"critPercent":null,"avgHit":431753.77084394376,"totalDamageMean":12530799.631480785,"isSkipped":false},"tiger_palm":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":1.2217862156584616,"executesPerFight":53.990990990990994,"intervalSec":4.948009608785182,"critPercent":33.70392258255153,"avgHit":11050.218964294947,"totalDamageMean":596612.2725497263,"isSkipped":false},"touch_of_death":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":0.8448240928345053,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":299560.3010899638,"totalDamageMean":299560.3010899638,"isSkipped":false},"touch_of_karma":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":1.639203412867066,"executesPerFight":3.4914914914914914,"intervalSec":100.54505333333333,"critPercent":null,"avgHit":166471.47568499454,"totalDamageMean":581233.7409301911,"isSkipped":false}}},"assistedHighlight":{"dps":102655.07010287239,"fightLengthSec":300.0517167167166,"profileSource":"default","timeline":[29587.439208739186,280180.4105464865,263362.1127067239,238401.59979980908,302910.9799688208,214525.36095216227,184370.08853329133,124865.70403621439,114760.0169377973,139206.53977188253,119454.64463611964,179764.09619211341,142874.28312648257,129651.62743237651,125857.16257091156,107408.76929001935,81106.33818904046,72825.22998601814,73275.0316584678,70880.48439667148,70908.65885676777,209682.2220341197,106166.65805758226,109472.58063708196,104694.68459436674,107706.61647342345,102143.705386768,76218.7283327697,72632.4096917506,74238.45332071296,75106.3572100658,73592.38904535517,67235.4968029555,75231.03462883602,72468.65393569165,97715.62426221084,100607.2079089751,66651.91312643942,64051.21899774058,63075.100587168046,60756.89708759244,125106.21855968873,156640.29177025773,114882.09831628401,124680.80278288946,127959.2938657274,125444.91253048793,93190.12961620235,76671.34272027966,73166.09436207708,71735.90375720884,71324.85616687337,65725.89819309665,70718.45086127086,71884.19685617235,70392.52161082465,69387.18551015158,68448.42900970957,68592.8985960751,62712.522842354425,58573.680864362446,142393.74554690902,124934.51618490355,111780.03150377967,119551.9643497811,117409.60759529301,87525.23744956087,75677.4581080553,97916.44627396182,106406.38307125417,80265.3370820237,74568.37825477215,72313.47370414075,73302.39635428827,73976.33972418554,69792.64685855353,75546.15433440241,75153.00769404024,71117.638783944,68840.67334343634,71126.34513891603,145154.63206529265,103849.92567513451,123508.49057146249,132189.22113786856,136947.29217707473,108504.1670858134,95103.4112830031,91143.6951908503,79302.01959906398,77908.2805508288,77535.800560398,71756.8739389711,72971.85063165888,72157.63360410614,74162.54009560305,76773.63880131285,77726.80423619297,76379.93932836164,75996.28045385655,74062.8498735165,178057.02124422617,174295.07854644128,161682.5442155907,149687.2066105611,139279.10633996857,108560.0784314147,103525.67640277963,93953.7014932021,99838.49610656823,98044.00528634219,83755.52990821822,71152.94024873969,71906.72758585733,60318.94610456605,70597.78136915316,58286.83030368782,69758.99091468762,56782.34682614617,61025.19181393585],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":1.214,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":1.214,"name":"touch_of_karma","spellName":"Touch of Karma","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":2.218,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":4.761,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":5.767,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":6.771,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":8.051,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":9.056000000000001,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":10.264,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":12.721,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":13.726,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":14.731,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":15.733,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":16.738,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":17.740000000000002,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":18.744,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":19.747,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":20.75,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":21.755,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":24.413,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":25.419,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":26.425,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":27.429000000000002,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":28.434,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":29.439,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":30.442,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":33.018,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":33.018,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":34.023,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":35.026,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":36.03,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":37.034,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":38.039,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":39.055,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":40.276,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":43.552,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":44.557,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":45.561,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":46.565,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":47.57,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":48.573,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":51.871,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":52.876,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":53.88,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":54.886,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":55.89,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":56.895,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":57.899,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":58.904,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":59.907000000000004,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"}],"abilitiesByKey":{"blackout_kick":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":5.991713370394904,"executesPerFight":58.490490490490494,"intervalSec":4.981918406211085,"critPercent":37.5696728995858,"avgHit":43416.09659107216,"totalDamageMean":2539428.7847943227,"isSkipped":false},"fists_of_fury":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":25.800664679714234,"executesPerFight":26.354354354354353,"intervalSec":11.531453362255942,"critPercent":null,"avgHit":414919.1904889395,"totalDamageMean":10934927.374567367,"isSkipped":false},"tiger_palm":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":2.2169259577607896,"executesPerFight":75.005005005005,"intervalSec":4.002218587953742,"critPercent":36.79516150471886,"avgHit":12526.967557225407,"totalDamageMean":939585.264327227,"isSkipped":false},"touch_of_death":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":0.9841627376591089,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":302881.62899094983,"totalDamageMean":302881.62899094983,"isSkipped":false},"touch_of_karma":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":1.8818778271992291,"executesPerFight":3.4734734734734736,"intervalSec":100.52291111111117,"critPercent":null,"avgHit":166737.56442954493,"totalDamageMean":579158.5070775985,"isSkipped":false}}},"oneButton":{"dps":94129.1243553643,"fightLengthSec":300.05201601601607,"profileSource":"default","timeline":[29846.932743601807,167870.40788714014,265658.8017705574,129717.71414762363,231351.48788339595,107813.23378698221,118648.90115379915,137979.42326847205,108984.45735902266,102721.51863631893,115069.3339831694,190129.51880170553,132697.65535250364,120165.91087421702,109723.975395012,102396.2237129441,74779.68221350056,61337.598958417206,68740.06969672047,65723.12564141977,62235.517232367536,204124.45393914985,91287.94782080625,102770.01803826077,95929.02171507044,95698.60788026352,97126.54967572818,67584.30408285459,63530.67927697607,63375.738601112134,66745.88328784268,66651.79612704285,64549.57778560839,70135.58107732807,62915.40716307404,98890.02229428275,94356.47443836486,65930.70728740515,63678.101337062384,63426.00596289905,61984.537512987314,102938.28624786415,117891.73626915058,122740.1305584557,116421.63167855963,112158.05182591175,112388.97089664088,83880.76632603417,69361.53128279495,65749.25356982264,67660.98003021728,68253.92528111939,63028.62987751216,61862.374312426924,65008.97225217974,61971.80517251089,69310.00198869972,66512.17995017616,65672.60595335341,60456.09469743694,62311.35821174,185012.43900654436,100267.90516936248,108271.0421152745,102945.92947287584,107553.06141136613,83084.82624519372,72454.66020209777,94764.0128091337,98011.51495478772,74472.68476925793,65175.06829195386,63862.752398934455,65839.13184557397,72342.07616921498,65974.8319825452,69253.67879130815,70048.27578337154,67594.26904141024,67978.71415855241,63910.285354813284,168326.77134712064,88938.70916207391,125852.81026719935,110615.42834058365,122814.11808964124,101363.2676071036,83375.51184893145,83028.43213551889,68279.60721859193,72538.28790582555,68200.98819106497,64760.23895299733,64547.88626140508,71942.16090535601,70699.5043035232,67963.01031500897,73141.2096383901,69473.3169212476,73168.6275073466,66915.56121755151,201698.7573862882,154715.45164206743,145225.81947513347,114757.48086472838,126576.11635718615,102518.70704364762,85995.60510672099,79876.06232326107,97704.20871857271,91764.56938664979,65661.63068651411,59861.196304247045,66634.74375354563,71326.20451458958,65163.10775017104,59766.15472828979,70957.1925620794,52583.936087336595,51476.21047738168],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":1.214,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":1.214,"name":"touch_of_karma","spellName":"Touch of Karma","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":1.214,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":2.471,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":4.366,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":5.62,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":6.875,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":8.128,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":9.996,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":11.251,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":12.505,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":13.76,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":15.017,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":16.271,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":18.421,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":19.676000000000002,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":20.931,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":22.185,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":23.439,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":24.692,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":25.948,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":27.949,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":29.203,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":30.459,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":31.715,"name":"zenith","spellName":"Zenith","target":"Fluffy_Pillow"},{"timeSec":31.715,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":33.998,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":35.251,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":36.505,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":37.759,"name":"whirling_dragon_punch","spellName":"Whirling Dragon Punch","target":"Fluffy_Pillow"},{"timeSec":39.014,"name":"spinning_crane_kick","spellName":"Spinning Crane Kick","target":"Fluffy_Pillow"},{"timeSec":40.543,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":42.341,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":43.597,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":44.853,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":46.108000000000004,"name":"rushing_wind_kick","spellName":"Rushing Wind Kick","target":"Fluffy_Pillow"},{"timeSec":47.363,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":48.618,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":49.874,"name":"fists_of_fury","spellName":"Fists of Fury","target":"Fluffy_Pillow"},{"timeSec":51.621,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":52.877,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"},{"timeSec":54.13,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":55.385,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":56.64,"name":"tiger_palm","spellName":"Tiger Palm","target":"Fluffy_Pillow"},{"timeSec":57.895,"name":"blackout_kick","spellName":"Blackout Kick","target":"Fluffy_Pillow"},{"timeSec":59.149,"name":"rising_sun_kick","spellName":"Rising Sun Kick","target":"Fluffy_Pillow"}],"abilitiesByKey":{"blackout_kick":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":5.792410793781924,"executesPerFight":51.829829829829826,"intervalSec":5.648362220658085,"critPercent":37.62212477882914,"avgHit":43436.66682810768,"totalDamageMean":2251315.050075835,"isSkipped":false},"fists_of_fury":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":17.358389476170043,"executesPerFight":26.22922922922923,"intervalSec":11.535191553277985,"critPercent":null,"avgHit":257217.68216855422,"totalDamageMean":6746621.547410036,"isSkipped":false},"tiger_palm":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":2.352727523061282,"executesPerFight":72.71871871871872,"intervalSec":4.139355723098029,"critPercent":37.27874741215021,"avgHit":12574.83616354508,"totalDamageMean":914425.9739108067,"isSkipped":false},"touch_of_death":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":1.0697142807842779,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":301901.8124581119,"totalDamageMean":301901.8124581119,"isSkipped":false},"touch_of_karma":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":2.0552844009608675,"executesPerFight":3.4814814814814814,"intervalSec":100.40617870036101,"critPercent":null,"avgHit":166611.80264371505,"totalDamageMean":580055.9055003413,"isSkipped":false}}},"abilities":[{"key":"fists_of_fury","displayName":"Fists of Fury","simc":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":25.661487309826185,"executesPerFight":29.023023023023022,"intervalSec":10.417725382003393,"critPercent":null,"avgHit":431753.77084394376,"totalDamageMean":12530799.631480785,"isSkipped":false},"assistedHighlight":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":25.800664679714234,"executesPerFight":26.354354354354353,"intervalSec":11.531453362255942,"critPercent":null,"avgHit":414919.1904889395,"totalDamageMean":10934927.374567367,"isSkipped":false},"oneButton":{"name":"fists_of_fury","spellName":"Fists of Fury","portionPercent":17.358389476170043,"executesPerFight":26.22922922922923,"intervalSec":11.535191553277985,"critPercent":null,"avgHit":257217.68216855422,"totalDamageMean":6746621.547410036,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":25.661487309826185},{"key":"blackout_kick","displayName":"Blackout Kick","simc":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":4.199525360275917,"executesPerFight":47.77477477477478,"intervalSec":6.098356955823972,"critPercent":38.58159283910948,"avgHit":42923.83547550838,"totalDamageMean":2050676.5723119003,"isSkipped":false},"assistedHighlight":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":5.991713370394904,"executesPerFight":58.490490490490494,"intervalSec":4.981918406211085,"critPercent":37.5696728995858,"avgHit":43416.09659107216,"totalDamageMean":2539428.7847943227,"isSkipped":false},"oneButton":{"name":"blackout_kick","spellName":"Blackout Kick","portionPercent":5.792410793781924,"executesPerFight":51.829829829829826,"intervalSec":5.648362220658085,"critPercent":37.62212477882914,"avgHit":43436.66682810768,"totalDamageMean":2251315.050075835,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.199525360275917},{"key":"touch_of_karma","displayName":"Touch of Karma","simc":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":1.639203412867066,"executesPerFight":3.4914914914914914,"intervalSec":100.54505333333333,"critPercent":null,"avgHit":166471.47568499454,"totalDamageMean":581233.7409301911,"isSkipped":false},"assistedHighlight":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":1.8818778271992291,"executesPerFight":3.4734734734734736,"intervalSec":100.52291111111117,"critPercent":null,"avgHit":166737.56442954493,"totalDamageMean":579158.5070775985,"isSkipped":false},"oneButton":{"name":"touch_of_karma","spellName":"Touch of Karma","portionPercent":2.0552844009608675,"executesPerFight":3.4814814814814814,"intervalSec":100.40617870036101,"critPercent":null,"avgHit":166611.80264371505,"totalDamageMean":580055.9055003413,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.639203412867066},{"key":"tiger_palm","displayName":"Tiger Palm","simc":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":1.2217862156584616,"executesPerFight":53.990990990990994,"intervalSec":4.948009608785182,"critPercent":33.70392258255153,"avgHit":11050.218964294947,"totalDamageMean":596612.2725497263,"isSkipped":false},"assistedHighlight":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":2.2169259577607896,"executesPerFight":75.005005005005,"intervalSec":4.002218587953742,"critPercent":36.79516150471886,"avgHit":12526.967557225407,"totalDamageMean":939585.264327227,"isSkipped":false},"oneButton":{"name":"tiger_palm","spellName":"Tiger Palm","portionPercent":2.352727523061282,"executesPerFight":72.71871871871872,"intervalSec":4.139355723098029,"critPercent":37.27874741215021,"avgHit":12574.83616354508,"totalDamageMean":914425.9739108067,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.2217862156584616},{"key":"touch_of_death","displayName":"Touch of Death","simc":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":0.8448240928345053,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":299560.3010899638,"totalDamageMean":299560.3010899638,"isSkipped":false},"assistedHighlight":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":0.9841627376591089,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":302881.62899094983,"totalDamageMean":302881.62899094983,"isSkipped":false},"oneButton":{"name":"touch_of_death","spellName":"Touch of Death","portionPercent":1.0697142807842779,"executesPerFight":1,"intervalSec":null,"critPercent":0,"avgHit":301901.8124581119,"totalDamageMean":301901.8124581119,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.8448240928345053}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 118286.03812365372,
+    ahDps: 102655.07010287239,
+    obDps: 94129.1243553643,
+    likelyBroken: false,
+    deltaPct: -13.214550312726725,
+    obDeltaPct: -20.422455728068513,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

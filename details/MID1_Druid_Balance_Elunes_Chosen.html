@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Druid Balance — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Druid Balance <span style="color:#71717a;font-weight:500">· Elune's Chosen</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Druid_Balance</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Druid_Balance_Elunes_Chosen","class":"Druid","spec":"Balance","heroTalent":"Elune\u0027s Chosen","simcProfileName":"MID1_Druid_Balance","playerName":"MID1_Druid_Balance","talents":"CYGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWoMbNjxMDwsYmZmZhBjZZmlZYmZswyMLzMGzshhBYstMzgxsNCMBAAAYxMzMzgNDjxAAwMDMA","simc":{"dps":111616.36687300623,"fightLengthSec":300.05561761761754,"profileSource":"default","timeline":[76490.50393738179,45601.325494084966,522655.3603631283,354809.1665090936,326293.85897838586,252965.90052727226,219134.2468564813,194295.5201633283,159155.84900448573,211800.61478450987,165928.63387090617,180193.6698385102,123523.93523147737,106889.05790780367,233081.65602607472,154603.08810042884,159908.45527385405,132974.38134732476,143877.0777411392,147522.16190261155,114610.13153602552,99870.25745981465,89252.79050165843,89475.20959401006,84202.21386694089,78469.14473679825,78793.22523714279,112268.53490437836,95139.29398813217,104989.90866823784,84158.97695124421,58390.18234492091,48392.52319123451,62372.68794767903,180911.8140427952,89748.8854869387,82675.1530953618,52029.867343240054,57989.73896183356,45800.9135171299,55938.52307238093,51396.370156908284,294069.26393160387,189934.19829219748,129820.47774383081,154134.82889419788,131847.05765065877,118693.66647216951,123161.76990070223,158966.49381681473,115007.73424509248,113625.5430491903,87897.30630654815,83123.02408833006,42020.136746018296,149430.35082675994,79973.53458647765,89950.37896929953,79280.04626828762,61925.04637594255,29532.174218224412,43784.16512454934,56026.22452421626,54660.84405481009,63435.115854603624,69219.43220522335,156740.4881871893,104250.99491190247,104043.26071219993,85915.37402636603,73415.81596675531,41680.6493659338,43021.50374738113,40425.87179715664,47899.37865108688,48864.730698860134,122502.0812149173,102903.11082421521,88023.0992316828,83918.8080009163,89090.23275705025,54022.96124613745,278029.1687230951,192774.22787111756,195098.4979081094,146548.53759833038,129261.9608468313,116137.22021101695,81622.93103413547,127137.21465109779,103145.72997974114,99093.50892440704,84637.78034283995,83755.12979592648,48651.33544929734,57655.71045050517,61955.63839710109,50193.037305480866,149534.96314348225,81776.4895839453,89280.17397007036,76546.84402004063,76122.46716521075,39781.52689013285,51114.86475690402,55109.52955219643,54340.932408518056,57910.5921392509,133339.48246615758,139789.4824189228,83743.62364178889,121701.46880188865,110989.98872142944,73758.9983768916,60649.69186240696,74236.19728034126,56811.61608421429,54964.94750840521,63229.09656695864,65443.308614787726],"sampleActions":[{"timeSec":0,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":1.0070000000000001,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":2.016,"name":"eclipse","spellName":"Lunar Eclipse","target":"Fluffy_Pillow"},{"timeSec":2.523,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":3.532,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":4.541,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":4.541,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":4.541,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":4.541,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":5.46,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":6.343,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":7.1930000000000005,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":8.014,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":8.837,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":9.658,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":10.887,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":11.707,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":12.934000000000001,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":14.162,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":14.98,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":15.801,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":17.028,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":17.849,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":18.671,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":19.899,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":21.129,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":21.95,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":22.771,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":23.999,"name":"wrath","spellName":"Wrath","target":"Fluffy_Pillow"},{"timeSec":24.82,"name":"lunar_eclipse","spellName":"Lunar Eclipse","target":"Fluffy_Pillow"},{"timeSec":25.325,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":26.334,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":27.304000000000002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":28.240000000000002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":29.642,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":31.044,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":31.981,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":32.883,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":33.785000000000004,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":35.136,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":36.038000000000004,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":36.939,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":38.292,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":39.642,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":40.544000000000004,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":40.544000000000004,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":42.331,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":43.522,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":44.714,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":46.432,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":47.577,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":49.231,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":50.335,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":51.99,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":53.645,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":54.748000000000005,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":55.852000000000004,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":56.917,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":57.983000000000004,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":59.049,"name":"wrath","spellName":"Wrath","target":"Fluffy_Pillow"}],"abilitiesByKey":{"astral_smolder":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":9.953766205778054,"executesPerFight":455.65265265265265,"intervalSec":0.642577630425449,"critPercent":null,"avgHit":7296.682152595471,"totalDamageMean":3324752.578393394,"isSkipped":false},"fury_of_elune":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":2.6796316874429613,"executesPerFight":6.953953953953954,"intervalSec":46.08817588652478,"critPercent":34.6183861401592,"avgHit":128710.85932567505,"totalDamageMean":895049.3891245892,"isSkipped":false},"moonfire":{"name":"moonfire","spellName":"Moonfire","portionPercent":7.286503031124439,"executesPerFight":14.222222222222221,"intervalSec":21.938847826087,"critPercent":28.32305103757712,"avgHit":171128.989295949,"totalDamageMean":2433834.5144312745,"isSkipped":false},"starfire":{"name":"starfire","spellName":"Starfire","portionPercent":7.692561412638385,"executesPerFight":50.87587587587588,"intervalSec":5.724374766037106,"critPercent":41.76178946154733,"avgHit":50504.60382055613,"totalDamageMean":2569465.9551349003,"isSkipped":false},"starsurge":{"name":"starsurge","spellName":"Starsurge","portionPercent":25.983497204613503,"executesPerFight":89.11011011011011,"intervalSec":3.338020052770476,"critPercent":35.5302562952162,"avgHit":97396.31355522193,"totalDamageMean":8678996.225224636,"isSkipped":false},"starsurge_cascade":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.932569870156272,"executesPerFight":43.4024024024024,"intervalSec":6.9306590726616255,"critPercent":31.819635433322674,"avgHit":61048.08321949451,"totalDamageMean":2649633.4737878502,"isSkipped":false},"sundered_firmament":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":1.099408753400172,"executesPerFight":8.98898898898899,"intervalSec":33.702427815970324,"critPercent":46.00977409708798,"avgHit":40852.650415611206,"totalDamageMean":367224.0247569456,"isSkipped":false},"sunfire":{"name":"sunfire","spellName":"Sunfire","portionPercent":4.617461577206485,"executesPerFight":17.15115115115115,"intervalSec":17.862009945040555,"critPercent":25.444715730728984,"avgHit":89925.30337029687,"totalDamageMean":1542322.4704170835,"isSkipped":false},"sunseeker_mushroom":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":0.7309110404976017,"executesPerFight":9.296296296296296,"intervalSec":29.934043206663222,"critPercent":26.4092082616179,"avgHit":26261.919173149126,"totalDamageMean":244138.5819429789,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.5100507404737066,"executesPerFight":15.01101101101101,"intervalSec":18.795002964719835,"critPercent":22.73301003122301,"avgHit":11349.463553673744,"totalDamageMean":170366.92237326474,"isSkipped":false},"wrath":{"name":"wrath","spellName":"Wrath","portionPercent":1.621449339976332,"executesPerFight":41.06206206206206,"intervalSec":6.82432601984555,"critPercent":32.75425707054574,"avgHit":13189.68807253517,"totalDamageMean":541595.7902136788,"isSkipped":false}}},"assistedHighlight":{"dps":85020.03667819001,"fightLengthSec":299.93416616616616,"profileSource":"default","timeline":[6312.1189350285795,197307.7740808324,222948.80612041056,362466.74716715433,236410.52738245294,226608.66067347574,206026.5020074844,193325.9775846046,166535.533527404,307626.83088181145,243273.56154358358,227718.042671017,145994.96621723418,137683.88722927414,109476.20912275997,80180.30846467317,27056.4341278822,60801.34854422347,57883.62871402208,49421.514205751715,53641.277038194305,55288.34368035352,50904.637333121704,48848.81908891735,34207.629033366065,42463.807487244034,40844.53692794554,49066.91395076567,45068.70329550107,49180.18304749968,46790.96987460832,41186.315138899685,30968.695163133496,64274.91595068575,66345.73136945469,66161.9308925068,60335.25840850793,55061.459776700794,35544.598385898804,38679.50746150793,42682.81181203957,59680.19018334889,181407.25005036962,160380.3204808694,125507.2395607703,121959.35401916975,108515.85129902925,100556.46566753385,69063.2481280594,69500.19076111724,61519.856498026216,50685.114703376945,54644.76196831268,54235.84590024717,42683.548188040804,48941.16828345821,46177.79560469097,34130.812255444864,48168.41998264988,49326.7727641023,50280.311130827395,44219.39758894795,50921.029643758775,41888.37049826162,51801.09515409214,58084.147757308565,57877.275577226195,57303.82979582836,55878.647787749775,38597.649473065874,42594.88679481545,48988.38146681649,48238.93218013811,47519.06814072116,48904.3164732535,42008.79062417471,39960.54620246191,41191.07154320914,46225.37783492194,47929.69124541242,51862.359947491415,66735.29188972594,200589.60004050052,163378.20324066366,150339.74604440326,122579.98315590998,113741.92872863202,116568.64293560018,66332.39212510997,62403.681007062405,52867.509648746855,41944.04980932669,50809.831447875054,54171.30666364807,46151.874962293696,52096.66002183622,52517.58199281656,49871.421144305394,56712.196769280476,54168.37837106276,42307.489624756396,57667.52723863297,62713.8138019008,61594.062024465406,60556.21857059713,56300.08526634979,56100.935577701064,42331.25492819462,53355.87865980559,60451.72363340476,61070.03812789268,51802.85672610442,51861.37507117514,43437.460509760494,46392.93697799759,48161.6646802457,48997.78992249258,50742.99377515466,50819.80371576816,29972.02667398351],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":1.01,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":2.02,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":2.02,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":2.939,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":3.822,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":4.706,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":5.557,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":6.832,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":7.682,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":8.91,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":9.731,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":10.552,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":11.371,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":12.601,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":13.42,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":14.646,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":15.466000000000001,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":16.695,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":17.923000000000002,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":18.743000000000002,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":19.563,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":20.385,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":21.613,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":22.433,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":22.433,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":23.81,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":24.729,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":26.107,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":27.025000000000002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":28.346,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":29.668,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":30.551000000000002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":31.826,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":32.676,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":33.904,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":35.133,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":36.362,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":37.183,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":38.002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":39.232,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":40.051,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":41.648,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":43.245,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":45.001,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":46.173,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":47.485,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":49.451,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":50.763,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":52.653,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":53.912,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":55.802,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":57.061,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":58.324,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"}],"abilitiesByKey":{"astral_smolder":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":7.118132417792738,"executesPerFight":229.22022022022023,"intervalSec":1.1173561516951982,"critPercent":null,"avgHit":7889.432165923553,"totalDamageMean":1808417.378485486,"isSkipped":false},"fury_of_elune":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":3.008329060733413,"executesPerFight":6.738738738738738,"intervalSec":47.69128611111111,"critPercent":31.509360988955898,"avgHit":113417.30643675709,"totalDamageMean":764289.5965287775,"isSkipped":false},"moonfire":{"name":"moonfire","spellName":"Moonfire","portionPercent":8.195882135744432,"executesPerFight":13.575575575575575,"intervalSec":22.859900506970842,"critPercent":26.518322684879198,"avgHit":153380.4689959299,"totalDamageMean":2082228.148671473,"isSkipped":false},"starfire":{"name":"starfire","spellName":"Starfire","portionPercent":10.949121882484874,"executesPerFight":88.09509509509509,"intervalSec":3.361912036190851,"critPercent":36.458698776637284,"avgHit":31576.222273730436,"totalDamageMean":2781710.3039481426,"isSkipped":false},"starsurge":{"name":"starsurge","spellName":"Starsurge","portionPercent":28.05877658304217,"executesPerFight":89.54154154154155,"intervalSec":3.3332941361492097,"critPercent":30.510347598955196,"avgHit":79611.67714468454,"totalDamageMean":7128552.296242565,"isSkipped":false},"starsurge_cascade":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.803508932624837,"executesPerFight":37.37837837837838,"intervalSec":7.909527719375932,"critPercent":28.65618986529827,"avgHit":53039.82528088104,"totalDamageMean":1982542.658471851,"isSkipped":false},"sundered_firmament":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":0.8638644912451643,"executesPerFight":3.974974974974975,"intervalSec":79.8812345844504,"critPercent":58.0244497770271,"avgHit":55213.31628843046,"totalDamageMean":219471.55053188925,"isSkipped":false},"sunfire":{"name":"sunfire","spellName":"Sunfire","portionPercent":5.806832921705684,"executesPerFight":16.505505505505507,"intervalSec":18.747670976616217,"critPercent":25.862381441430554,"avgHit":89380.56787206396,"totalDamageMean":1475271.4550975603,"isSkipped":false},"sunseeker_mushroom":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":0.9288968972657842,"executesPerFight":9.14014014014014,"intervalSec":29.497965976331404,"critPercent":26.195426195426197,"avgHit":25819.466638993712,"totalDamageMean":235993.54342407564,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.6613928375863932,"executesPerFight":14.82082082082082,"intervalSec":19.4420816385822,"critPercent":22.60278581522105,"avgHit":11337.566297784113,"totalDamageMean":168032.0386436352,"isSkipped":false}}},"oneButton":{"dps":77725.41398189786,"fightLengthSec":300.0532752752753,"profileSource":"default","timeline":[6369.427780899302,21800.3869831869,340795.4327108957,253382.4539867175,291280.44282382523,222573.9838953919,154673.03463565273,163759.53183125684,169449.52713577985,297382.8625598657,229817.25723488125,205573.61209675143,151069.031706819,121894.2527144179,113563.74029656222,78839.29794441152,35041.59053934451,43413.37127849152,48407.97463766526,36392.67843153956,56864.62286146372,59016.05231266619,54604.158763776584,45811.31670031678,26740.40935900378,39433.531855936875,34354.595967266454,45693.2849045367,44757.76680932474,45717.448635692366,46379.28264356749,40776.08121355263,22107.620356516396,56564.43036857223,57078.602431978165,61698.28003019331,53785.90160638114,51148.64301469105,35266.324973261944,38100.51050708511,39129.743614748,44192.91025475807,224902.74466961526,140084.76532966376,126689.93840154992,103590.41885642223,111342.5834668013,82224.49508646321,76577.19580531206,66388.44712935912,62571.27087564551,40134.16615104935,52073.1940267197,52788.963029449915,45055.19715519474,41473.70424912022,44732.63841498915,29988.019759716703,43498.73817505505,43169.02504668592,45457.665871620644,45706.81177949765,43939.87801630193,36106.27963015814,44363.961643419585,52510.32214314757,52361.274277115386,51589.54702384052,52045.867683554214,41033.11881858437,32562.50880494983,46376.86056810145,46597.72657614943,43961.80060368758,46353.40949939008,43903.16781260568,35894.160665573174,38936.90803653264,37738.723587957604,44753.61529656192,45940.58728528803,48459.8601482659,167708.55079938902,152052.82330596598,146870.79038875035,107802.66613484228,112290.37286180435,109078.03082673362,78138.4300325242,44473.38879923693,52548.817922635804,42604.249034308596,54020.515830486234,42302.72976525104,43970.42670946902,42910.95274193509,47760.89764741914,47640.90354817084,47651.54259554348,49016.94662977029,39890.664707898846,48297.603776495,56087.07071915979,62182.359600340336,54064.24639914059,51851.728450225455,52441.00645630149,42520.9429820552,42542.80747554866,51252.523628084564,56649.695864341535,42349.56693936781,46468.019840138215,37504.907161276904,38346.452551515504,37774.56645732693,43743.30270897253,44619.42390381585,47007.92922695456,46807.31943901999],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":1.26,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":2.5220000000000002,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":2.5220000000000002,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":3.669,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":4.771,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":5.871,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":6.934,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":7.997,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":9.022,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":10.25,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":11.274000000000001,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":12.502,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":13.526,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":14.755,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":15.985000000000001,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":17.01,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":18.239,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":19.264,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":20.492,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":21.518,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":22.745,"name":"incarnation_chosen_of_elune","spellName":"Incarnation: Chosen of Elune","target":"none"},{"timeSec":22.745,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":23.894000000000002,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":24.996000000000002,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":26.099,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":27.16,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":28.435000000000002,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":29.499000000000002,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":30.727,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":31.752,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":32.981,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":34.211,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":35.234,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":36.461,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":37.487,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":38.512,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":39.742,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":40.767,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":42.363,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":43.96,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":45.928000000000004,"name":"moonfire","spellName":"Moonfire","target":"Fluffy_Pillow"},{"timeSec":47.567,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":49.204,"name":"fury_of_elune","spellName":"Fury of Elune","target":"Fluffy_Pillow"},{"timeSec":50.778,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":52.354,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"},{"timeSec":54.174,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":55.692,"name":"sunfire","spellName":"Sunfire","target":"Fluffy_Pillow"},{"timeSec":57.154,"name":"starsurge","spellName":"Starsurge","target":"Fluffy_Pillow"},{"timeSec":58.619,"name":"starfire","spellName":"Starfire","target":"Fluffy_Pillow"}],"abilitiesByKey":{"astral_smolder":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":7.138041779492185,"executesPerFight":222.86186186186185,"intervalSec":1.1498409948541923,"critPercent":null,"avgHit":7441.785302759174,"totalDamageMean":1658490.1281491488,"isSkipped":false},"fury_of_elune":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":3.2242073757767775,"executesPerFight":6.7007007007007005,"intervalSec":47.96034066666659,"critPercent":30.957865472794886,"avgHit":111798.64825408609,"totalDamageMean":749129.2806935458,"isSkipped":false},"moonfire":{"name":"moonfire","spellName":"Moonfire","portionPercent":8.883532889720268,"executesPerFight":13.526526526526526,"intervalSec":22.92911622276033,"critPercent":25.83474607503501,"avgHit":152592.51508002082,"totalDamageMean":2064046.7029793006,"isSkipped":false},"starfire":{"name":"starfire","spellName":"Starfire","portionPercent":10.01911441697635,"executesPerFight":74.85785785785785,"intervalSec":3.952260202248257,"critPercent":35.72532097384263,"avgHit":31097.519320449115,"totalDamageMean":2327893.681022168,"isSkipped":false},"starsurge":{"name":"starsurge","spellName":"Starsurge","portionPercent":27.674647334130732,"executesPerFight":80.53353353353353,"intervalSec":3.700171969984703,"critPercent":31.020955407686962,"avgHit":79843.42265473815,"totalDamageMean":6430072.955797446,"isSkipped":false},"starsurge_cascade":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.218394007194534,"executesPerFight":31.995995995995997,"intervalSec":9.178947095179135,"critPercent":28.078064012490245,"avgHit":52417.79587325786,"totalDamageMean":1677159.5868796941,"isSkipped":false},"sundered_firmament":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":0.9301293927160224,"executesPerFight":3.972972972972973,"intervalSec":79.94905229591838,"critPercent":57.76567319695047,"avgHit":54395.32339910321,"totalDamageMean":216111.1497207614,"isSkipped":false},"sunfire":{"name":"sunfire","spellName":"Sunfire","portionPercent":6.309504741448404,"executesPerFight":16.43743743743744,"intervalSec":18.848237683438178,"critPercent":26.09935100382119,"avgHit":89185.64620720054,"totalDamageMean":1465983.4798482885,"isSkipped":false},"sunseeker_mushroom":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":1.0271109667805352,"executesPerFight":9.272272272272271,"intervalSec":29.396075514874173,"critPercent":26.408374703216058,"avgHit":25737.41917224147,"totalDamageMean":238644.35815062333,"isSkipped":false},"twilight_barrage":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.7245418112205662,"executesPerFight":14.83883883883884,"intervalSec":18.894970133333313,"critPercent":22.708333333333332,"avgHit":11344.812944583102,"totalDamageMean":168343.85094144134,"isSkipped":false}}},"abilities":[{"key":"starsurge","displayName":"Starsurge","simc":{"name":"starsurge","spellName":"Starsurge","portionPercent":25.983497204613503,"executesPerFight":89.11011011011011,"intervalSec":3.338020052770476,"critPercent":35.5302562952162,"avgHit":97396.31355522193,"totalDamageMean":8678996.225224636,"isSkipped":false},"assistedHighlight":{"name":"starsurge","spellName":"Starsurge","portionPercent":28.05877658304217,"executesPerFight":89.54154154154155,"intervalSec":3.3332941361492097,"critPercent":30.510347598955196,"avgHit":79611.67714468454,"totalDamageMean":7128552.296242565,"isSkipped":false},"oneButton":{"name":"starsurge","spellName":"Starsurge","portionPercent":27.674647334130732,"executesPerFight":80.53353353353353,"intervalSec":3.700171969984703,"critPercent":31.020955407686962,"avgHit":79843.42265473815,"totalDamageMean":6430072.955797446,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":25.983497204613503},{"key":"astral_smolder","displayName":"Astral Smolder","simc":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":9.953766205778054,"executesPerFight":455.65265265265265,"intervalSec":0.642577630425449,"critPercent":null,"avgHit":7296.682152595471,"totalDamageMean":3324752.578393394,"isSkipped":false},"assistedHighlight":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":7.118132417792738,"executesPerFight":229.22022022022023,"intervalSec":1.1173561516951982,"critPercent":null,"avgHit":7889.432165923553,"totalDamageMean":1808417.378485486,"isSkipped":false},"oneButton":{"name":"astral_smolder","spellName":"Astral Smolder","portionPercent":7.138041779492185,"executesPerFight":222.86186186186185,"intervalSec":1.1498409948541923,"critPercent":null,"avgHit":7441.785302759174,"totalDamageMean":1658490.1281491488,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.953766205778054},{"key":"starsurge_cascade","displayName":"Starsurge","simc":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.932569870156272,"executesPerFight":43.4024024024024,"intervalSec":6.9306590726616255,"critPercent":31.819635433322674,"avgHit":61048.08321949451,"totalDamageMean":2649633.4737878502,"isSkipped":false},"assistedHighlight":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.803508932624837,"executesPerFight":37.37837837837838,"intervalSec":7.909527719375932,"critPercent":28.65618986529827,"avgHit":53039.82528088104,"totalDamageMean":1982542.658471851,"isSkipped":false},"oneButton":{"name":"starsurge_cascade","spellName":"Starsurge","portionPercent":7.218394007194534,"executesPerFight":31.995995995995997,"intervalSec":9.178947095179135,"critPercent":28.078064012490245,"avgHit":52417.79587325786,"totalDamageMean":1677159.5868796941,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.932569870156272},{"key":"starfire","displayName":"Starfire","simc":{"name":"starfire","spellName":"Starfire","portionPercent":7.692561412638385,"executesPerFight":50.87587587587588,"intervalSec":5.724374766037106,"critPercent":41.76178946154733,"avgHit":50504.60382055613,"totalDamageMean":2569465.9551349003,"isSkipped":false},"assistedHighlight":{"name":"starfire","spellName":"Starfire","portionPercent":10.949121882484874,"executesPerFight":88.09509509509509,"intervalSec":3.361912036190851,"critPercent":36.458698776637284,"avgHit":31576.222273730436,"totalDamageMean":2781710.3039481426,"isSkipped":false},"oneButton":{"name":"starfire","spellName":"Starfire","portionPercent":10.01911441697635,"executesPerFight":74.85785785785785,"intervalSec":3.952260202248257,"critPercent":35.72532097384263,"avgHit":31097.519320449115,"totalDamageMean":2327893.681022168,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.692561412638385},{"key":"moonfire","displayName":"Moonfire","simc":{"name":"moonfire","spellName":"Moonfire","portionPercent":7.286503031124439,"executesPerFight":14.222222222222221,"intervalSec":21.938847826087,"critPercent":28.32305103757712,"avgHit":171128.989295949,"totalDamageMean":2433834.5144312745,"isSkipped":false},"assistedHighlight":{"name":"moonfire","spellName":"Moonfire","portionPercent":8.195882135744432,"executesPerFight":13.575575575575575,"intervalSec":22.859900506970842,"critPercent":26.518322684879198,"avgHit":153380.4689959299,"totalDamageMean":2082228.148671473,"isSkipped":false},"oneButton":{"name":"moonfire","spellName":"Moonfire","portionPercent":8.883532889720268,"executesPerFight":13.526526526526526,"intervalSec":22.92911622276033,"critPercent":25.83474607503501,"avgHit":152592.51508002082,"totalDamageMean":2064046.7029793006,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.286503031124439},{"key":"sunfire","displayName":"Sunfire","simc":{"name":"sunfire","spellName":"Sunfire","portionPercent":4.617461577206485,"executesPerFight":17.15115115115115,"intervalSec":17.862009945040555,"critPercent":25.444715730728984,"avgHit":89925.30337029687,"totalDamageMean":1542322.4704170835,"isSkipped":false},"assistedHighlight":{"name":"sunfire","spellName":"Sunfire","portionPercent":5.806832921705684,"executesPerFight":16.505505505505507,"intervalSec":18.747670976616217,"critPercent":25.862381441430554,"avgHit":89380.56787206396,"totalDamageMean":1475271.4550975603,"isSkipped":false},"oneButton":{"name":"sunfire","spellName":"Sunfire","portionPercent":6.309504741448404,"executesPerFight":16.43743743743744,"intervalSec":18.848237683438178,"critPercent":26.09935100382119,"avgHit":89185.64620720054,"totalDamageMean":1465983.4798482885,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.617461577206485},{"key":"fury_of_elune","displayName":"Fury of Elune","simc":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":2.6796316874429613,"executesPerFight":6.953953953953954,"intervalSec":46.08817588652478,"critPercent":34.6183861401592,"avgHit":128710.85932567505,"totalDamageMean":895049.3891245892,"isSkipped":false},"assistedHighlight":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":3.008329060733413,"executesPerFight":6.738738738738738,"intervalSec":47.69128611111111,"critPercent":31.509360988955898,"avgHit":113417.30643675709,"totalDamageMean":764289.5965287775,"isSkipped":false},"oneButton":{"name":"fury_of_elune","spellName":"Fury of Elune","portionPercent":3.2242073757767775,"executesPerFight":6.7007007007007005,"intervalSec":47.96034066666659,"critPercent":30.957865472794886,"avgHit":111798.64825408609,"totalDamageMean":749129.2806935458,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.6796316874429613},{"key":"wrath","displayName":"Wrath","simc":{"name":"wrath","spellName":"Wrath","portionPercent":1.621449339976332,"executesPerFight":41.06206206206206,"intervalSec":6.82432601984555,"critPercent":32.75425707054574,"avgHit":13189.68807253517,"totalDamageMean":541595.7902136788,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":1.621449339976332},{"key":"sundered_firmament","displayName":"Sundered Firmament","simc":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":1.099408753400172,"executesPerFight":8.98898898898899,"intervalSec":33.702427815970324,"critPercent":46.00977409708798,"avgHit":40852.650415611206,"totalDamageMean":367224.0247569456,"isSkipped":false},"assistedHighlight":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":0.8638644912451643,"executesPerFight":3.974974974974975,"intervalSec":79.8812345844504,"critPercent":58.0244497770271,"avgHit":55213.31628843046,"totalDamageMean":219471.55053188925,"isSkipped":false},"oneButton":{"name":"sundered_firmament","spellName":"Sundered Firmament","portionPercent":0.9301293927160224,"executesPerFight":3.972972972972973,"intervalSec":79.94905229591838,"critPercent":57.76567319695047,"avgHit":54395.32339910321,"totalDamageMean":216111.1497207614,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.099408753400172},{"key":"sunseeker_mushroom","displayName":"Sunseeker Mushroom","simc":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":0.7309110404976017,"executesPerFight":9.296296296296296,"intervalSec":29.934043206663222,"critPercent":26.4092082616179,"avgHit":26261.919173149126,"totalDamageMean":244138.5819429789,"isSkipped":false},"assistedHighlight":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":0.9288968972657842,"executesPerFight":9.14014014014014,"intervalSec":29.497965976331404,"critPercent":26.195426195426197,"avgHit":25819.466638993712,"totalDamageMean":235993.54342407564,"isSkipped":false},"oneButton":{"name":"sunseeker_mushroom","spellName":"Sunseeker Mushroom","portionPercent":1.0271109667805352,"executesPerFight":9.272272272272271,"intervalSec":29.396075514874173,"critPercent":26.408374703216058,"avgHit":25737.41917224147,"totalDamageMean":238644.35815062333,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.7309110404976017},{"key":"twilight_barrage","displayName":"Twilight Barrage","simc":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.5100507404737066,"executesPerFight":15.01101101101101,"intervalSec":18.795002964719835,"critPercent":22.73301003122301,"avgHit":11349.463553673744,"totalDamageMean":170366.92237326474,"isSkipped":false},"assistedHighlight":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.6613928375863932,"executesPerFight":14.82082082082082,"intervalSec":19.4420816385822,"critPercent":22.60278581522105,"avgHit":11337.566297784113,"totalDamageMean":168032.0386436352,"isSkipped":false},"oneButton":{"name":"twilight_barrage","spellName":"Twilight Barrage","portionPercent":0.7245418112205662,"executesPerFight":14.83883883883884,"intervalSec":18.894970133333313,"critPercent":22.708333333333332,"avgHit":11344.812944583102,"totalDamageMean":168343.85094144134,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.5100507404737066}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 111616.36687300623,
+    ahDps: 85020.03667819001,
+    obDps: 77725.41398189786,
+    likelyBroken: false,
+    deltaPct: -23.828342509191984,
+    obDeltaPct: -30.363784309220964,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Death Knight Blood — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Death Knight Blood <span style="color:#71717a;font-weight:500">· Deathbringer</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Death_Knight_Blood_Deathbringer</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Death_Knight_Blood_Deathbringer_Deathbringer","class":"Death Knight","spec":"Blood","heroTalent":"Deathbringer","simcProfileName":"MID1_Death_Knight_Blood_Deathbringer","playerName":"MID1_Death_Knight_Blood_Deathbringer","talents":"CoPAAAAAAAAAAAAAAAAAAAAAAwYWmZmxMmZmhZZmZmmZxMjxMAAAAAzMzMzwMDzYMDAjZmZGAAgxsNwAWCWGmADLAmxMAAMzAMYA","simc":{"dps":58338.71836783925,"fightLengthSec":299.93687187187186,"profileSource":"default","timeline":[151195.7288252908,100767.81737410492,114960.83670098291,294043.27977654396,23299.030795706418,72318.09091356126,58684.19895356194,60029.87603302044,64892.2875459944,56662.246882436644,57938.569881427524,18039.98964773349,27794.51579265306,54547.27644282419,36224.250779666625,36663.13455276341,54899.80403351093,49594.63503948018,41336.14578835302,36881.28066002324,69045.13202750564,77437.18391305555,77654.37856106937,39866.22709034842,31719.027624447324,43352.8380539696,34133.15324527066,42427.080443559425,28586.07406146913,31220.327302248035,29788.443206324373,94717.84749435235,74173.58852210398,126958.1043616997,90831.79804310329,98256.56211677386,57920.507563697116,47874.19320298095,54174.3629691409,40305.50540241517,42927.455299415284,47991.55823866011,31559.463226227104,38788.92013883618,31477.79922441011,39703.00855564993,32192.4479112119,37890.91014194864,61909.58281848558,39349.77817617823,70742.2543490754,78776.12976365576,36774.54839531019,55496.57901070921,51069.168206527494,61010.61392248729,40379.523968404304,33046.542412353236,47113.52710903239,42742.45113384714,30221.447009466803,62245.15817746216,54319.840275506096,90391.3032646152,63422.632616163355,74738.65413970419,86939.5420185418,52447.278926050756,72068.3138306197,54308.1507666215,40282.11093797171,59384.24534099095,47142.47789707828,49983.454213633006,40680.05840673063,31929.46373337418,42627.531208784276,35260.99823070787,45337.6617030574,47451.43824170085,35709.19958129243,152052.3640754498,62396.01398132341,83633.48430549758,61651.400358626044,42095.81306128953,56509.990980731614,65823.00361632796,61499.578231873245,52549.026767659954,31346.00103144785,54180.74813168765,49562.339063254396,53681.9984341279,53063.654585711156,46725.63304267832,71848.76969653972,60025.740779453154,54225.356010215735,76122.71354479324,42734.52210688474,122250.51490104414,92003.87729145082,112562.1070400339,93525.05527979799,83681.01799255316,80538.49613613411,75656.7429606332,49013.24443012849,82969.76032250213,42123.26547219984,53127.16244212882,73349.33191069943,42179.91441094648,56868.041918611256,47597.640617552526,62938.83863690802,52176.730022566924,30266.84866605324,52104.697464577206],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"vampiric_blood","spellName":"Vampiric Blood","target":"none"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"dancing_rune_weapon","spellName":"Dancing Rune Weapon","target":"none"},{"timeSec":0.883,"name":"potion","spellName":"Draught of Rampant Abandon","target":"none"},{"timeSec":0.883,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":1.7670000000000001,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":2.649,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":3.5300000000000002,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":4.414,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":5.296,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":6.1770000000000005,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":7.059,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":7.9430000000000005,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":8.825000000000001,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":9.708,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":10.59,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":11.471,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":12.353,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":13.235,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":14.118,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":15,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":15.881,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":16.763,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":17.646,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":18.528,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":19.409,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":20.293,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":21.178,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":22.061,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":22.946,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":23.829,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":24.711000000000002,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":25.594,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":26.475,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":27.357,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":28.241,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":29.123,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":30.005,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":30.887,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":31.77,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":32.652,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":33.535000000000004,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":34.416000000000004,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":35.297000000000004,"name":"deaths_caress","spellName":"Death\u0027s Caress","target":"Fluffy_Pillow"},{"timeSec":36.178,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":37.061,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":37.944,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":38.827,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":39.709,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":40.591,"name":"unknown","spellName":"unknown","target":""},{"timeSec":41.345,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":42.491,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":43.639,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":44.784,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":45.932,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":47.079,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":48.227000000000004,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":49.374,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":50.521,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":51.667,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":52.813,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":53.961,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":55.268,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":56.415,"name":"unknown","spellName":"unknown","target":""},{"timeSec":56.625,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":57.772,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":58.919000000000004,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":9.90514547935416,"executesPerFight":175.82382382382383,"intervalSec":2.037860951718821,"critPercent":27.764325611727013,"avgHit":14082.772800902303,"totalDamageMean":2476086.9638967845,"isSkipped":false},"blood_boil":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":7.54238908972525,"executesPerFight":62.653653653653656,"intervalSec":4.735543598876658,"critPercent":27.264626792050535,"avgHit":21065.20092194684,"totalDamageMean":1319811.8027082828,"isSkipped":false},"blood_boil_boiling_point":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":1.1087505506963584,"executesPerFight":9.6986986986987,"intervalSec":27.5954883381924,"critPercent":27.737377934760026,"avgHit":20004.304473350065,"totalDamageMean":194015.72176405284,"isSkipped":false},"blood_draw":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.15879308240223614,"executesPerFight":2.7967967967967966,"intervalSec":120.91344835680748,"critPercent":27.441197434069853,"avgHit":9935.134267346692,"totalDamageMean":27786.551694661317,"isSkipped":false},"blood_mist":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.0808005963216758,"executesPerFight":32.626626626626624,"intervalSec":9.179986775037882,"critPercent":28.09397244371124,"avgHit":5796.641981592161,"totalDamageMean":189124.8736216365,"isSkipped":false},"blood_plague":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.067224798605769,"executesPerFight":94.38038038038039,"intervalSec":3.190647024186981,"critPercent":null,"avgHit":9394.886187321146,"totalDamageMean":886692.9319897514,"isSkipped":false},"blood_plague_heal":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":6.383294338507457,"executesPerFight":234.47547547547546,"intervalSec":1.275000000000542,"critPercent":27.755643525624947,"avgHit":7307.158064781144,"totalDamageMean":1713349.361614014,"isSkipped":false},"blood_shield":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":30.329456896167034,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":0,"avgHit":103393.21036323899,"totalDamageMean":7482190.940940941,"isSkipped":false},"death_strike":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.33027165263551,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":27.687538747675138,"avgHit":87500.01269160362,"totalDamageMean":6332057.9755022945,"isSkipped":false},"death_strike_heal":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.4117915690787,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":0,"avgHit":153991.97208167618,"totalDamageMean":11143839.46914184,"isSkipped":false},"deaths_caress":{"name":"deaths_caress","spellName":"Death\u0027s Caress","portionPercent":0.10828844498643811,"executesPerFight":4.858858858858859,"intervalSec":55.83137513751378,"critPercent":28.449744463373083,"avgHit":3899.876990258372,"totalDamageMean":18948.951862576716,"isSkipped":false},"dragon_games_equipment":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":2.946882311176393,"executesPerFight":7.438438438438438,"intervalSec":30.21298199152544,"critPercent":27.452032738494562,"avgHit":99034.39526711954,"totalDamageMean":736661.2524824478,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":6.896439678036614,"executesPerFight":208.38738738738738,"intervalSec":1.6670558649950904,"critPercent":0,"avgHit":11222.840336166386,"totalDamageMean":2338698.3767195013,"isSkipped":false},"heart_strike":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":5.881392364626374,"executesPerFight":69.89889889889889,"intervalSec":4.130176567757734,"critPercent":27.346123671635404,"avgHit":21033.660225929412,"totalDamageMean":1470229.6896060307,"isSkipped":false},"heart_strike_bloodied_blade":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.09191457726487559,"executesPerFight":0.2822822822822823,"intervalSec":null,"critPercent":27.464788732394368,"avgHit":81396.51467830616,"totalDamageMean":22976.793933215555,"isSkipped":true},"leech":{"name":"leech","spellName":"Leech","portionPercent":9.407869368936804,"executesPerFight":272.46046046046047,"intervalSec":1.0985225880670977,"critPercent":0,"avgHit":9820.098035687999,"totalDamageMean":2675588.4325704155,"isSkipped":false},"marrowrend":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":0.8240026878366972,"executesPerFight":16.36736736736737,"intervalSec":18.47550372003301,"critPercent":27.247259439707673,"avgHit":12585.046750871605,"totalDamageMean":205984.08350700862,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.201674163679467,"executesPerFight":6.5825825825825826,"intervalSec":49.67702281368822,"critPercent":27.513628104179283,"avgHit":31944.307862534686,"totalDamageMean":210276.04454857667,"isSkipped":false},"relish_in_blood":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.36575294864876595,"executesPerFight":5.454454454454455,"intervalSec":47.80270860927156,"critPercent":27.568555758683726,"avgHit":17595.850305138658,"totalDamageMean":95975.76407677733,"isSkipped":false},"rune_of_sanguination":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.219855498134544,"executesPerFight":1.4264264264264264,"intervalSec":303.47947115384636,"critPercent":0,"avgHit":855129.923415737,"totalDamageMean":1219779.9207882134,"isSkipped":false},"sanguinary_burst":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9192682837086228,"executesPerFight":3.6466466466466465,"intervalSec":103.96431679999999,"critPercent":27.078120656102307,"avgHit":44111.484009417414,"totalDamageMean":160858.9952415492,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.5328737421330609,"executesPerFight":37.647647647647645,"intervalSec":7.785591610469877,"critPercent":27.693734269439663,"avgHit":2476.792081235289,"totalDamageMean":93245.39557083005,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.0245509200047012,"executesPerFight":15.34034034034034,"intervalSec":18.531056791569096,"critPercent":null,"avgHit":11686.961890276365,"totalDamageMean":179281.9729414267,"isSkipped":false}}},"assistedHighlight":{"dps":50249.41927878488,"fightLengthSec":300.0543583583583,"profileSource":"default","timeline":[149142.1206081075,87500.8086256052,65195.76933498218,318702.8287690855,48722.08883518849,58489.21643660112,25079.433386189143,52773.767924342166,26167.707757816992,60176.17257473499,42059.13130954745,50257.19765796006,15889.941898838213,37393.74219609404,14915.64590976602,22048.70298012346,15430.30989557863,18217.658289080442,69498.18104486662,14200.40916553628,57402.56239844957,92220.4570074747,26369.0821429839,71475.4435911626,16032.243607146405,42709.31763916177,26671.195765048902,18603.725700084462,37519.29132294455,32451.182279116565,21654.572325650963,103603.09755534188,35779.66772333548,130610.81216367641,20128.341323913646,45534.784945450534,64326.44001728448,35747.11140040725,77483.00218654245,30808.192328694728,25743.247441150892,63763.598142670584,29477.507590212972,46662.65034743018,32763.01583723225,37415.10868650214,25238.425996634644,21507.409531236724,49267.077341091695,26145.610478229606,23647.643197236604,90854.35518374124,38411.492031085036,81753.1683017619,50471.07791244931,21981.85413702311,48411.15899308723,18468.62969179366,30148.59891944641,30445.30280955823,19337.326949547583,121427.64082421146,66317.74008500282,93005.38389462476,57508.92893547068,44640.647263462364,64621.55497185806,71018.60535637997,53109.85721641061,76911.93081285713,21626.171674834673,55511.891498109835,35566.00748308906,23844.945165295772,33425.3766727515,26454.89634222259,38680.90101144917,30360.090756002817,21104.40570088952,59938.65827023765,19525.88366954155,105972.20913834867,66343.11115277334,36198.76749773289,63735.28573393089,46323.4724154176,56210.2994875198,56788.32724683533,20241.249393306505,56573.43655954135,30374.557859048065,67076.07509311408,67861.12438424512,50688.45867552835,77845.3631561662,25092.833776451163,22387.76587024532,63744.10683597268,39096.59248060071,73659.69958314016,41556.031111087206,101352.81369607852,71454.28341128275,57376.742805614485,54541.40618865843,56093.06445074374,27555.767801898262,52513.10935256198,34254.01811229681,62410.466392517825,44377.51814757181,26705.28240755227,53419.43977348762,34984.6406328094,42655.00541808999,48497.13131557839,23332.484597123384,53742.14646376122,52188.4057565655,24187.880080001614],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Draught of Rampant Abandon","target":"none"},{"timeSec":0,"name":"vampiric_blood","spellName":"Vampiric Blood","target":"none"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"dancing_rune_weapon","spellName":"Dancing Rune Weapon","target":"none"},{"timeSec":0.969,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":1.851,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":2.734,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":3.615,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":4.498,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":5.38,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":6.2620000000000005,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":7.147,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":8.029,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":8.912,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":9.795,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":10.677,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":11.561,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":12.443,"name":"unknown","spellName":"unknown","target":""},{"timeSec":12.723,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":13.605,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":14.488,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":15.372,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":16.254,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":17.136,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.549,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":19.431,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":20.313,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":21.197,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":22.080000000000002,"name":"unknown","spellName":"unknown","target":""},{"timeSec":22.928,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":23.812,"name":"unknown","spellName":"unknown","target":""},{"timeSec":24.435000000000002,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":25.316,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":26.199,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":27.082,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":27.965,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":28.846,"name":"unknown","spellName":"unknown","target":""},{"timeSec":29.031000000000002,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":29.914,"name":"unknown","spellName":"unknown","target":""},{"timeSec":30.292,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":31.178,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":32.062,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":32.946,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":33.828,"name":"unknown","spellName":"unknown","target":""},{"timeSec":36.213,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":37.094,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":38.064,"name":"unknown","spellName":"unknown","target":""},{"timeSec":41.536,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":42.682,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":43.829,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":44.978,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":46.126,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":47.273,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":48.421,"name":"unknown","spellName":"unknown","target":""},{"timeSec":50.328,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":51.475,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":52.622,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":53.77,"name":"unknown","spellName":"unknown","target":""},{"timeSec":57.988,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":59.134,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":11.386947238434654,"executesPerFight":174.97297297297297,"intervalSec":2.0493556894865144,"critPercent":27.634442912331487,"avgHit":14005.741441551929,"totalDamageMean":2450626.218719113,"isSkipped":false},"blood_boil":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":1.9367878147699444,"executesPerFight":13.053053053053054,"intervalSec":23.563165268716894,"critPercent":27.90253589978613,"avgHit":22353.099341801346,"totalDamageMean":291776.1916086983,"isSkipped":false},"blood_boil_boiling_point":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":0.7938437090813584,"executesPerFight":6.063063063063063,"intervalSec":44.64869196093161,"critPercent":28.54063018242123,"avgHit":19724.714659583427,"totalDamageMean":119592.1888819788,"isSkipped":false},"blood_draw":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.18714136357888575,"executesPerFight":2.833833833833834,"intervalSec":120.53223030303029,"critPercent":28.898275255191834,"avgHit":9948.628543807308,"totalDamageMean":28192.760167686174,"isSkipped":false},"blood_mist":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.2527105286439422,"executesPerFight":33.35535535535536,"intervalSec":8.135363149118625,"critPercent":27.717683619195597,"avgHit":5657.869980453251,"totalDamageMean":188720.26375241563,"isSkipped":false},"blood_plague":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.518576963014993,"executesPerFight":35.58058058058058,"intervalSec":8.421073933751863,"critPercent":null,"avgHit":23365.86593981311,"totalDamageMean":831371.0759065636,"isSkipped":false},"blood_plague_heal":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":7.03835548708152,"executesPerFight":228.74374374374375,"intervalSec":1.294089889666583,"critPercent":27.78153099161847,"avgHit":7030.306625740982,"totalDamageMean":1608138.657238439,"isSkipped":false},"blood_shield":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":28.398801000393824,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":0,"avgHit":97254.33128688086,"totalDamageMean":6533076.740740741,"isSkipped":false},"death_strike":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.678861661188098,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":27.653763951555447,"avgHit":82269.09640153791,"totalDamageMean":5526440.962276682,"isSkipped":false},"death_strike_heal":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.19849858907538,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":0,"avgHit":141912.61164541612,"totalDamageMean":9533004.546847433,"isSkipped":false},"dragon_games_equipment":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":3.1093576071515385,"executesPerFight":6.747747747747748,"intervalSec":48.18592134831455,"critPercent":27.602010644588997,"avgHit":99170.29416799957,"totalDamageMean":669176.1291156007,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":7.499721979475726,"executesPerFight":208.02902902902903,"intervalSec":1.668673145061588,"critPercent":0,"avgHit":11162.417076501868,"totalDamageMean":2322106.7860417366,"isSkipped":false},"heart_strike":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":7.122864482929793,"executesPerFight":70.61561561561561,"intervalSec":4.184752684131305,"critPercent":27.73683467457292,"avgHit":21708.194264997186,"totalDamageMean":1532937.5019261525,"isSkipped":false},"heart_strike_bloodied_blade":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.10274946570813506,"executesPerFight":0.28128128128128127,"intervalSec":null,"critPercent":27.659574468085108,"avgHit":78615.55918120468,"totalDamageMean":22113.085215133648,"isSkipped":false},"leech":{"name":"leech","spellName":"Leech","portionPercent":9.717325466086413,"executesPerFight":271.019019019019,"intervalSec":1.1042922583860098,"critPercent":0,"avgHit":8425.008136246224,"totalDamageMean":2283337.4403127055,"isSkipped":false},"marrowrend":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":1.1327916388371855,"executesPerFight":19.88088088088088,"intervalSec":14.906437697160813,"critPercent":27.22531467830099,"avgHit":12262.64565420116,"totalDamageMean":243792.19753562487,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.4162458417929462,"executesPerFight":6.744744744744745,"intervalSec":47.94015324165028,"critPercent":28.554537392846584,"avgHit":31633.0404452093,"totalDamageMean":213356.78330312337,"isSkipped":false},"relish_in_blood":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.45387521030642664,"executesPerFight":6.5275275275275275,"intervalSec":41.576767394270114,"critPercent":26.94245153411693,"avgHit":15822.080224000154,"totalDamageMean":103279.06420490991,"isSkipped":false},"rune_of_sanguination":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.684732020210225,"executesPerFight":1.3783783783783783,"intervalSec":305.6172400000002,"critPercent":0,"avgHit":847555.7544265242,"totalDamageMean":1168252.5263716953,"isSkipped":false},"sanguinary_burst":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9706628184685505,"executesPerFight":3.7427427427427427,"intervalSec":90.39145306122447,"critPercent":28.121606948968513,"avgHit":39070.253090963175,"totalDamageMean":146229.90621332463,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.6174241349244152,"executesPerFight":37.61961961961962,"intervalSec":7.804377127228588,"critPercent":27.375145795779876,"avgHit":2472.5040361761203,"totalDamageMean":93014.66134891988,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.1441903480920361,"executesPerFight":15.162162162162161,"intervalSec":18.827224862888503,"critPercent":null,"avgHit":11368.546697156025,"totalDamageMean":172371.7485703927,"isSkipped":false}}},"oneButton":{"dps":49010.32930435271,"fightLengthSec":300.0547127127128,"profileSource":"default","timeline":[147852.14396132177,102896.0687497859,58843.47240789686,291192.26994807075,146545.01526038433,61002.8039573449,37925.28261476394,22427.920352983092,42912.83837984431,59098.58824559144,51285.86925654034,36165.133648151736,24957.91932322079,36269.13992416183,16664.04691485751,21545.3058795493,33637.29393652515,20842.471284979023,74507.97205355538,17201.303920028568,28035.422676578946,106887.36317122602,45736.304473864206,64546.23700496247,38204.701455090355,33075.834704041976,26335.095521503117,29160.863748930402,22237.355649174504,25860.399588032546,20419.81303745933,75159.66294056545,65692.61637359169,96088.26380710395,58231.83613649158,33809.644313708406,53447.34302332122,70553.81439116098,73624.91063513009,35636.581026364336,20952.20998723444,64076.465518180376,27538.914017279265,35212.94557985115,29043.6930932322,34135.02611875609,25623.88152831532,30604.34297119891,32586.70525578059,53418.69245117118,28039.50867417477,56221.83471916148,64171.487983661995,60008.67245927179,52366.48394235777,27676.615926265637,35877.85101443459,26233.76992443642,23607.443658494714,25617.203987031295,23776.48148052448,95868.372366855,52300.27702803249,95928.06178429046,72375.17130015582,60343.43085712596,44016.480201586775,75706.27808002754,58342.74209171721,65203.18487716261,48256.892702026205,44778.93135666068,33035.73529884434,32660.456622532394,34053.36482700581,32591.74715063575,31708.633592585124,31417.73152307618,29552.284085009418,39940.188346792,32169.124521528487,119912.5383922711,52444.04955695215,54765.469177369596,51889.1194999736,63183.03899163077,40299.66499420952,55339.51251816104,45941.07429976411,45806.5585646217,32893.30063511055,43543.45093222413,69745.20792192101,68584.66032548838,54885.31573980919,44003.97517689344,27808.799554714165,50092.43125678034,53070.015116922375,44369.73158625502,47663.66095392832,104950.91528912279,53254.28850450555,62343.18148122124,42734.07331578242,61812.80562700941,40918.984016314236,53566.40931865359,46375.50549907948,50177.10764840096,49103.786942155835,32639.740622025514,34035.2685379447,36598.251328374485,34827.15583230912,40346.20828023897,25499.57072419639,36032.382048740816,50037.00757663592,33897.380413855295],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Draught of Rampant Abandon","target":"none"},{"timeSec":0,"name":"vampiric_blood","spellName":"Vampiric Blood","target":"none"},{"timeSec":0,"name":"raise_dead","spellName":"Raise Dead","target":"none"},{"timeSec":0,"name":"dancing_rune_weapon","spellName":"Dancing Rune Weapon","target":"none"},{"timeSec":1.212,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":2.316,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":3.418,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":4.5200000000000005,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":5.623,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":6.724,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":7.825,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":8.928,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":10.029,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":11.13,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":12.229000000000001,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":13.33,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":14.432,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":15.532,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":16.634,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":17.735,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":18.838,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":19.94,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":21.043,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":22.146,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":23.246000000000002,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":24.346,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":25.447,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":26.547,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":27.648,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":28.748,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":29.85,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":30.951,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":32.053,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":33.155,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":34.258,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":35.36,"name":"unknown","spellName":"unknown","target":""},{"timeSec":36.429,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":37.531,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":38.632,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":39.734,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":40.834,"name":"blood_boil","spellName":"Blood Boil","target":"Fluffy_Pillow"},{"timeSec":42.408,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":43.982,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"},{"timeSec":45.557,"name":"marrowrend","spellName":"Marrowrend","target":"Fluffy_Pillow"},{"timeSec":47.132,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":48.562,"name":"unknown","spellName":"unknown","target":""},{"timeSec":51.052,"name":"death_and_decay","spellName":"Death and Decay","target":"Fluffy_Pillow"},{"timeSec":52.482,"name":"reapers_mark","spellName":"Reaper\u0027s Mark","target":"Fluffy_Pillow"},{"timeSec":53.913000000000004,"name":"death_strike","spellName":"Death Strike","target":"Fluffy_Pillow"},{"timeSec":55.344,"name":"unknown","spellName":"unknown","target":""},{"timeSec":58.692,"name":"heart_strike","spellName":"Heart Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":11.633542148134211,"executesPerFight":174.47247247247248,"intervalSec":2.0531379714564433,"critPercent":27.674770733937095,"avgHit":13999.747946814088,"totalDamageMean":2442570.638272074,"isSkipped":false},"blood_boil":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":1.752298087924075,"executesPerFight":11.54954954954955,"intervalSec":24.36746274038461,"critPercent":28.198929373165253,"avgHit":22298.52545859783,"totalDamageMean":257537.92466596773,"isSkipped":false},"blood_boil_boiling_point":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":0.8145697366306893,"executesPerFight":6.168168168168168,"intervalSec":42.43912469635632,"critPercent":27.55918367346939,"avgHit":19409.094284833634,"totalDamageMean":119718.55754068554,"isSkipped":false},"blood_draw":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.18780451847039642,"executesPerFight":2.823823823823824,"intervalSec":120.43491489361699,"critPercent":27.850335333568655,"avgHit":9774.659633141915,"totalDamageMean":27601.91674183518,"isSkipped":false},"blood_mist":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.2593154130511635,"executesPerFight":33.249249249249246,"intervalSec":8.142654868456747,"critPercent":27.58693045563549,"avgHit":5566.546993901884,"totalDamageMean":185083.50845790288,"isSkipped":false},"blood_plague":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.52844694487891,"executesPerFight":33.7987987987988,"intervalSec":8.746435458986861,"critPercent":null,"avgHit":24040.03440688304,"totalDamageMean":812524.2860344404,"isSkipped":false},"blood_plague_heal":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":6.960346841711439,"executesPerFight":223.75175175175175,"intervalSec":1.3164886018242965,"critPercent":27.80349782778211,"avgHit":7019.50511952328,"totalDamageMean":1570626.5669237236,"isSkipped":false},"blood_shield":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":28.305695415332977,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":0,"avgHit":95548.08841671339,"totalDamageMean":6310860.378378378,"isSkipped":false},"death_strike":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.68382847625392,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":27.599480707686734,"avgHit":81644.76744278162,"totalDamageMean":5392559.249426486,"isSkipped":false},"death_strike_heal":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.30795098724691,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":0,"avgHit":142522.47837285048,"totalDamageMean":9413474.164640434,"isSkipped":false},"dragon_games_equipment":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":3.5451379976784834,"executesPerFight":7.42942942942943,"intervalSec":30.24047396386825,"critPercent":28.901423583131887,"avgHit":100187.34042153669,"totalDamageMean":744334.7753840294,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":7.474678382758972,"executesPerFight":206.7807807807808,"intervalSec":1.6775013166716175,"critPercent":0,"avgHit":11129.339056859493,"totalDamageMean":2301333.4197514444,"isSkipped":false},"heart_strike":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":7.1920239874432985,"executesPerFight":71.15415415415416,"intervalSec":4.14427810615186,"critPercent":27.442544843049326,"avgHit":21221.986380068112,"totalDamageMean":1510032.4903447265,"isSkipped":false},"heart_strike_bloodied_blade":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.08964576429748182,"executesPerFight":0.2502502502502503,"intervalSec":null,"critPercent":26.693227091633464,"avgHit":75212.56821744605,"totalDamageMean":18821.964018379895,"isSkipped":true},"leech":{"name":"leech","spellName":"Leech","portionPercent":9.685411724749057,"executesPerFight":270.76976976976977,"intervalSec":1.105367060781668,"critPercent":0,"avgHit":8261.434313878455,"totalDamageMean":2236946.6671369453,"isSkipped":false},"marrowrend":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":1.123762158566699,"executesPerFight":19.12812812812813,"intervalSec":15.377352323137936,"critPercent":27.937881077700766,"avgHit":12334.941553340845,"totalDamageMean":235944.34248527547,"isSkipped":false},"reapers_mark":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.3901313861041746,"executesPerFight":6.528528528528528,"intervalSec":49.00928177641652,"critPercent":27.954198473282442,"avgHit":31294.912904249875,"totalDamageMean":204309.7316932109,"isSkipped":false},"relish_in_blood":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.4291390077412459,"executesPerFight":6.009009009009009,"intervalSec":43.92749036043583,"critPercent":27.461397974431346,"avgHit":16035.648320778117,"totalDamageMean":96358.3552248559,"isSkipped":false},"rune_of_sanguination":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.8447909604873174,"executesPerFight":1.3583583583583583,"intervalSec":303.2139268292684,"critPercent":0,"avgHit":851995.6292572896,"totalDamageMean":1157315.3842864283,"isSkipped":false},"sanguinary_burst":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9555970670479,"executesPerFight":3.72972972972973,"intervalSec":90.68542080745348,"critPercent":27.696078431372552,"avgHit":37655.69350368532,"totalDamageMean":140445.55955428578,"isSkipped":false},"voidclaw":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.6324745793958076,"executesPerFight":37.46546546546546,"intervalSec":7.892967546818748,"critPercent":27.748649296037048,"avgHit":2481.1050170992394,"totalDamageMean":92955.75433432465,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.1783281975007418,"executesPerFight":15.196196196196196,"intervalSec":19.0217481304218,"critPercent":null,"avgHit":11396.318627027978,"totalDamageMean":173180.6937706824,"isSkipped":false}}},"abilities":[{"key":"death_strike_heal","displayName":"Death Strike","simc":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.4117915690787,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":0,"avgHit":153991.97208167618,"totalDamageMean":11143839.46914184,"isSkipped":false},"assistedHighlight":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.19849858907538,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":0,"avgHit":141912.61164541612,"totalDamageMean":9533004.546847433,"isSkipped":false},"oneButton":{"name":"death_strike_heal","spellName":"Death Strike","portionPercent":43.30795098724691,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":0,"avgHit":142522.47837285048,"totalDamageMean":9413474.164640434,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":43.4117915690787},{"key":"blood_shield","displayName":"Blood Shield","simc":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":30.329456896167034,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":0,"avgHit":103393.21036323899,"totalDamageMean":7482190.940940941,"isSkipped":false},"assistedHighlight":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":28.398801000393824,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":0,"avgHit":97254.33128688086,"totalDamageMean":6533076.740740741,"isSkipped":false},"oneButton":{"name":"blood_shield","spellName":"Blood Shield","portionPercent":28.305695415332977,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":0,"avgHit":95548.08841671339,"totalDamageMean":6310860.378378378,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":30.329456896167034},{"key":"death_strike","displayName":"Death Strike","simc":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.33027165263551,"executesPerFight":72.36636636636636,"intervalSec":4.122023297067219,"critPercent":27.687538747675138,"avgHit":87500.01269160362,"totalDamageMean":6332057.9755022945,"isSkipped":false},"assistedHighlight":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.678861661188098,"executesPerFight":67.17517517517517,"intervalSec":4.4263364554533355,"critPercent":27.653763951555447,"avgHit":82269.09640153791,"totalDamageMean":5526440.962276682,"isSkipped":false},"oneButton":{"name":"death_strike","spellName":"Death Strike","portionPercent":25.68382847625392,"executesPerFight":66.04904904904905,"intervalSec":4.49636661456293,"critPercent":27.599480707686734,"avgHit":81644.76744278162,"totalDamageMean":5392559.249426486,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":25.33027165263551},{"key":"auto_attack_mh","displayName":"","simc":{"name":"auto_attack_mh","spellName":"","portionPercent":9.90514547935416,"executesPerFight":175.82382382382383,"intervalSec":2.037860951718821,"critPercent":27.764325611727013,"avgHit":14082.772800902303,"totalDamageMean":2476086.9638967845,"isSkipped":false},"assistedHighlight":{"name":"auto_attack_mh","spellName":"","portionPercent":11.386947238434654,"executesPerFight":174.97297297297297,"intervalSec":2.0493556894865144,"critPercent":27.634442912331487,"avgHit":14005.741441551929,"totalDamageMean":2450626.218719113,"isSkipped":false},"oneButton":{"name":"auto_attack_mh","spellName":"","portionPercent":11.633542148134211,"executesPerFight":174.47247247247248,"intervalSec":2.0531379714564433,"critPercent":27.674770733937095,"avgHit":13999.747946814088,"totalDamageMean":2442570.638272074,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.90514547935416},{"key":"leech","displayName":"Leech","simc":{"name":"leech","spellName":"Leech","portionPercent":9.407869368936804,"executesPerFight":272.46046046046047,"intervalSec":1.0985225880670977,"critPercent":0,"avgHit":9820.098035687999,"totalDamageMean":2675588.4325704155,"isSkipped":false},"assistedHighlight":{"name":"leech","spellName":"Leech","portionPercent":9.717325466086413,"executesPerFight":271.019019019019,"intervalSec":1.1042922583860098,"critPercent":0,"avgHit":8425.008136246224,"totalDamageMean":2283337.4403127055,"isSkipped":false},"oneButton":{"name":"leech","spellName":"Leech","portionPercent":9.685411724749057,"executesPerFight":270.76976976976977,"intervalSec":1.105367060781668,"critPercent":0,"avgHit":8261.434313878455,"totalDamageMean":2236946.6671369453,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.407869368936804},{"key":"blood_boil","displayName":"Blood Boil","simc":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":7.54238908972525,"executesPerFight":62.653653653653656,"intervalSec":4.735543598876658,"critPercent":27.264626792050535,"avgHit":21065.20092194684,"totalDamageMean":1319811.8027082828,"isSkipped":false},"assistedHighlight":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":1.9367878147699444,"executesPerFight":13.053053053053054,"intervalSec":23.563165268716894,"critPercent":27.90253589978613,"avgHit":22353.099341801346,"totalDamageMean":291776.1916086983,"isSkipped":false},"oneButton":{"name":"blood_boil","spellName":"Blood Boil","portionPercent":1.752298087924075,"executesPerFight":11.54954954954955,"intervalSec":24.36746274038461,"critPercent":28.198929373165253,"avgHit":22298.52545859783,"totalDamageMean":257537.92466596773,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.54238908972525},{"key":"frost_shield","displayName":"Frost Shield","simc":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":6.896439678036614,"executesPerFight":208.38738738738738,"intervalSec":1.6670558649950904,"critPercent":0,"avgHit":11222.840336166386,"totalDamageMean":2338698.3767195013,"isSkipped":false},"assistedHighlight":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":7.499721979475726,"executesPerFight":208.02902902902903,"intervalSec":1.668673145061588,"critPercent":0,"avgHit":11162.417076501868,"totalDamageMean":2322106.7860417366,"isSkipped":false},"oneButton":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":7.474678382758972,"executesPerFight":206.7807807807808,"intervalSec":1.6775013166716175,"critPercent":0,"avgHit":11129.339056859493,"totalDamageMean":2301333.4197514444,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.896439678036614},{"key":"blood_plague_heal","displayName":"Blood Plague","simc":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":6.383294338507457,"executesPerFight":234.47547547547546,"intervalSec":1.275000000000542,"critPercent":27.755643525624947,"avgHit":7307.158064781144,"totalDamageMean":1713349.361614014,"isSkipped":false},"assistedHighlight":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":7.03835548708152,"executesPerFight":228.74374374374375,"intervalSec":1.294089889666583,"critPercent":27.78153099161847,"avgHit":7030.306625740982,"totalDamageMean":1608138.657238439,"isSkipped":false},"oneButton":{"name":"blood_plague_heal","spellName":"Blood Plague","portionPercent":6.960346841711439,"executesPerFight":223.75175175175175,"intervalSec":1.3164886018242965,"critPercent":27.80349782778211,"avgHit":7019.50511952328,"totalDamageMean":1570626.5669237236,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.383294338507457},{"key":"heart_strike","displayName":"Heart Strike","simc":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":5.881392364626374,"executesPerFight":69.89889889889889,"intervalSec":4.130176567757734,"critPercent":27.346123671635404,"avgHit":21033.660225929412,"totalDamageMean":1470229.6896060307,"isSkipped":false},"assistedHighlight":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":7.122864482929793,"executesPerFight":70.61561561561561,"intervalSec":4.184752684131305,"critPercent":27.73683467457292,"avgHit":21708.194264997186,"totalDamageMean":1532937.5019261525,"isSkipped":false},"oneButton":{"name":"heart_strike","spellName":"Heart Strike","portionPercent":7.1920239874432985,"executesPerFight":71.15415415415416,"intervalSec":4.14427810615186,"critPercent":27.442544843049326,"avgHit":21221.986380068112,"totalDamageMean":1510032.4903447265,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.881392364626374},{"key":"blood_plague","displayName":"Blood Plague","simc":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.067224798605769,"executesPerFight":94.38038038038039,"intervalSec":3.190647024186981,"critPercent":null,"avgHit":9394.886187321146,"totalDamageMean":886692.9319897514,"isSkipped":false},"assistedHighlight":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.518576963014993,"executesPerFight":35.58058058058058,"intervalSec":8.421073933751863,"critPercent":null,"avgHit":23365.86593981311,"totalDamageMean":831371.0759065636,"isSkipped":false},"oneButton":{"name":"blood_plague","spellName":"Blood Plague","portionPercent":5.52844694487891,"executesPerFight":33.7987987987988,"intervalSec":8.746435458986861,"critPercent":null,"avgHit":24040.03440688304,"totalDamageMean":812524.2860344404,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.067224798605769},{"key":"rune_of_sanguination","displayName":"Rune of Sanguination","simc":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.219855498134544,"executesPerFight":1.4264264264264264,"intervalSec":303.47947115384636,"critPercent":0,"avgHit":855129.923415737,"totalDamageMean":1219779.9207882134,"isSkipped":false},"assistedHighlight":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.684732020210225,"executesPerFight":1.3783783783783783,"intervalSec":305.6172400000002,"critPercent":0,"avgHit":847555.7544265242,"totalDamageMean":1168252.5263716953,"isSkipped":false},"oneButton":{"name":"rune_of_sanguination","spellName":"Rune of Sanguination","portionPercent":3.8447909604873174,"executesPerFight":1.3583583583583583,"intervalSec":303.2139268292684,"critPercent":0,"avgHit":851995.6292572896,"totalDamageMean":1157315.3842864283,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.219855498134544},{"key":"dragon_games_equipment","displayName":"Dragon Games Equipment","simc":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":2.946882311176393,"executesPerFight":7.438438438438438,"intervalSec":30.21298199152544,"critPercent":27.452032738494562,"avgHit":99034.39526711954,"totalDamageMean":736661.2524824478,"isSkipped":false},"assistedHighlight":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":3.1093576071515385,"executesPerFight":6.747747747747748,"intervalSec":48.18592134831455,"critPercent":27.602010644588997,"avgHit":99170.29416799957,"totalDamageMean":669176.1291156007,"isSkipped":false},"oneButton":{"name":"dragon_games_equipment","spellName":"Dragon Games Equipment","portionPercent":3.5451379976784834,"executesPerFight":7.42942942942943,"intervalSec":30.24047396386825,"critPercent":28.901423583131887,"avgHit":100187.34042153669,"totalDamageMean":744334.7753840294,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.946882311176393},{"key":"reapers_mark","displayName":"Reaper\u0027s Mark","simc":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.201674163679467,"executesPerFight":6.5825825825825826,"intervalSec":49.67702281368822,"critPercent":27.513628104179283,"avgHit":31944.307862534686,"totalDamageMean":210276.04454857667,"isSkipped":false},"assistedHighlight":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.4162458417929462,"executesPerFight":6.744744744744745,"intervalSec":47.94015324165028,"critPercent":28.554537392846584,"avgHit":31633.0404452093,"totalDamageMean":213356.78330312337,"isSkipped":false},"oneButton":{"name":"reapers_mark","spellName":"Reaper\u0027s Mark","portionPercent":1.3901313861041746,"executesPerFight":6.528528528528528,"intervalSec":49.00928177641652,"critPercent":27.954198473282442,"avgHit":31294.912904249875,"totalDamageMean":204309.7316932109,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.201674163679467},{"key":"blood_boil_boiling_point","displayName":"Blood Boil","simc":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":1.1087505506963584,"executesPerFight":9.6986986986987,"intervalSec":27.5954883381924,"critPercent":27.737377934760026,"avgHit":20004.304473350065,"totalDamageMean":194015.72176405284,"isSkipped":false},"assistedHighlight":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":0.7938437090813584,"executesPerFight":6.063063063063063,"intervalSec":44.64869196093161,"critPercent":28.54063018242123,"avgHit":19724.714659583427,"totalDamageMean":119592.1888819788,"isSkipped":false},"oneButton":{"name":"blood_boil_boiling_point","spellName":"Blood Boil","portionPercent":0.8145697366306893,"executesPerFight":6.168168168168168,"intervalSec":42.43912469635632,"critPercent":27.55918367346939,"avgHit":19409.094284833634,"totalDamageMean":119718.55754068554,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.1087505506963584},{"key":"blood_mist","displayName":"Blood Mist","simc":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.0808005963216758,"executesPerFight":32.626626626626624,"intervalSec":9.179986775037882,"critPercent":28.09397244371124,"avgHit":5796.641981592161,"totalDamageMean":189124.8736216365,"isSkipped":false},"assistedHighlight":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.2527105286439422,"executesPerFight":33.35535535535536,"intervalSec":8.135363149118625,"critPercent":27.717683619195597,"avgHit":5657.869980453251,"totalDamageMean":188720.26375241563,"isSkipped":false},"oneButton":{"name":"blood_mist","spellName":"Blood Mist","portionPercent":1.2593154130511635,"executesPerFight":33.249249249249246,"intervalSec":8.142654868456747,"critPercent":27.58693045563549,"avgHit":5566.546993901884,"totalDamageMean":185083.50845790288,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.0808005963216758},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.0245509200047012,"executesPerFight":15.34034034034034,"intervalSec":18.531056791569096,"critPercent":null,"avgHit":11686.961890276365,"totalDamageMean":179281.9729414267,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.1441903480920361,"executesPerFight":15.162162162162161,"intervalSec":18.827224862888503,"critPercent":null,"avgHit":11368.546697156025,"totalDamageMean":172371.7485703927,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.1783281975007418,"executesPerFight":15.196196196196196,"intervalSec":19.0217481304218,"critPercent":null,"avgHit":11396.318627027978,"totalDamageMean":173180.6937706824,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.0245509200047012},{"key":"sanguinary_burst","displayName":"Sanguinary Burst","simc":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9192682837086228,"executesPerFight":3.6466466466466465,"intervalSec":103.96431679999999,"critPercent":27.078120656102307,"avgHit":44111.484009417414,"totalDamageMean":160858.9952415492,"isSkipped":false},"assistedHighlight":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9706628184685505,"executesPerFight":3.7427427427427427,"intervalSec":90.39145306122447,"critPercent":28.121606948968513,"avgHit":39070.253090963175,"totalDamageMean":146229.90621332463,"isSkipped":false},"oneButton":{"name":"sanguinary_burst","spellName":"Sanguinary Burst","portionPercent":0.9555970670479,"executesPerFight":3.72972972972973,"intervalSec":90.68542080745348,"critPercent":27.696078431372552,"avgHit":37655.69350368532,"totalDamageMean":140445.55955428578,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.9192682837086228},{"key":"marrowrend","displayName":"Marrowrend","simc":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":0.8240026878366972,"executesPerFight":16.36736736736737,"intervalSec":18.47550372003301,"critPercent":27.247259439707673,"avgHit":12585.046750871605,"totalDamageMean":205984.08350700862,"isSkipped":false},"assistedHighlight":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":1.1327916388371855,"executesPerFight":19.88088088088088,"intervalSec":14.906437697160813,"critPercent":27.22531467830099,"avgHit":12262.64565420116,"totalDamageMean":243792.19753562487,"isSkipped":false},"oneButton":{"name":"marrowrend","spellName":"Marrowrend","portionPercent":1.123762158566699,"executesPerFight":19.12812812812813,"intervalSec":15.377352323137936,"critPercent":27.937881077700766,"avgHit":12334.941553340845,"totalDamageMean":235944.34248527547,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.8240026878366972},{"key":"voidclaw","displayName":"Voidclaw","simc":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.5328737421330609,"executesPerFight":37.647647647647645,"intervalSec":7.785591610469877,"critPercent":27.693734269439663,"avgHit":2476.792081235289,"totalDamageMean":93245.39557083005,"isSkipped":false},"assistedHighlight":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.6174241349244152,"executesPerFight":37.61961961961962,"intervalSec":7.804377127228588,"critPercent":27.375145795779876,"avgHit":2472.5040361761203,"totalDamageMean":93014.66134891988,"isSkipped":false},"oneButton":{"name":"voidclaw","spellName":"Voidclaw","portionPercent":0.6324745793958076,"executesPerFight":37.46546546546546,"intervalSec":7.892967546818748,"critPercent":27.748649296037048,"avgHit":2481.1050170992394,"totalDamageMean":92955.75433432465,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.5328737421330609},{"key":"relish_in_blood","displayName":"Relish in Blood","simc":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.36575294864876595,"executesPerFight":5.454454454454455,"intervalSec":47.80270860927156,"critPercent":27.568555758683726,"avgHit":17595.850305138658,"totalDamageMean":95975.76407677733,"isSkipped":false},"assistedHighlight":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.45387521030642664,"executesPerFight":6.5275275275275275,"intervalSec":41.576767394270114,"critPercent":26.94245153411693,"avgHit":15822.080224000154,"totalDamageMean":103279.06420490991,"isSkipped":false},"oneButton":{"name":"relish_in_blood","spellName":"Relish in Blood","portionPercent":0.4291390077412459,"executesPerFight":6.009009009009009,"intervalSec":43.92749036043583,"critPercent":27.461397974431346,"avgHit":16035.648320778117,"totalDamageMean":96358.3552248559,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.36575294864876595},{"key":"blood_draw","displayName":"Blood Draw","simc":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.15879308240223614,"executesPerFight":2.7967967967967966,"intervalSec":120.91344835680748,"critPercent":27.441197434069853,"avgHit":9935.134267346692,"totalDamageMean":27786.551694661317,"isSkipped":false},"assistedHighlight":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.18714136357888575,"executesPerFight":2.833833833833834,"intervalSec":120.53223030303029,"critPercent":28.898275255191834,"avgHit":9948.628543807308,"totalDamageMean":28192.760167686174,"isSkipped":false},"oneButton":{"name":"blood_draw","spellName":"Blood Draw","portionPercent":0.18780451847039642,"executesPerFight":2.823823823823824,"intervalSec":120.43491489361699,"critPercent":27.850335333568655,"avgHit":9774.659633141915,"totalDamageMean":27601.91674183518,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.15879308240223614},{"key":"deaths_caress","displayName":"Death\u0027s Caress","simc":{"name":"deaths_caress","spellName":"Death\u0027s Caress","portionPercent":0.10828844498643811,"executesPerFight":4.858858858858859,"intervalSec":55.83137513751378,"critPercent":28.449744463373083,"avgHit":3899.876990258372,"totalDamageMean":18948.951862576716,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":0.10828844498643811},{"key":"heart_strike_bloodied_blade","displayName":"Heart Strike","simc":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.09191457726487559,"executesPerFight":0.2822822822822823,"intervalSec":null,"critPercent":27.464788732394368,"avgHit":81396.51467830616,"totalDamageMean":22976.793933215555,"isSkipped":true},"assistedHighlight":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.10274946570813506,"executesPerFight":0.28128128128128127,"intervalSec":null,"critPercent":27.659574468085108,"avgHit":78615.55918120468,"totalDamageMean":22113.085215133648,"isSkipped":false},"oneButton":{"name":"heart_strike_bloodied_blade","spellName":"Heart Strike","portionPercent":0.08964576429748182,"executesPerFight":0.2502502502502503,"intervalSec":null,"critPercent":26.693227091633464,"avgHit":75212.56821744605,"totalDamageMean":18821.964018379895,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.09191457726487559}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 58338.71836783925,
+    ahDps: 50249.41927878488,
+    obDps: 49010.32930435271,
+    likelyBroken: false,
+    deltaPct: -13.866089820570698,
+    obDeltaPct: -15.990047989516784,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

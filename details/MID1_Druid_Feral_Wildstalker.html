@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Druid Feral — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Druid Feral <span style="color:#71717a;font-weight:500">· Wildstalker</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Druid_Feral</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Druid_Feral_Wildstalker","class":"Druid","spec":"Feral","heroTalent":"Wildstalker","simcProfileName":"MID1_Druid_Feral","playerName":"MID1_Druid_Feral_Wildstalker","talents":"CcGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjZwMzMzMmtFPwyMbzYGzMDAAAALBzGMmZUzYWYmZGjZmZAAAAAAAGAAAABAz2MLNbzssBmZAWMDGAAzMAYA","simc":{"dps":127018.66718596117,"fightLengthSec":299.9302702702703,"profileSource":"default","timeline":[28451.926599224556,209111.68208933977,437456.93672546407,358097.43074582424,312093.16742941784,293941.2632798472,165177.78437004573,152259.8734021119,103974.80243948584,107684.38913913541,99258.3818011861,217796.70617647158,216184.43022438983,156842.77164515035,106750.68306422733,96011.00481914806,72144.9594920673,70773.14960272268,66809.56852581784,60000.4999620495,57731.32561920921,144433.49378950044,218977.3909704156,208643.42766090974,150484.31606434705,92473.94755821227,80291.25452560301,81738.44219119097,72461.7778066125,70763.60207831017,64376.348170324505,113242.4554255515,152076.69488464066,150211.5080584684,115498.50860566096,90563.84553712867,79090.17784755905,78753.94509666349,63289.588229073954,57314.86363820066,39541.07186772564,159144.50592008134,252443.84917487888,258610.35048129916,207175.08076907383,203754.44874816106,149516.13219185808,117282.16770745425,87791.43660133818,75596.31814218758,66316.43705548094,89050.30978531475,142779.74396005698,147717.38146188474,124502.87223149567,99453.07625389996,83590.23480390832,69263.51090368668,65196.71357404932,58888.50995426488,60779.40323760811,104107.17190067805,139353.4688330469,154244.50830316672,161605.5074440099,145704.7430748324,119159.92330222283,97476.56285982489,81887.2555389915,71917.01059198989,68951.44482110806,84943.71769057056,129345.65009984095,140469.2721197153,130092.22530274495,109824.26759337155,84336.99220735181,71037.6322792219,68494.33164840874,65354.9491520123,64648.34750021727,106727.45115220691,168598.37772145658,177819.71401292612,204524.89759689927,214884.65215227185,176597.96420332036,132009.58308656016,105840.54100596838,76576.05798295182,65457.2771227068,84075.66061064793,125191.04650884551,133611.44952102966,119648.52660723242,107400.17643298229,88836.45319112402,80165.77889201313,81443.87184665425,74559.35960006856,65305.465628182865,99034.49543474638,152498.54586438907,207517.6620542942,244971.43654307746,243541.5580402414,225998.7222458045,165937.68226888284,128160.36863609192,91010.78782189832,73959.14229993596,94768.82303051435,140041.57370753787,143055.0493097294,127077.65221888325,102701.62074392654,95209.06020141364,91732.99167270324,85908.80135368882,76686.13551237447],"sampleActions":[{"timeSec":0,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":0,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":1.004,"name":"berserk_cat","spellName":"Berserk","target":"none"},{"timeSec":1.004,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.004,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":2.0100000000000002,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":3.0140000000000002,"name":"convoke_the_spirits","spellName":"Convoke the Spirits","target":"none"},{"timeSec":6.3340000000000005,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":7.338,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":8.342,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":9.346,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":10.35,"name":"shadowmeld","spellName":"Shadowmeld","target":"Fluffy_Pillow"},{"timeSec":10.35,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":10.35,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":11.356,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":12.36,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":13.365,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":14.369,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":15.374,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":16.378,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":17.383,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":18.137,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":19.141000000000002,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":20.145,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":21.150000000000002,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":22.154,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":23.157,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":24.162,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":25.166,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":26.17,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":27.66,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":29.344,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":30.35,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":30.35,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":31.353,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":32.358000000000004,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":33.363,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":34.369,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":35.123,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":36.127,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":37.131,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":38.137,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":39.141,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":40.145,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":41.148,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":42.153,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":43.157000000000004,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":44.164,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":45.167,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":46.701,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":48.5,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":51.561,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":53.332,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":55.688,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":56.692,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":57.696,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":58.701,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":59.706,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"}],"abilitiesByKey":{"bloodseeker_vines":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":6.905642056552481,"executesPerFight":78.31131131131131,"intervalSec":3.8500240809118456,"critPercent":null,"avgHit":33575.65920503127,"totalDamageMean":2629353.900487699,"isSkipped":false},"cat_melee":{"name":"cat_melee","spellName":"","portionPercent":7.214071752491091,"executesPerFight":464.5315315315315,"intervalSec":0.7735940548026711,"critPercent":30.474536763774747,"avgHit":8447.188777069046,"totalDamageMean":3923985.539747849,"isSkipped":false},"feral_frenzy":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.304397076398951,"executesPerFight":10.076076076076076,"intervalSec":31.18425955915428,"critPercent":30.566741385808655,"avgHit":324591.0928446006,"totalDamageMean":3270604.5451188684,"isSkipped":false},"ferocious_bite":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":10.950059766894912,"executesPerFight":61.32432432432432,"intervalSec":4.800857953011071,"critPercent":30.866023963193573,"avgHit":97124.91651831761,"totalDamageMean":5956119.880542234,"isSkipped":false},"lunar_inspiration":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":5.502889089622419,"executesPerFight":18.792792792792792,"intervalSec":15.567999539064346,"critPercent":30.93002281288132,"avgHit":111492.18202128242,"totalDamageMean":2095249.4747422985,"isSkipped":false},"rake":{"name":"rake","spellName":"Rake","portionPercent":12.860099553831153,"executesPerFight":27.725725725725727,"intervalSec":11.006612591182964,"critPercent":44.84754782108442,"avgHit":176606.3799943079,"totalDamageMean":4896540.053135476,"isSkipped":false},"rip":{"name":"rip","spellName":"Rip","portionPercent":13.985877022087273,"executesPerFight":16.12812812812813,"intervalSec":19.018545577130602,"critPercent":null,"avgHit":330179.9678564782,"totalDamageMean":5325184.826930507,"isSkipped":false},"shred":{"name":"shred","spellName":"Shred","portionPercent":9.197786089275018,"executesPerFight":103.68968968968969,"intervalSec":2.8018999167953638,"critPercent":41.99228705244227,"avgHit":48249.70595728308,"totalDamageMean":5002997.038329454,"isSkipped":false},"unseen_slash":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":10.961893211376688,"executesPerFight":76.55955955955956,"intervalSec":3.9143252780974085,"critPercent":30.861396852713785,"avgHit":57686.951528471094,"totalDamageMean":4416487.601353408,"isSkipped":false}}},"assistedHighlight":{"dps":113468.78801631856,"fightLengthSec":300.0533943943944,"profileSource":"default","timeline":[0,40866.78425616759,281774.08886835125,342662.1889943887,319671.656142886,305528.01330388815,256960.18330589298,179107.51743890083,104119.1479651768,101769.27119131167,89948.94070693754,78491.24036593009,116044.1690581135,138670.98396301392,115326.69189119611,99209.07319595705,101975.73095150781,94698.01694646841,85116.23871740112,80313.95172077643,68469.5510615884,60511.68069065134,72281.00642560393,135598.30093159442,161368.51377734984,153129.5441258288,143743.40569196508,120182.09267911385,92842.73094670671,75709.5900942246,64459.68859458196,61467.03358567102,71363.32700004145,88132.53213653609,101166.65701666454,98007.67328239452,102430.27730009655,105115.04147600377,92998.98620891623,84554.98222503407,81877.46087885908,65647.12673232071,81606.84715020032,135962.40032595658,195771.01917577785,217959.1901640579,201091.94694473335,159256.67569440033,140017.69003357776,102740.04530710497,75056.08153505516,68233.01498007623,67200.33533959824,76975.49919572272,91963.68861347734,98222.2311128058,92138.77480605248,90560.97436695994,97537.4073000732,97730.2370211842,89182.39413217695,79961.07499100691,68222.13790880964,71565.62505613908,93924.64199152183,133275.7315204761,140074.55840859952,134641.7521861013,126018.91074161805,116122.2427824002,99237.73008668075,81189.70460218257,74086.97007255278,71629.00383638595,79888.56297432988,89158.94958089096,94223.61541998337,91813.2278946824,92939.18932423921,93770.56150547005,93857.68832223924,85037.62770767465,94885.32865578104,108411.96249128436,123521.10843752604,151502.42194051854,191589.45690193027,171344.90887729393,153707.45731853787,128330.10409998782,108366.03673964327,92566.9296113467,84069.10466710021,74646.61253502285,76309.87389379885,86087.44416460114,90138.63771490272,91515.28021852332,90922.15698614677,90966.10404035292,91882.63818808939,107209.7278794625,105391.81388855094,97346.8642079942,94521.58087090691,104820.66956347847,133062.3564575946,155484.9035866743,167454.5264671356,162301.57541379114,148073.66174227907,106431.46830664949,98443.46702743023,84671.12284974226,83976.38221623545,85681.3570863713,81807.4200006619,83322.30328831883,86167.47986446178,83783.34362088334],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.254,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.254,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":1.254,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":2.257,"name":"berserk_cat","spellName":"Berserk","target":"none"},{"timeSec":2.257,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":3.0100000000000002,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":3.7640000000000002,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":3.7640000000000002,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":4.7700000000000005,"name":"convoke_the_spirits","spellName":"Convoke the Spirits","target":"none"},{"timeSec":8.066,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":9.07,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":10.075000000000001,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":10.83,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":11.835,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":12.84,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":13.844,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":14.85,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":15.854000000000001,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":16.609,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":18.489,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":19.492,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":20.247,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":21.252,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":22.944,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":23.949,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":24.703,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":25.708000000000002,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":26.464000000000002,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":27.468,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":28.473,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":29.479,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":31.484,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":32.486000000000004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":33.241,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":34.244,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":34.244,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":35.25,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":36.004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":36.759,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":37.513,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":38.374,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":39.377,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":40.835,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":41.84,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":44.468,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":45.471000000000004,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":46.476,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":47.480000000000004,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":48.483000000000004,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":49.488,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":50.242000000000004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":52.967,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":53.971000000000004,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":54.976,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":57.033,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":58.036,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":59.042,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"}],"abilitiesByKey":{"bloodseeker_vines":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":7.031757490203673,"executesPerFight":71.45945945945945,"intervalSec":4.175519429443516,"critPercent":null,"avgHit":33484.54859362165,"totalDamageMean":2392787.7427442065,"isSkipped":false},"cat_melee":{"name":"cat_melee","spellName":"","portionPercent":7.943081233832572,"executesPerFight":462.4884884884885,"intervalSec":0.7743138445340955,"critPercent":30.427612432579252,"avgHit":8348.92053538937,"totalDamageMean":3861279.6389227323,"isSkipped":false},"feral_frenzy":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.483467340146786,"executesPerFight":9.423423423423424,"intervalSec":32.03794351669941,"critPercent":30.633131330253843,"avgHit":316366.79470695107,"totalDamageMean":2981258.263634872,"isSkipped":false},"ferocious_bite":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":12.523145140367827,"executesPerFight":63.767767767767765,"intervalSec":4.609115930599351,"critPercent":30.551690715525194,"avgHit":95467.25829555426,"totalDamageMean":6087733.956416405,"isSkipped":false},"lunar_inspiration":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":8.451630993338796,"executesPerFight":83.23923923923924,"intervalSec":3.5748381769813604,"critPercent":30.206511583335327,"avgHit":34550.37103220172,"totalDamageMean":2875946.6001539202,"isSkipped":false},"rake":{"name":"rake","spellName":"Rake","portionPercent":9.152257373277058,"executesPerFight":17.553553553553552,"intervalSec":17.462201754385976,"critPercent":45.46952224052718,"avgHit":177420.36436621324,"totalDamageMean":3114357.8673933083,"isSkipped":false},"rip":{"name":"rip","spellName":"Rip","portionPercent":14.37869638485931,"executesPerFight":14.824824824824825,"intervalSec":20.684421398685004,"critPercent":null,"avgHit":330042.7780098279,"totalDamageMean":4892826.368694245,"isSkipped":false},"shred":{"name":"shred","spellName":"Shred","portionPercent":5.716827528631203,"executesPerFight":48.61961961961962,"intervalSec":5.7771914708441905,"critPercent":51.84942179939309,"avgHit":57159.15293991475,"totalDamageMean":2779056.2737183175,"isSkipped":false},"unseen_slash":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":12.102221288752336,"executesPerFight":76.83583583583584,"intervalSec":3.808118453865281,"critPercent":30.179805643610663,"avgHit":56730.30041390663,"totalDamageMean":4358920.04952058,"isSkipped":false}}},"oneButton":{"dps":104654.93415551256,"fightLengthSec":300.0530300300302,"profileSource":"default","timeline":[0,40400.240614525064,184040.34345044853,291925.09000257985,243546.4221404536,274703.4199355081,272458.873146735,219285.58450938514,167715.74035099652,98412.52237681106,87726.37011600619,77067.67327490091,94846.44589422946,121344.3747971063,120712.70850394631,93861.41090537002,86509.01997303951,91072.60890889633,89423.47977022178,79644.92004035684,68660.00222123966,60868.20110261358,62882.54297179812,90893.9080499066,127792.99948718604,140549.0924569267,128195.81354470433,116749.23421257662,98751.2065552431,83805.7509059422,68742.40089157465,59896.40022814968,66207.14431960265,75086.5104577938,90753.80183343051,98563.47197275367,95081.66679377317,90708.52687252821,87427.14063531792,82838.89863187465,80028.3053835312,71698.87202978978,85692.65716779369,109233.39454461237,141431.61093339315,179480.65758162673,182678.99046572187,145003.01280530432,134297.04978150706,110176.27673671098,83771.9785452548,68762.21649011428,65460.73859271056,68147.77243500177,82554.15918614666,90465.09438788253,92149.98620248194,85643.2958941804,90139.36805587029,90728.39408544885,89834.58189424426,79769.7352635953,72061.5427976152,67552.19374053279,72779.2774674002,92430.09039302694,114172.69199656569,122846.3601502795,120720.65953409139,112569.52261031418,102331.98434465342,86519.92743071288,75542.77410302187,68462.7716288397,69880.21225777986,78309.01580472755,85899.36047414031,88440.71750665773,87610.77192287482,90565.1201038669,89748.99928752771,85499.98130798279,97881.89881167778,102189.6305051224,107381.39038602669,114567.48319654197,141304.40360995088,145671.9169660755,147491.70023966252,125459.37765585854,113582.24773152324,95046.77463454801,83873.77570654788,75142.89115181543,73092.2641624681,69641.85777117898,79074.61610011237,84199.72105171335,89278.4488987741,89821.05618705429,91792.87093609481,106492.04206159587,104853.9813141142,98857.79904511664,94127.91706572546,89783.8840373719,98132.17797838023,112981.24242985515,124512.71674133472,142875.84339005654,141619.1834399547,111102.56070831485,97306.88010129875,89770.66683706702,75731.06951246985,73982.48548964474,71826.38230820704,80037.0787360625,67903.16555527663,78629.41077399094],"sampleActions":[{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.254,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.254,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":1.254,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":2.508,"name":"berserk_cat","spellName":"Berserk","target":"none"},{"timeSec":2.508,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":3.45,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":4.391,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":4.391,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":5.6450000000000005,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":6.586,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":7.84,"name":"convoke_the_spirits","spellName":"Convoke the Spirits","target":"none"},{"timeSec":10.075000000000001,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":11.329,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":12.27,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":13.523,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":14.777000000000001,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":16.031,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":16.973,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":18.228,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":19.483,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":20.736,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":21.677,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":22.617,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":23.650000000000002,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":24.905,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":25.847,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":27.101,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":29.416,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":30.67,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":32.856,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":34.109,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":35.050000000000004,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":36.304,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":37.245,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":38.185,"name":"tigers_fury","spellName":"Tiger\u0027s Fury","target":"none"},{"timeSec":38.185,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":39.441,"name":"rake","spellName":"Rake","target":"Fluffy_Pillow"},{"timeSec":40.696,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":41.638,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":42.892,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":43.833,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":44.774,"name":"shred","spellName":"Shred","target":"Fluffy_Pillow"},{"timeSec":46.028,"name":"rip","spellName":"Rip","target":"Fluffy_Pillow"},{"timeSec":47.281,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":48.303000000000004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":50.34,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":51.594,"name":"feral_frenzy","spellName":"Feral Frenzy","target":"Fluffy_Pillow"},{"timeSec":54.177,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":55.431000000000004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"},{"timeSec":58.427,"name":"ferocious_bite","spellName":"Ferocious Bite","target":"Fluffy_Pillow"},{"timeSec":59.681000000000004,"name":"lunar_inspiration","spellName":"Lunar Inspiration","target":"Fluffy_Pillow"}],"abilitiesByKey":{"bloodseeker_vines":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":7.61587606274963,"executesPerFight":71.37437437437437,"intervalSec":4.167826558891461,"critPercent":null,"avgHit":33492.21523633118,"totalDamageMean":2390485.9089050274,"isSkipped":false},"cat_melee":{"name":"cat_melee","spellName":"","portionPercent":8.8169701626453,"executesPerFight":473.28628628628627,"intervalSec":0.756767392854156,"critPercent":30.452285654097324,"avgHit":8353.408703233485,"totalDamageMean":3953553.7829849184,"isSkipped":false},"feral_frenzy":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.525533973298922,"executesPerFight":9.28028028028028,"intervalSec":32.445458190709,"critPercent":30.866429878376923,"avgHit":298065.46352014126,"totalDamageMean":2766131.043338568,"isSkipped":false},"ferocious_bite":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":12.574330917877246,"executesPerFight":59.07807807807808,"intervalSec":4.991653226935503,"critPercent":30.799216983360893,"avgHit":95439.20369402501,"totalDamageMean":5638364.727545207,"isSkipped":false},"lunar_inspiration":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":9.172190284860335,"executesPerFight":89.33433433433433,"intervalSec":3.342010277445019,"critPercent":30.5789920092853,"avgHit":32227.080982419648,"totalDamageMean":2878984.8271031445,"isSkipped":false},"rake":{"name":"rake","spellName":"Rake","portionPercent":10.419808119436098,"executesPerFight":18.35835835835836,"intervalSec":16.54588494749128,"critPercent":51.26812578069841,"avgHit":178152.61377247653,"totalDamageMean":3270589.5261133327,"isSkipped":false},"rip":{"name":"rip","spellName":"Rip","portionPercent":15.292642773284657,"executesPerFight":14.61061061061061,"intervalSec":20.985528972520857,"critPercent":null,"avgHit":328534.1331746459,"totalDamageMean":4800084.292109241,"isSkipped":false},"shred":{"name":"shred","spellName":"Shred","portionPercent":3.8389447067897478,"executesPerFight":30.644644644644643,"intervalSec":8.8486616285403,"critPercent":54.05845212523596,"avgHit":56172.73209801058,"totalDamageMean":1721393.413862358,"isSkipped":false},"unseen_slash":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":11.878842235643743,"executesPerFight":70.12512512512512,"intervalSec":4.178085672428967,"critPercent":30.530797049861892,"avgHit":56293.52116195244,"totalDamageMean":3947590.215215794,"isSkipped":false}}},"abilities":[{"key":"rip","displayName":"Rip","simc":{"name":"rip","spellName":"Rip","portionPercent":13.985877022087273,"executesPerFight":16.12812812812813,"intervalSec":19.018545577130602,"critPercent":null,"avgHit":330179.9678564782,"totalDamageMean":5325184.826930507,"isSkipped":false},"assistedHighlight":{"name":"rip","spellName":"Rip","portionPercent":14.37869638485931,"executesPerFight":14.824824824824825,"intervalSec":20.684421398685004,"critPercent":null,"avgHit":330042.7780098279,"totalDamageMean":4892826.368694245,"isSkipped":false},"oneButton":{"name":"rip","spellName":"Rip","portionPercent":15.292642773284657,"executesPerFight":14.61061061061061,"intervalSec":20.985528972520857,"critPercent":null,"avgHit":328534.1331746459,"totalDamageMean":4800084.292109241,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":13.985877022087273},{"key":"rake","displayName":"Rake","simc":{"name":"rake","spellName":"Rake","portionPercent":12.860099553831153,"executesPerFight":27.725725725725727,"intervalSec":11.006612591182964,"critPercent":44.84754782108442,"avgHit":176606.3799943079,"totalDamageMean":4896540.053135476,"isSkipped":false},"assistedHighlight":{"name":"rake","spellName":"Rake","portionPercent":9.152257373277058,"executesPerFight":17.553553553553552,"intervalSec":17.462201754385976,"critPercent":45.46952224052718,"avgHit":177420.36436621324,"totalDamageMean":3114357.8673933083,"isSkipped":false},"oneButton":{"name":"rake","spellName":"Rake","portionPercent":10.419808119436098,"executesPerFight":18.35835835835836,"intervalSec":16.54588494749128,"critPercent":51.26812578069841,"avgHit":178152.61377247653,"totalDamageMean":3270589.5261133327,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":12.860099553831153},{"key":"unseen_slash","displayName":"Unseen Slash","simc":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":10.961893211376688,"executesPerFight":76.55955955955956,"intervalSec":3.9143252780974085,"critPercent":30.861396852713785,"avgHit":57686.951528471094,"totalDamageMean":4416487.601353408,"isSkipped":false},"assistedHighlight":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":12.102221288752336,"executesPerFight":76.83583583583584,"intervalSec":3.808118453865281,"critPercent":30.179805643610663,"avgHit":56730.30041390663,"totalDamageMean":4358920.04952058,"isSkipped":false},"oneButton":{"name":"unseen_slash","spellName":"Unseen Slash","portionPercent":11.878842235643743,"executesPerFight":70.12512512512512,"intervalSec":4.178085672428967,"critPercent":30.530797049861892,"avgHit":56293.52116195244,"totalDamageMean":3947590.215215794,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.961893211376688},{"key":"ferocious_bite","displayName":"Ferocious Bite","simc":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":10.950059766894912,"executesPerFight":61.32432432432432,"intervalSec":4.800857953011071,"critPercent":30.866023963193573,"avgHit":97124.91651831761,"totalDamageMean":5956119.880542234,"isSkipped":false},"assistedHighlight":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":12.523145140367827,"executesPerFight":63.767767767767765,"intervalSec":4.609115930599351,"critPercent":30.551690715525194,"avgHit":95467.25829555426,"totalDamageMean":6087733.956416405,"isSkipped":false},"oneButton":{"name":"ferocious_bite","spellName":"Ferocious Bite","portionPercent":12.574330917877246,"executesPerFight":59.07807807807808,"intervalSec":4.991653226935503,"critPercent":30.799216983360893,"avgHit":95439.20369402501,"totalDamageMean":5638364.727545207,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.950059766894912},{"key":"shred","displayName":"Shred","simc":{"name":"shred","spellName":"Shred","portionPercent":9.197786089275018,"executesPerFight":103.68968968968969,"intervalSec":2.8018999167953638,"critPercent":41.99228705244227,"avgHit":48249.70595728308,"totalDamageMean":5002997.038329454,"isSkipped":false},"assistedHighlight":{"name":"shred","spellName":"Shred","portionPercent":5.716827528631203,"executesPerFight":48.61961961961962,"intervalSec":5.7771914708441905,"critPercent":51.84942179939309,"avgHit":57159.15293991475,"totalDamageMean":2779056.2737183175,"isSkipped":false},"oneButton":{"name":"shred","spellName":"Shred","portionPercent":3.8389447067897478,"executesPerFight":30.644644644644643,"intervalSec":8.8486616285403,"critPercent":54.05845212523596,"avgHit":56172.73209801058,"totalDamageMean":1721393.413862358,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.197786089275018},{"key":"feral_frenzy","displayName":"Feral Frenzy","simc":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.304397076398951,"executesPerFight":10.076076076076076,"intervalSec":31.18425955915428,"critPercent":30.566741385808655,"avgHit":324591.0928446006,"totalDamageMean":3270604.5451188684,"isSkipped":false},"assistedHighlight":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.483467340146786,"executesPerFight":9.423423423423424,"intervalSec":32.03794351669941,"critPercent":30.633131330253843,"avgHit":316366.79470695107,"totalDamageMean":2981258.263634872,"isSkipped":false},"oneButton":{"name":"feral_frenzy","spellName":"Feral Frenzy","portionPercent":8.525533973298922,"executesPerFight":9.28028028028028,"intervalSec":32.445458190709,"critPercent":30.866429878376923,"avgHit":298065.46352014126,"totalDamageMean":2766131.043338568,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":8.304397076398951},{"key":"cat_melee","displayName":"","simc":{"name":"cat_melee","spellName":"","portionPercent":7.214071752491091,"executesPerFight":464.5315315315315,"intervalSec":0.7735940548026711,"critPercent":30.474536763774747,"avgHit":8447.188777069046,"totalDamageMean":3923985.539747849,"isSkipped":false},"assistedHighlight":{"name":"cat_melee","spellName":"","portionPercent":7.943081233832572,"executesPerFight":462.4884884884885,"intervalSec":0.7743138445340955,"critPercent":30.427612432579252,"avgHit":8348.92053538937,"totalDamageMean":3861279.6389227323,"isSkipped":false},"oneButton":{"name":"cat_melee","spellName":"","portionPercent":8.8169701626453,"executesPerFight":473.28628628628627,"intervalSec":0.756767392854156,"critPercent":30.452285654097324,"avgHit":8353.408703233485,"totalDamageMean":3953553.7829849184,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.214071752491091},{"key":"bloodseeker_vines","displayName":"Bloodseeker Vines","simc":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":6.905642056552481,"executesPerFight":78.31131131131131,"intervalSec":3.8500240809118456,"critPercent":null,"avgHit":33575.65920503127,"totalDamageMean":2629353.900487699,"isSkipped":false},"assistedHighlight":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":7.031757490203673,"executesPerFight":71.45945945945945,"intervalSec":4.175519429443516,"critPercent":null,"avgHit":33484.54859362165,"totalDamageMean":2392787.7427442065,"isSkipped":false},"oneButton":{"name":"bloodseeker_vines","spellName":"Bloodseeker Vines","portionPercent":7.61587606274963,"executesPerFight":71.37437437437437,"intervalSec":4.167826558891461,"critPercent":null,"avgHit":33492.21523633118,"totalDamageMean":2390485.9089050274,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.905642056552481},{"key":"lunar_inspiration","displayName":"Lunar Inspiration","simc":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":5.502889089622419,"executesPerFight":18.792792792792792,"intervalSec":15.567999539064346,"critPercent":30.93002281288132,"avgHit":111492.18202128242,"totalDamageMean":2095249.4747422985,"isSkipped":false},"assistedHighlight":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":8.451630993338796,"executesPerFight":83.23923923923924,"intervalSec":3.5748381769813604,"critPercent":30.206511583335327,"avgHit":34550.37103220172,"totalDamageMean":2875946.6001539202,"isSkipped":false},"oneButton":{"name":"lunar_inspiration","spellName":"Lunar Inspiration","portionPercent":9.172190284860335,"executesPerFight":89.33433433433433,"intervalSec":3.342010277445019,"critPercent":30.5789920092853,"avgHit":32227.080982419648,"totalDamageMean":2878984.8271031445,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.502889089622419}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 127018.66718596117,
+    ahDps: 113468.78801631856,
+    obDps: 104654.93415551256,
+    likelyBroken: false,
+    deltaPct: -10.667628207596415,
+    obDeltaPct: -17.60665068049177,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

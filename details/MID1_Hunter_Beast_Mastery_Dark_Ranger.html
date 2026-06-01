@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hunter Beast Mastery — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Hunter Beast Mastery <span style="color:#71717a;font-weight:500">· Dark Ranger</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Hunter_Beast_Mastery</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Hunter_Beast_Mastery_Dark_Ranger","class":"Hunter","spec":"Beast Mastery","heroTalent":"Dark Ranger","simcProfileName":"MID1_Hunter_Beast_Mastery","playerName":"MID1_Hunter_Beast_Mastery","talents":"C0PAAAAAAAAAAAAAAAAAAAAAAAMmxwCsBzwQDbAAYG2GzsNzwMmZYYmxYmxMzYGzwMzYGzgx0MAAAAAmBAAgxMzMgZ2AbwsA2GA","simc":{"dps":121556.74203594854,"fightLengthSec":300.05134834834826,"profileSource":"default","timeline":[57482.55464524037,203284.8576815631,164562.48778900213,330791.94279007637,142290.82001073787,168315.35130561414,77934.17547085845,150967.26153442974,57061.69981979122,89823.52870136275,56389.49074846459,179038.69863166744,197638.80820203462,235855.07028192925,138275.1983657833,106562.5593172243,52762.42494394187,65144.907376480165,37103.06736375525,66160.68155734602,63076.524801657746,182914.1848841769,173186.35823671904,237558.32213703886,159800.91921807878,139514.83599744967,76109.2040166818,61369.06917911778,56512.59266629772,45670.826726866915,54996.357791320515,102940.11016771289,252809.74623299058,154864.3094154648,157853.3410264356,114040.8685256264,88785.95581891981,48797.076253438885,44722.89865009762,42506.8153673979,50000.17484385162,47122.1452649826,270655.9039002938,200939.7472197643,186859.78427583256,132636.2120522249,109278.58236693172,61017.89395654314,60990.28375531718,63137.39601763014,52749.84439328455,72736.0229676637,174134.2998391096,180720.5358455572,170806.7683093084,150318.55880301286,125381.97970484926,62518.649405338765,54109.424273898905,51493.824954487405,46814.65346237291,69301.9043543453,172183.11641431012,191069.3785383575,181223.27731431424,142171.03128396193,120797.56730615819,65543.06176894323,64645.64673149974,69906.24859165208,53838.82451927134,59175.4133381308,156018.2427175606,180392.54867340357,180410.33801973012,154376.8037177135,111286.0742111741,61948.01145647044,55422.37222483291,61261.860125929146,56455.0529932025,58608.7438882675,135406.1444959633,245405.6916805894,211729.03905585414,195264.29943999532,142289.35606061935,90662.26966917142,57657.813787782936,54757.82397585533,44100.7804604919,62558.85175030983,139098.52674032951,237444.22826119498,185149.9310690556,160456.30928886202,109163.84297924873,88886.53299546824,62063.867159556976,65380.976302537994,48362.551732772146,65808.32008700285,143766.17373458896,241281.60475595365,227784.94059894996,194901.23365260495,150715.217618645,103007.52160766331,76602.40535802634,70347.7483290125,68672.26168655316,78974.9971120558,154328.19651188835,210775.15654011432,216665.07312862904,184717.9221326106,148332.37551641336,145520.42028640598,82052.0325154852,43517.49856542318],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"blood_fury","spellName":"Blood Fury","target":"none"},{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":0.9550000000000001,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":1.9100000000000001,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":2.867,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":3.823,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":4.779,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":5.735,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":6.691,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":7.647,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":8.604000000000001,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":9.559000000000001,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":10.516,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":11.473,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":12.429,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":13.385,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":14.343,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":15.299,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":16.257,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":17.213,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":18.17,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":19.236,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":20.192,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":21.149,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":22.106,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":23.062,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":24.017,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":24.973,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":25.929000000000002,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":26.887,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":27.842000000000002,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":28.799,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":29.757,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":30.714000000000002,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":31.671,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":32.866,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":33.823,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":34.751,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":35.677,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":36.604,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":37.532000000000004,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":38.458,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":39.386,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":40.315,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":41.521,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":42.728,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":43.935,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":45.141,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":46.347,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":47.556000000000004,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":48.763,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":50.003,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":51.245000000000005,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":52.486000000000004,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":53.727000000000004,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":54.919000000000004,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":56.114000000000004,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":57.309000000000005,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":58.505,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":59.7,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_shot":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.208355522528815,"executesPerFight":126.56756756756756,"intervalSec":2.3790647091892345,"critPercent":26.763709849304146,"avgHit":4975.631125349826,"totalDamageMean":629753.5286490064,"isSkipped":false},"barbed_shot":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":22.3719748586223,"executesPerFight":53.067067067067065,"intervalSec":5.7867952199008,"critPercent":null,"avgHit":153798.8738408492,"totalDamageMean":8161655.152951731,"isSkipped":false},"boar_charge":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.1294399217828444,"executesPerFight":0,"intervalSec":null,"critPercent":27.204984119227948,"avgHit":0,"totalDamageMean":1109791.182964394,"isSkipped":true},"cobra_shot":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":12.22026751313383,"executesPerFight":95.11511511511512,"intervalSec":3.096017409317266,"critPercent":56.89473905546911,"avgHit":66958.7062232576,"totalDamageMean":6368785.050384322,"isSkipped":false},"stampede_tick":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.1091585115775473,"executesPerFight":0,"intervalSec":null,"critPercent":26.632470813730613,"avgHit":0,"totalDamageMean":1620386.9699684046,"isSkipped":true}}},"assistedHighlight":{"dps":119181.81463156713,"fightLengthSec":300.0536336336337,"profileSource":"default","timeline":[5511.438752492599,162907.18242145522,248748.99995277476,178291.8141537765,233869.02417496624,173169.99894132675,76177.18443591222,168894.362894456,106854.39628910611,86182.59518069822,77259.05009775727,171357.02509414696,254172.38298291352,200309.45489609952,166584.85970485365,64541.59808843447,65851.63924598813,67079.08887609426,56491.41368745265,77403.56908286424,73210.72854482035,150570.51044175462,162735.4815138302,170551.45225171276,142324.59421643932,111348.42031182355,66754.60688073256,54157.996365878964,58701.4306335116,51153.86773893093,49912.90932124144,176364.22526001817,226184.25076155565,152350.2209849474,159170.19428955496,110960.35321908417,69430.23014316932,58203.00007947693,49415.12094226347,51663.14665400467,49472.528163425304,91688.32834254082,349751.0861756521,200722.65654419796,200849.1306981177,127894.28471793298,106591.0794142446,77541.73174905346,77102.40445144231,58189.085320599406,60009.050424555186,52810.29816134569,171247.2967549411,195070.29349264657,191376.10072473602,125576.57527262036,72092.02772832641,53937.49754404139,52984.525841037255,58306.45057431225,64927.254971486196,77706.90522863479,157094.1910542608,169498.54678246676,151952.2856356251,153400.7908213396,122076.550764011,91671.07673158379,55057.53713972388,51967.98652837632,44606.91894324409,51697.16946032632,151861.58346145772,185049.4169496472,169047.43753548042,166006.877918926,96845.0119831852,62565.39683072566,61093.26819227472,77559.10787872343,70389.82577766564,58429.36351107701,189114.26329041098,202367.45921937766,225164.68250613828,185778.62325112187,155337.17212600465,79516.52645773688,71899.4037791287,49203.62366580539,56897.67985290159,54212.72503019918,161394.35415842006,215526.37016001844,179596.97657859535,162244.00519090446,132721.0148316313,72696.70456960589,49337.45850371908,48932.26448973872,45193.38549339907,61384.96779487627,142872.45396859682,305647.61594988493,227555.96422663634,201190.9830465686,151091.72380820324,113489.23741272728,87067.39858962489,84985.6399716424,69732.97946617087,65533.37676078516,95313.96319837934,179702.85761765586,170644.8960767978,183469.9279417913,133749.0618598086,62017.851872072555,59447.41394550691,54816.388570922376],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.27,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.27,"name":"blood_fury","spellName":"Blood Fury","target":"none"},{"timeSec":1.27,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":2.225,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":3.181,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":4.1370000000000005,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":5.095,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":6.051,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":7.008,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":7.965,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":8.922,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":9.879,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":10.836,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":11.793000000000001,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":12.75,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":13.705,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":14.661,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":15.618,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":16.573,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":17.749,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":18.707,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":19.664,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":20.62,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":21.577,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":22.535,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":23.490000000000002,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":24.447,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":25.403000000000002,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":26.36,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":27.318,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":28.274,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":29.23,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":30.186,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":31.143,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":32.226,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":33.184,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":34.104,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":35.023,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":35.941,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":36.862,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":37.781,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":38.702,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":39.621,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":40.542,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":41.735,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":42.928000000000004,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":44.124,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":45.319,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":46.56,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":47.801,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":49.042,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":50.284,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":51.526,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":52.768,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":54.009,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":55.25,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":56.491,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":57.732,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":58.975,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_shot":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.2259008196984384,"executesPerFight":125.95295295295296,"intervalSec":2.3812433054326965,"critPercent":26.59504407645738,"avgHit":4974.053318883163,"totalDamageMean":626496.7036587705,"isSkipped":false},"barbed_shot":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":20.888861139099728,"executesPerFight":50.53953953953954,"intervalSec":5.904066475933994,"critPercent":null,"avgHit":147858.0509085371,"totalDamageMean":7472677.81013126,"isSkipped":false},"boar_charge":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.1667499924094655,"executesPerFight":0,"intervalSec":null,"critPercent":26.813956296028007,"avgHit":0,"totalDamageMean":1107317.7422551373,"isSkipped":true},"cobra_shot":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":12.56957554490512,"executesPerFight":94.11011011011011,"intervalSec":3.113005909477542,"critPercent":56.65841294806534,"avgHit":68257.09262229505,"totalDamageMean":6423682.502480172,"isSkipped":false},"stampede_tick":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.1710251888652037,"executesPerFight":0,"intervalSec":null,"critPercent":26.463104325699742,"avgHit":0,"totalDamageMean":1620552.654929849,"isSkipped":true}}},"oneButton":{"dps":104999.32620915755,"fightLengthSec":299.9306336336336,"profileSource":"default","timeline":[5399.970528859131,141600.67678218993,155399.45530537507,234089.71882724992,112648.86687199026,123082.59896825021,95222.12754778293,64094.516100279754,202971.85767241486,54461.964077508106,96262.421940016,135897.2499690504,130711.69790424051,149974.6521031403,138477.8252286813,80152.86481532276,60256.855957924694,48592.75898025205,55387.29404343077,45567.35894730049,55951.977466072065,153687.57395931153,154844.7859548435,156369.8319533618,159310.8525625701,69486.60193566036,52402.00608659879,59396.63217751117,40178.63140868441,41830.796680047104,29549.66929079674,155921.6231147214,195004.1051910569,146655.93824945146,139982.07963577996,86350.40210179,55016.81309583335,59102.19445196624,61163.00924147822,55386.42343188133,45847.3780288536,51267.676550101925,165730.31492464594,195655.24847073058,247171.62388242598,185074.55675330595,91915.99554319451,55735.192887462406,36230.192466488574,42163.44014180263,35459.426895321565,55211.04096197342,141922.16272883504,171620.7443388295,162299.62826762922,134815.59896907525,76491.54863052245,52828.27415416619,64943.02563341657,66757.75053995424,49804.601703606044,50427.56363666042,128191.6560754388,141874.42198259852,151607.6245650098,126070.03737579925,103735.5249999539,58151.82717725291,50152.305486858495,42257.72491447223,47380.22631243008,47677.59857334161,136630.3050071153,194298.66026304453,148982.00681987073,148417.66067807132,120075.3755386298,64591.53465485789,42313.308999517845,38246.170057947194,41422.86197254314,41364.11418120371,85771.21136908606,273223.0402062556,183567.50455310717,165500.71376677876,146235.0026224774,80374.44573046287,54171.2223281079,64694.04798794696,68125.13730199338,59318.00874876351,56207.74098352151,132682.10816734302,157614.37410649587,159983.2056394969,156368.46183657425,95461.73274834202,56756.43690658811,40378.38736982085,43624.50315138958,51408.13517156645,59102.15689158809,167679.95118155226,201783.1809473706,207465.61848437486,175523.85957927597,119061.01187533174,77685.29935590205,84515.95845043554,69355.44850795432,57610.36088143205,52085.16500451762,106557.13683784098,135844.658446557,151123.7752270549,126342.64261545104,111617.06671161858,59193.67978883224,41674.378131597325],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.27,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":1.27,"name":"blood_fury","spellName":"Blood Fury","target":"none"},{"timeSec":1.27,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":2.464,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":3.658,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":4.853,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":6.046,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":7.242,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":8.436,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":9.63,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":10.825000000000001,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":12.02,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":13.214,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":14.407,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":15.602,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":16.763,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":17.923000000000002,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":19.082,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":20.242,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":21.400000000000002,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":22.56,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":23.719,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":24.88,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":26.04,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":27.199,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":28.359,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":29.533,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":30.694,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":31.853,"name":"bestial_wrath","spellName":"Bestial Wrath","target":"Fluffy_Pillow"},{"timeSec":33.012,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":34.171,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":35.331,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":36.491,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":37.685,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":38.88,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":40.222,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":41.773,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":43.323,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":44.873,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":46.423,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":47.975,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":49.524,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":51.075,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":52.625,"name":"barbed_shot","spellName":"Barbed Shot","target":"Fluffy_Pillow"},{"timeSec":54.176,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"},{"timeSec":55.727000000000004,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":57.278,"name":"cobra_shot","spellName":"Cobra Shot","target":"Fluffy_Pillow"},{"timeSec":58.829,"name":"kill_command","spellName":"Kill Command","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_shot":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.3884946081211336,"executesPerFight":125.7917917917918,"intervalSec":2.3825073725936656,"critPercent":26.85993407728049,"avgHit":4967.225187733328,"totalDamageMean":624836.1565982947,"isSkipped":false},"barbed_shot":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":19.227867646347157,"executesPerFight":43.14414414414414,"intervalSec":6.8951132125732295,"critPercent":null,"avgHit":140387.7651610891,"totalDamageMean":6056909.976184285,"isSkipped":false},"boar_charge":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.4115870130922388,"executesPerFight":0,"intervalSec":null,"critPercent":26.868919610855098,"avgHit":0,"totalDamageMean":1085237.7472332672,"isSkipped":true},"cobra_shot":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":9.715328490104929,"executesPerFight":62.167167167167165,"intervalSec":4.690856003925065,"critPercent":57.06772600800939,"avgHit":70326.39671289652,"totalDamageMean":4371992.860715153,"isSkipped":false},"stampede_tick":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.610313900606991,"executesPerFight":0,"intervalSec":null,"critPercent":26.69640502768744,"avgHit":0,"totalDamageMean":1624676.5731566076,"isSkipped":true}}},"abilities":[{"key":"barbed_shot","displayName":"Barbed Shot","simc":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":22.3719748586223,"executesPerFight":53.067067067067065,"intervalSec":5.7867952199008,"critPercent":null,"avgHit":153798.8738408492,"totalDamageMean":8161655.152951731,"isSkipped":false},"assistedHighlight":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":20.888861139099728,"executesPerFight":50.53953953953954,"intervalSec":5.904066475933994,"critPercent":null,"avgHit":147858.0509085371,"totalDamageMean":7472677.81013126,"isSkipped":false},"oneButton":{"name":"barbed_shot","spellName":"Barbed Shot","portionPercent":19.227867646347157,"executesPerFight":43.14414414414414,"intervalSec":6.8951132125732295,"critPercent":null,"avgHit":140387.7651610891,"totalDamageMean":6056909.976184285,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":22.3719748586223},{"key":"cobra_shot","displayName":"Cobra Shot","simc":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":12.22026751313383,"executesPerFight":95.11511511511512,"intervalSec":3.096017409317266,"critPercent":56.89473905546911,"avgHit":66958.7062232576,"totalDamageMean":6368785.050384322,"isSkipped":false},"assistedHighlight":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":12.56957554490512,"executesPerFight":94.11011011011011,"intervalSec":3.113005909477542,"critPercent":56.65841294806534,"avgHit":68257.09262229505,"totalDamageMean":6423682.502480172,"isSkipped":false},"oneButton":{"name":"cobra_shot","spellName":"Cobra Shot","portionPercent":9.715328490104929,"executesPerFight":62.167167167167165,"intervalSec":4.690856003925065,"critPercent":57.06772600800939,"avgHit":70326.39671289652,"totalDamageMean":4371992.860715153,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":12.22026751313383},{"key":"stampede_tick","displayName":"Stampede","simc":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.1091585115775473,"executesPerFight":0,"intervalSec":null,"critPercent":26.632470813730613,"avgHit":0,"totalDamageMean":1620386.9699684046,"isSkipped":true},"assistedHighlight":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.1710251888652037,"executesPerFight":0,"intervalSec":null,"critPercent":26.463104325699742,"avgHit":0,"totalDamageMean":1620552.654929849,"isSkipped":true},"oneButton":{"name":"stampede_tick","spellName":"Stampede","portionPercent":3.610313900606991,"executesPerFight":0,"intervalSec":null,"critPercent":26.69640502768744,"avgHit":0,"totalDamageMean":1624676.5731566076,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.1091585115775473},{"key":"boar_charge","displayName":"Boar Charge","simc":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.1294399217828444,"executesPerFight":0,"intervalSec":null,"critPercent":27.204984119227948,"avgHit":0,"totalDamageMean":1109791.182964394,"isSkipped":true},"assistedHighlight":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.1667499924094655,"executesPerFight":0,"intervalSec":null,"critPercent":26.813956296028007,"avgHit":0,"totalDamageMean":1107317.7422551373,"isSkipped":true},"oneButton":{"name":"boar_charge","spellName":"Boar Charge","portionPercent":2.4115870130922388,"executesPerFight":0,"intervalSec":null,"critPercent":26.868919610855098,"avgHit":0,"totalDamageMean":1085237.7472332672,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.1294399217828444},{"key":"auto_shot","displayName":"Auto Shot","simc":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.208355522528815,"executesPerFight":126.56756756756756,"intervalSec":2.3790647091892345,"critPercent":26.763709849304146,"avgHit":4975.631125349826,"totalDamageMean":629753.5286490064,"isSkipped":false},"assistedHighlight":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.2259008196984384,"executesPerFight":125.95295295295296,"intervalSec":2.3812433054326965,"critPercent":26.59504407645738,"avgHit":4974.053318883163,"totalDamageMean":626496.7036587705,"isSkipped":false},"oneButton":{"name":"auto_shot","spellName":"Auto Shot","portionPercent":1.3884946081211336,"executesPerFight":125.7917917917918,"intervalSec":2.3825073725936656,"critPercent":26.85993407728049,"avgHit":4967.225187733328,"totalDamageMean":624836.1565982947,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.208355522528815}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 121556.74203594854,
+    ahDps: 119181.81463156713,
+    obDps: 104999.32620915755,
+    likelyBroken: false,
+    deltaPct: -1.9537603300350541,
+    obDeltaPct: -13.621141492830066,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

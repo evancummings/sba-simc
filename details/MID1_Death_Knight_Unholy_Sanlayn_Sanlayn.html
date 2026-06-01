@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Death Knight Unholy — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Death Knight Unholy <span style="color:#71717a;font-weight:500">· San'layn</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Death_Knight_Unholy_San'layn</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Death_Knight_Unholy_Sanlayn_Sanlayn","class":"Death Knight","spec":"Unholy","heroTalent":"San\u0027layn","simcProfileName":"MID1_Death_Knight_Unholy_San\u0027layn","playerName":"MID1_Death_Knight_Unholy_San\u0027layn","talents":"CwPAAAAAAAAAAAAAAAAAAAAAAAwMjZMDDz2MzMTzmZmZMjBAAAAAAAgZGmZAw2MmZ2mZGjZMwAzYRjlFAbTsBgZAYMzMmBzMYGjB","simc":{"dps":113737.63551148049,"fightLengthSec":299.93219019019017,"profileSource":"default","timeline":[780.0076413336323,24705.134682713524,166234.5472873503,203006.09819883754,300392.0209650111,283785.4141436662,293105.5958335765,206980.96135583174,205405.49965781026,188534.8641206841,202132.8043080831,105946.0008223752,85922.95371907065,71904.83931134976,75047.21230618324,63176.70483531197,66462.68406815633,126403.43523673734,107140.61624538366,113903.76821984733,113224.5628152837,93123.60545174834,92268.01750788535,89972.27392703704,58589.81910152698,55077.19455702991,53170.85877979038,46588.862410125315,40505.811988544876,41425.105367361655,53399.43418462437,56417.95695199239,190929.94799539563,159498.0538857634,178068.98496753597,187780.2174366968,165942.57767620994,145180.99924787186,146487.7798694363,132966.0145354001,113389.2402278969,88309.51530360455,71722.61665338388,51137.27770147888,47795.47951126256,47701.63033253417,42912.77616036534,170585.1715693801,95196.88716502176,102948.50818532187,99883.40959710414,107409.65041818708,103486.4077568889,91435.27222096907,81055.10893022748,79603.0835914982,77883.55663402319,71274.37947772979,71936.94941653943,71350.26914593676,73643.40540431387,71878.89271563827,188037.6628107623,166253.25554528448,173964.64823150018,180094.2100767052,175056.97675395122,158716.54107562656,138815.96851634225,144149.25766504812,134417.93605771213,102789.73846631097,93654.12693835837,84902.18010949821,86264.19115466006,86669.40958447046,85208.68010455072,117470.94366485297,130456.05733088235,119844.87590864899,122319.07127347807,113171.55165963445,93208.01598399582,88616.21706957206,72971.50502625732,70689.03124670789,59913.57649203549,59778.1718315153,79290.94379519281,78322.60777414475,78842.03052792017,79966.83438424052,112168.82394319636,171266.7245214533,175925.31200142542,184156.56095379282,181903.636853873,169182.12425049293,179445.30131111253,161564.81894688468,145140.39771458445,96146.41174011701,78774.80740674278,77831.08846140624,64504.7748076565,60916.862420414356,59270.85158767616,95449.70984438836,148600.68033419663,144988.1095880064,144158.4668678291,156615.03600635464,125036.82140675095,149970.49075272155,130386.33117199873,116660.9357949891,116225.88571226285,102952.8278721654,105649.36777541539,86502.75994923527],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"outbreak","spellName":"Outbreak","target":"Fluffy_Pillow"},{"timeSec":1.038,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":2.044,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":3.048,"name":"army_of_the_dead","spellName":"Army of the Dead","target":"none"},{"timeSec":4.087,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":4.087,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":4.087,"name":"use_item_light_company_guidon","spellName":"use_item_light_company_guidon","target":"Fluffy_Pillow"},{"timeSec":4.087,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":4.087,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":4.88,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":5.646,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":6.399,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":7.154,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":7.909,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":8.662,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":9.417,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":10.173,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":10.926,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":11.68,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":12.433,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":13.188,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":13.943,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":14.698,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":15.453000000000001,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":16.206,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":16.96,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":17.713,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":18.717,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":19.472,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":20.329,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":21.198,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":22.066,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":22.936,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":23.807000000000002,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":24.675,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":25.678,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":26.549,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":27.42,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":28.29,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":29.179000000000002,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":30.085,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":30.971,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":31.924,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":32.876,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":33.828,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":34.76,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":35.766,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":36.702,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":37.636,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":38.569,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":39.572,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":40.505,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":41.717,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":42.908,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":44.12,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":45.332,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":46.335,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":47.571,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":48.808,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":50.045,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":50.045,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":51.218,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":52.349000000000004,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":53.621,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":54.871,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":55.875,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":57.104,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":58.313,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":59.498000000000005,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":2.8306774985333054,"executesPerFight":162.03203203203202,"intervalSec":2.2099498983175785,"critPercent":30.035011721850637,"avgHit":8509.152984388158,"totalDamageMean":1378755.348931843,"isSkipped":false},"death_coil":{"name":"death_coil","spellName":"Death Coil","portionPercent":4.931539280132919,"executesPerFight":46.0990990990991,"intervalSec":5.693082693011311,"critPercent":29.988965099422288,"avgHit":36474.12785750314,"totalDamageMean":1681424.4346562484,"isSkipped":false},"dread_plague":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":6.88014873980077,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2345809.1983115277,"totalDamageMean":2345809.1983115277,"isSkipped":false},"festering_scythe":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.44046105331853536,"executesPerFight":14.613613613613614,"intervalSec":20.84918981200724,"critPercent":30.083242358078603,"avgHit":10276.488731672953,"totalDamageMean":150176.63562932276,"isSkipped":false},"festering_strike":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.32785154114165577,"executesPerFight":14.887887887887889,"intervalSec":20.48861193586701,"critPercent":30.656396517079703,"avgHit":10726.078163832393,"totalDamageMean":159688.64917985906,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":162.03203203203202,"intervalSec":2.2099498983175785,"critPercent":0,"avgHit":2392.6905173225423,"totalDamageMean":387692.5065455455,"isSkipped":true},"infected_claws":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.654345947194372,"executesPerFight":464.7047047047047,"intervalSec":0.646577171462055,"critPercent":null,"avgHit":2681.1891101925307,"totalDamageMean":1245961.19370949,"isSkipped":false},"pestilence_runeforge":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":3.522778962413895,"executesPerFight":387.27527527527525,"intervalSec":0.7663966268672582,"critPercent":null,"avgHit":3101.419266726846,"totalDamageMean":1201103.0002656817,"isSkipped":false},"scourge_strike":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.469107308829804,"executesPerFight":134.47947947947947,"intervalSec":2.196616998202887,"critPercent":29.886134479457354,"avgHit":6260.064432577656,"totalDamageMean":841850.2064010461,"isSkipped":false},"soul_reaper":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.120460419764504,"executesPerFight":12.541541541541541,"intervalSec":24.960269217018222,"critPercent":30.127186009538953,"avgHit":57646.654340152156,"totalDamageMean":722977.9101379042,"isSkipped":false},"virulent_plague":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.1276896563708134,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":1066396.0101523811,"totalDamageMean":1066396.0101523811,"isSkipped":false}}},"assistedHighlight":{"dps":105015.61193029817,"fightLengthSec":299.9312382382383,"profileSource":"default","timeline":[559.7145648035582,237160.9740697398,141509.80284019743,226945.21607119864,259116.46743408914,245314.01249268567,242559.26512483414,179039.0171191311,195373.68118295813,148217.73698348325,135157.74601561128,64750.02238790087,73651.8603860196,60144.559202479766,75071.25643376373,69932.52477467956,99700.24168282696,94966.50426625174,97606.31107839828,101427.40891888473,83046.39121510233,81293.50569331767,77779.56565939035,73284.40839995455,75236.31446314232,71749.94577630237,68285.67640729713,58089.51773071094,62585.137429339295,57004.088026339145,54275.48020820799,100988.1969571296,121467.89655734661,144586.04225955575,158478.62607410678,150057.54626823447,124555.76728973523,129644.66460642399,117054.63279483841,104453.03621073361,86019.89561521205,65984.83446725903,61565.3218967978,66836.20730711169,64935.3897857543,62825.73532215589,90226.17992828449,111080.01330630314,103011.76563249226,93306.98074917839,82675.96817729755,81464.37305572904,84008.96772906397,71489.08345568087,67392.74213096825,70166.76376437997,70167.7617319186,68247.7075060408,65779.99508099361,65003.6236523541,56644.156602424984,102156.31638428071,143764.22691328864,157281.96545093053,172630.32761648743,168701.84707452933,140893.99908181367,146042.17680516822,136870.5729768373,127208.16284839241,106786.85187770726,78714.39887503328,71661.41634920327,72077.31727350666,70545.5563650652,73916.33593693213,88822.77861235855,115240.71385665734,105209.53585988874,103641.04802965942,97919.22537647212,95683.4316242053,101717.40968690491,90464.19835253652,81529.70548892183,78307.04674404144,73769.75727601172,74202.51891567295,77079.96417540085,74270.53058444691,70635.04206348068,78806.88862128177,139575.98007988968,150180.4823331607,159822.83568302848,162754.556896601,148944.92433297535,139874.38000888436,142522.56412338436,129072.94877445704,108483.59286328018,109876.24265665136,94962.49462866795,90337.95439890091,95413.68605301101,95442.26555625405,102000.76062888608,149221.59044647956,134015.7669494572,130219.90098848288,129788.76638392382,94750.98434360343,93805.61285183285,83932.68554938928,80297.27776350461,77657.50008437956,71205.7234270791,62701.19706321108,78993.23888835433,62674.29527099392],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":0,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":0,"name":"outbreak","spellName":"Outbreak","target":"Fluffy_Pillow"},{"timeSec":0.8260000000000001,"name":"army_of_the_dead","spellName":"Army of the Dead","target":"none"},{"timeSec":1.653,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":1.653,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":2.448,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":3.243,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":4.007,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":4.7620000000000005,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":5.516,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":6.5200000000000005,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":7.274,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":8.03,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":8.784,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":9.789,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":10.544,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":11.298,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":12.053,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":12.81,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":13.566,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":14.321,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":15.074,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":15.899000000000001,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":16.723,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":17.563,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":18.567,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":19.453,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":20.357,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":21.261,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":22.167,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":23.073,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":24.078,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":24.966,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":25.852,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":26.740000000000002,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":27.675,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":28.679000000000002,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":29.612000000000002,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":30.545,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":31.497,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":32.447,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":33.399,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":34.333,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":35.269,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":36.203,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":37.137,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":38.073,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":38.989000000000004,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":39.907000000000004,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":40.823,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":41.828,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":43.041000000000004,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":44.254,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":45.467,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":46.657000000000004,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":46.657000000000004,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":47.787,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":48.896,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":50.026,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":51.156,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":52.161,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":53.271,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":54.381,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":55.491,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":56.494,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":57.626,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":58.759,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":59.891,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":3.027965061853978,"executesPerFight":160.56256256256256,"intervalSec":2.2335689542989288,"critPercent":30.212065700003105,"avgHit":8484.77255504574,"totalDamageMean":1362336.8241986455,"isSkipped":false},"death_coil":{"name":"death_coil","spellName":"Death Coil","portionPercent":4.519481429992668,"executesPerFight":38.466466466466464,"intervalSec":6.812482796405889,"critPercent":30.397115658962985,"avgHit":37003.089705906634,"totalDamageMean":1423378.109327908,"isSkipped":false},"dread_plague":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":7.128760191332676,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2245151.652942541,"totalDamageMean":2245151.652942541,"isSkipped":false},"festering_scythe":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.4654835174540841,"executesPerFight":13.774774774774775,"intervalSec":21.682869593285982,"critPercent":30.87447517011727,"avgHit":10642.691585120832,"totalDamageMean":146600.6795824302,"isSkipped":false},"festering_strike":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.37131133213686573,"executesPerFight":15.49049049049049,"intervalSec":19.50168909710391,"critPercent":29.83845015125185,"avgHit":10784.665274511586,"totalDamageMean":167059.75487794474,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":160.56256256256256,"intervalSec":2.2335689542989288,"critPercent":0,"avgHit":2385.841389359234,"totalDamageMean":383076.8073433432,"isSkipped":true},"infected_claws":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.7463304633771566,"executesPerFight":445.8988988988989,"intervalSec":0.6767174488206634,"critPercent":null,"avgHit":2646.0701889475777,"totalDamageMean":1179879.7836609262,"isSkipped":false},"pestilence_runeforge":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":3.78510223010084,"executesPerFight":372.68868868868867,"intervalSec":0.8011063794292295,"critPercent":null,"avgHit":3198.6231629365057,"totalDamageMean":1192090.6722040721,"isSkipped":false},"scourge_strike":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.8542161004654454,"executesPerFight":132.7947947947948,"intervalSec":2.227477949903202,"critPercent":30.54250072526835,"avgHit":6769.202023023192,"totalDamageMean":898914.7935718746,"isSkipped":false},"soul_reaper":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.162107055040293,"executesPerFight":11.721721721721721,"intervalSec":26.96667395473724,"critPercent":29.820532448753934,"avgHit":58092.15174762733,"totalDamageMean":680940.0370017177,"isSkipped":false},"virulent_plague":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.2380424157215435,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":1019798.1257377971,"totalDamageMean":1019798.1257377971,"isSkipped":false}}},"oneButton":{"dps":89413.13546944848,"fightLengthSec":299.93267467467473,"profileSource":"default","timeline":[547.254277092658,54867.96303233733,175700.94578928483,169955.20676835586,213385.49218095664,184640.0320980416,197189.7971336427,187285.00192357384,182235.48323890596,136531.24466801633,119121.88509846653,68776.31196298232,67149.05007094955,60429.79714032902,49994.92282866802,58783.23573122069,98719.46411599538,102829.30847619502,87833.03319624292,85207.34128172098,73106.21574030437,71709.61623608641,58792.3512621712,53539.41636294839,55079.239982479114,58167.54519648176,62999.25100497981,62051.058009561406,61739.8773156723,55815.77677804233,49946.31627625844,73442.51600648175,109796.87734778936,109730.45116153975,128858.612015794,130566.9256708449,116682.02950074073,119238.24824619577,102532.28846416369,78859.69043928501,69175.71976407748,56751.56355705143,54618.25690677826,55234.39787845699,58521.32674649568,58068.47560778992,60607.72642322473,86633.79355576944,83772.78904654473,76374.64438201899,75146.02444915859,72029.92836206415,64886.792804002194,62275.17817424604,63460.90313045873,62238.92813823963,59807.09340165542,55930.02711214168,55996.55246140388,53656.10212793995,50508.16421564985,63380.665677067074,124924.43045503637,125761.44318127951,155127.29935682163,154854.76080791996,126814.0664680497,119748.35179339217,112051.98013189959,95079.27949484126,89621.93517208347,71682.75627113607,63574.09702686426,62845.153678761904,64486.35708927855,68056.19220640902,66379.03148340156,91908.93003147029,85915.0638059908,85054.6510087245,85853.94687477523,79058.35754161268,83614.96871157447,78415.9724006625,73281.03748663956,72581.70435255961,66622.30292655509,63105.71601467147,63498.07015564758,64777.667219305615,63603.33921676391,47000.73403285854,114183.03307345507,117704.45816674463,132795.8154249659,143307.08468520624,136564.10848261538,116610.03836655655,117170.70444040492,94980.98726234223,82246.85622799222,83156.9870982689,88764.4276572178,78586.08737125146,74436.91369067409,77512.08388702772,80710.1954996004,103440.76660464743,119165.82634490283,109866.62683137514,107433.26511512199,79638.91782523997,79293.53396817789,74913.82510669346,68651.64864838916,65701.53481951702,66635.3112084465,58837.743402978485,65733.88085245427,60234.84121594983],"sampleActions":[{"timeSec":0,"name":"auto_attack","spellName":"auto_attack","target":"Fluffy_Pillow"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"potion","spellName":"Potion of Recklessness","target":"none"},{"timeSec":0,"name":"berserking","spellName":"Berserking","target":"none"},{"timeSec":0,"name":"outbreak","spellName":"Outbreak","target":"Fluffy_Pillow"},{"timeSec":1.032,"name":"army_of_the_dead","spellName":"Army of the Dead","target":"none"},{"timeSec":2.066,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":2.066,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":3.0580000000000003,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":4.051,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":5.007,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":5.947,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":6.886,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":7.827,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":9.083,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":10.023,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":10.966000000000001,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":11.906,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":12.847,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":14.102,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":15.081,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":16.164,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":17.246,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":18.326,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":19.411,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":20.517,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":21.624,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":22.711000000000002,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":23.797,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":24.866,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":25.953,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":27.12,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":28.285,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":29.54,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":30.704,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":31.892,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":33.079,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":34.268,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":35.436,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":36.599000000000004,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":37.742,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":38.887,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":40.142,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":41.656,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":43.17,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":44.655,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":46.168,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":47.684,"name":"dark_transformation","spellName":"Dark Transformation","target":"none"},{"timeSec":47.684,"name":"soul_reaper","spellName":"Soul Reaper","target":"Fluffy_Pillow"},{"timeSec":49.095,"name":"putrefy","spellName":"Putrefy","target":"Fluffy_Pillow"},{"timeSec":50.535000000000004,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":52.122,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":53.685,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":55.221000000000004,"name":"death_coil","spellName":"Death Coil","target":"Fluffy_Pillow"},{"timeSec":56.755,"name":"festering_strike","spellName":"Festering Strike","target":"Fluffy_Pillow"},{"timeSec":58.008,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"},{"timeSec":59.544000000000004,"name":"scourge_strike","spellName":"Scourge Strike","target":"Fluffy_Pillow"}],"abilitiesByKey":{"auto_attack_mh":{"name":"auto_attack_mh","spellName":"","portionPercent":3.379488722447182,"executesPerFight":154.35735735735736,"intervalSec":2.323774064713368,"critPercent":30.08324883587256,"avgHit":8385.23920770983,"totalDamageMean":1294323.3649113902,"isSkipped":false},"death_coil":{"name":"death_coil","spellName":"Death Coil","portionPercent":3.6773610232977143,"executesPerFight":27.61161161161161,"intervalSec":9.312386197644976,"critPercent":30.25540984791012,"avgHit":35705.43613510371,"totalDamageMean":985884.6349856864,"isSkipped":false},"dread_plague":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":7.615489091986484,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2041679.7905139306,"totalDamageMean":2041679.7905139306,"isSkipped":false},"festering_scythe":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.3505392837979591,"executesPerFight":9.27027027027027,"intervalSec":32.30579228915664,"critPercent":30.569000752931053,"avgHit":10137.576128456229,"totalDamageMean":93978.07059622936,"isSkipped":false},"festering_strike":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.3115511801347626,"executesPerFight":11.164164164164164,"intervalSec":27.120378864970714,"critPercent":29.89819610644758,"avgHit":10687.96385055466,"totalDamageMean":119322.18300824438,"isSkipped":false},"frost_shield":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":154.35735735735736,"intervalSec":2.323774064713368,"critPercent":0,"avgHit":2357.86226960565,"totalDamageMean":363953.388948949,"isSkipped":true},"infected_claws":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.692385160385756,"executesPerFight":382.8538538538539,"intervalSec":0.7846400868428706,"critPercent":null,"avgHit":2585.614670966827,"totalDamageMean":989912.541360714,"isSkipped":false},"pestilence_runeforge":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":4.372513352465483,"executesPerFight":317.62362362362364,"intervalSec":0.9386033084985366,"critPercent":null,"avgHit":3690.6951814021863,"totalDamageMean":1172251.9772072094,"isSkipped":false},"scourge_strike":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.8512882198455127,"executesPerFight":105.72072072072072,"intervalSec":2.7898399010089165,"critPercent":30.047783087009666,"avgHit":7230.541684504471,"totalDamageMean":764418.0780870267,"isSkipped":false},"soul_reaper":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.4136721992054433,"executesPerFight":11.316316316316316,"intervalSec":27.759221582181283,"critPercent":30.358558717293633,"avgHit":57182.48692391869,"totalDamageMean":647095.1097846854,"isSkipped":false},"virulent_plague":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.4678246138110014,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":929708.8270423673,"totalDamageMean":929708.8270423673,"isSkipped":false}}},"abilities":[{"key":"dread_plague","displayName":"Dread Plague","simc":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":6.88014873980077,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2345809.1983115277,"totalDamageMean":2345809.1983115277,"isSkipped":false},"assistedHighlight":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":7.128760191332676,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2245151.652942541,"totalDamageMean":2245151.652942541,"isSkipped":false},"oneButton":{"name":"dread_plague","spellName":"Dread Plague","portionPercent":7.615489091986484,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":2041679.7905139306,"totalDamageMean":2041679.7905139306,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":6.88014873980077},{"key":"death_coil","displayName":"Death Coil","simc":{"name":"death_coil","spellName":"Death Coil","portionPercent":4.931539280132919,"executesPerFight":46.0990990990991,"intervalSec":5.693082693011311,"critPercent":29.988965099422288,"avgHit":36474.12785750314,"totalDamageMean":1681424.4346562484,"isSkipped":false},"assistedHighlight":{"name":"death_coil","spellName":"Death Coil","portionPercent":4.519481429992668,"executesPerFight":38.466466466466464,"intervalSec":6.812482796405889,"critPercent":30.397115658962985,"avgHit":37003.089705906634,"totalDamageMean":1423378.109327908,"isSkipped":false},"oneButton":{"name":"death_coil","spellName":"Death Coil","portionPercent":3.6773610232977143,"executesPerFight":27.61161161161161,"intervalSec":9.312386197644976,"critPercent":30.25540984791012,"avgHit":35705.43613510371,"totalDamageMean":985884.6349856864,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.931539280132919},{"key":"infected_claws","displayName":"Infected Claws","simc":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.654345947194372,"executesPerFight":464.7047047047047,"intervalSec":0.646577171462055,"critPercent":null,"avgHit":2681.1891101925307,"totalDamageMean":1245961.19370949,"isSkipped":false},"assistedHighlight":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.7463304633771566,"executesPerFight":445.8988988988989,"intervalSec":0.6767174488206634,"critPercent":null,"avgHit":2646.0701889475777,"totalDamageMean":1179879.7836609262,"isSkipped":false},"oneButton":{"name":"infected_claws","spellName":"Infected Claws","portionPercent":3.692385160385756,"executesPerFight":382.8538538538539,"intervalSec":0.7846400868428706,"critPercent":null,"avgHit":2585.614670966827,"totalDamageMean":989912.541360714,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.654345947194372},{"key":"pestilence_runeforge","displayName":"Pestilence","simc":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":3.522778962413895,"executesPerFight":387.27527527527525,"intervalSec":0.7663966268672582,"critPercent":null,"avgHit":3101.419266726846,"totalDamageMean":1201103.0002656817,"isSkipped":false},"assistedHighlight":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":3.78510223010084,"executesPerFight":372.68868868868867,"intervalSec":0.8011063794292295,"critPercent":null,"avgHit":3198.6231629365057,"totalDamageMean":1192090.6722040721,"isSkipped":false},"oneButton":{"name":"pestilence_runeforge","spellName":"Pestilence","portionPercent":4.372513352465483,"executesPerFight":317.62362362362364,"intervalSec":0.9386033084985366,"critPercent":null,"avgHit":3690.6951814021863,"totalDamageMean":1172251.9772072094,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.522778962413895},{"key":"virulent_plague","displayName":"Virulent Plague","simc":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.1276896563708134,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":1066396.0101523811,"totalDamageMean":1066396.0101523811,"isSkipped":false},"assistedHighlight":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.2380424157215435,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":1019798.1257377971,"totalDamageMean":1019798.1257377971,"isSkipped":false},"oneButton":{"name":"virulent_plague","spellName":"Virulent Plague","portionPercent":3.4678246138110014,"executesPerFight":1,"intervalSec":null,"critPercent":null,"avgHit":929708.8270423673,"totalDamageMean":929708.8270423673,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.1276896563708134},{"key":"auto_attack_mh","displayName":"","simc":{"name":"auto_attack_mh","spellName":"","portionPercent":2.8306774985333054,"executesPerFight":162.03203203203202,"intervalSec":2.2099498983175785,"critPercent":30.035011721850637,"avgHit":8509.152984388158,"totalDamageMean":1378755.348931843,"isSkipped":false},"assistedHighlight":{"name":"auto_attack_mh","spellName":"","portionPercent":3.027965061853978,"executesPerFight":160.56256256256256,"intervalSec":2.2335689542989288,"critPercent":30.212065700003105,"avgHit":8484.77255504574,"totalDamageMean":1362336.8241986455,"isSkipped":false},"oneButton":{"name":"auto_attack_mh","spellName":"","portionPercent":3.379488722447182,"executesPerFight":154.35735735735736,"intervalSec":2.323774064713368,"critPercent":30.08324883587256,"avgHit":8385.23920770983,"totalDamageMean":1294323.3649113902,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.8306774985333054},{"key":"scourge_strike","displayName":"Scourge Strike","simc":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.469107308829804,"executesPerFight":134.47947947947947,"intervalSec":2.196616998202887,"critPercent":29.886134479457354,"avgHit":6260.064432577656,"totalDamageMean":841850.2064010461,"isSkipped":false},"assistedHighlight":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.8542161004654454,"executesPerFight":132.7947947947948,"intervalSec":2.227477949903202,"critPercent":30.54250072526835,"avgHit":6769.202023023192,"totalDamageMean":898914.7935718746,"isSkipped":false},"oneButton":{"name":"scourge_strike","spellName":"Scourge Strike","portionPercent":2.8512882198455127,"executesPerFight":105.72072072072072,"intervalSec":2.7898399010089165,"critPercent":30.047783087009666,"avgHit":7230.541684504471,"totalDamageMean":764418.0780870267,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.469107308829804},{"key":"soul_reaper","displayName":"Soul Reaper","simc":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.120460419764504,"executesPerFight":12.541541541541541,"intervalSec":24.960269217018222,"critPercent":30.127186009538953,"avgHit":57646.654340152156,"totalDamageMean":722977.9101379042,"isSkipped":false},"assistedHighlight":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.162107055040293,"executesPerFight":11.721721721721721,"intervalSec":26.96667395473724,"critPercent":29.820532448753934,"avgHit":58092.15174762733,"totalDamageMean":680940.0370017177,"isSkipped":false},"oneButton":{"name":"soul_reaper","spellName":"Soul Reaper","portionPercent":2.4136721992054433,"executesPerFight":11.316316316316316,"intervalSec":27.759221582181283,"critPercent":30.358558717293633,"avgHit":57182.48692391869,"totalDamageMean":647095.1097846854,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.120460419764504},{"key":"festering_scythe","displayName":"Festering Scythe","simc":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.44046105331853536,"executesPerFight":14.613613613613614,"intervalSec":20.84918981200724,"critPercent":30.083242358078603,"avgHit":10276.488731672953,"totalDamageMean":150176.63562932276,"isSkipped":false},"assistedHighlight":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.4654835174540841,"executesPerFight":13.774774774774775,"intervalSec":21.682869593285982,"critPercent":30.87447517011727,"avgHit":10642.691585120832,"totalDamageMean":146600.6795824302,"isSkipped":false},"oneButton":{"name":"festering_scythe","spellName":"Festering Scythe","portionPercent":0.3505392837979591,"executesPerFight":9.27027027027027,"intervalSec":32.30579228915664,"critPercent":30.569000752931053,"avgHit":10137.576128456229,"totalDamageMean":93978.07059622936,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.44046105331853536},{"key":"festering_strike","displayName":"Festering Strike","simc":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.32785154114165577,"executesPerFight":14.887887887887889,"intervalSec":20.48861193586701,"critPercent":30.656396517079703,"avgHit":10726.078163832393,"totalDamageMean":159688.64917985906,"isSkipped":false},"assistedHighlight":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.37131133213686573,"executesPerFight":15.49049049049049,"intervalSec":19.50168909710391,"critPercent":29.83845015125185,"avgHit":10784.665274511586,"totalDamageMean":167059.75487794474,"isSkipped":false},"oneButton":{"name":"festering_strike","spellName":"Festering Strike","portionPercent":0.3115511801347626,"executesPerFight":11.164164164164164,"intervalSec":27.120378864970714,"critPercent":29.89819610644758,"avgHit":10687.96385055466,"totalDamageMean":119322.18300824438,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.32785154114165577},{"key":"frost_shield","displayName":"Frost Shield","simc":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":162.03203203203202,"intervalSec":2.2099498983175785,"critPercent":0,"avgHit":2392.6905173225423,"totalDamageMean":387692.5065455455,"isSkipped":true},"assistedHighlight":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":160.56256256256256,"intervalSec":2.2335689542989288,"critPercent":0,"avgHit":2385.841389359234,"totalDamageMean":383076.8073433432,"isSkipped":true},"oneButton":{"name":"frost_shield","spellName":"Frost Shield","portionPercent":0,"executesPerFight":154.35735735735736,"intervalSec":2.323774064713368,"critPercent":0,"avgHit":2357.86226960565,"totalDamageMean":363953.388948949,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 113737.63551148049,
+    ahDps: 105015.61193029817,
+    obDps: 89413.13546944848,
+    likelyBroken: false,
+    deltaPct: -7.668546600216544,
+    obDeltaPct: -21.38650054807649,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

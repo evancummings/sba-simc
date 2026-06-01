@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evoker Devastation — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>Evoker Devastation <span style="color:#71717a;font-weight:500">· Flameshaper</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Evoker_Devastation_FS</code>
+    · Player: <code id="player-name"></code>
+    · 1000 iterations · SimC 1205-01 · simulationcraftorg/simc:latest @ sha256:1c3dec6c3370…
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-06-01 16:50 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{"slug":"MID1_Evoker_Devastation_FS_Flameshaper","class":"Evoker","spec":"Devastation","heroTalent":"Flameshaper","simcProfileName":"MID1_Evoker_Devastation_FS","playerName":"MID1_Evoker_Devastation_FS","talents":"CsbBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgZmZwMDGMgBjZamZmJjxyMzMzwMzMzAmxMzYmZbmZwMwMmB2ALgZYCsFsMMAmZGG","simc":{"dps":113543.5025831707,"fightLengthSec":300.05170470470466,"profileSource":"default","timeline":[41670.47976774811,187346.73305822854,289208.70286554575,216005.10207325936,303699.7099109367,119488.63779875186,168984.05360691895,290210.7627067304,272503.52564050804,323282.30238853494,326678.9841628148,300244.5025431314,144979.20489781024,206844.75286194394,206955.55833629495,188503.44486638406,94136.65558535073,145946.43209038553,124834.51125022714,156008.50729834224,75992.51534386518,73012.44952559231,87216.43217748113,73124.1101989865,95614.85717664548,76990.9605612627,56085.34002697206,80265.78866963698,85073.39352208699,74359.08764006087,82503.10460142914,65739.10156015606,73880.32207599383,78738.15814945566,70153.69669676841,68129.89135711835,71969.45586252047,61151.32533707988,44642.129259110814,34821.00431481472,37049.38668665595,60590.852364926795,186528.39298583253,142404.28335304043,151441.5736872387,162511.93822024224,111083.1757654479,123181.22447093342,144528.16988318917,166566.01740822484,145200.78996571572,109886.80268882803,151765.69349752957,140758.97106913774,139481.79806722424,85738.96410254845,108637.71516814934,148924.05244433368,127277.69244571798,71184.13018794058,71855.13272849385,76870.61593042461,74583.77437062441,58258.61035505741,51854.45337640829,55422.69647130043,60610.38173864031,72005.07200888709,67978.29172766893,54631.37068229357,54050.4791872737,59136.86872907807,61343.14203826607,66284.00198048199,59784.365543142325,44641.08350951683,34011.95003839872,32633.711659129815,40302.089989710206,48034.49026284987,46862.22516665069,37106.285054283995,138343.89350837277,114643.56041680541,130989.43504732818,170159.13912103846,151310.33856090286,118452.81077235694,135671.09566673433,143790.43993450465,148781.67054737097,140884.89559856555,139614.26672793744,95250.06252489319,123586.77318212585,108972.65688237917,125798.04264264449,119394.11772530858,94466.55274786164,83362.18459097059,83671.74224433201,77026.24520112238,68323.7842219541,63669.45647764842,66779.09346217295,83288.2403478112,76240.61203345412,73037.33242450803,61257.51031006944,57396.50450814304,77213.04365377237,81626.96309976881,72578.81314036617,65772.18876784483,55621.721664014454,51727.12944469038,52364.48408977946,47801.17637905858,47368.27221787898,38842.23253022709],"sampleActions":[{"timeSec":0,"name":"dragonrage","spellName":"Dragonrage","target":"Fluffy_Pillow"},{"timeSec":0,"name":"tip_the_scales","spellName":"Tip the Scales","target":"Fluffy_Pillow"},{"timeSec":0.984,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0.984,"name":"use_item_vaelgors_final_stare","spellName":"use_item_vaelgors_final_stare","target":"Fluffy_Pillow"},{"timeSec":0.984,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":1.492,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":2.633,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":3.7640000000000002,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":5.272,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":7.25,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":8.373,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":9.924,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":10.836,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":11.925,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":13.846,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":14.939,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":15.819,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":16.952,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":18.146,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":19.16,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":20.512,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":22.292,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":23.142,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":24.608,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":25.688,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":26.765,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":27.857,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":29.269000000000002,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":30.089000000000002,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":31.07,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":32.81,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":33.631,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":35.035000000000004,"name":"living_flame","spellName":"Living Flame","target":"Fluffy_Pillow"},{"timeSec":35.855000000000004,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":36.916000000000004,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":38.007,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":39.093,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":40.388,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":41.663000000000004,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":43.363,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":45.568,"name":"azure_sweep","spellName":"Azure Sweep","target":"Fluffy_Pillow"},{"timeSec":46.634,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":47.909,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":49.728,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":50.944,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":52.219,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":54.022,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":55.315,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":56.59,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":59.136,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"}],"abilitiesByKey":{"azure_sweep":{"name":"azure_sweep","spellName":"Azure Sweep","portionPercent":8.644283406195179,"executesPerFight":32.945945945945944,"intervalSec":8.80161312921636,"critPercent":38.36934810241511,"avgHit":89324.19344431441,"totalDamageMean":2942870.0488816015,"isSkipped":false},"consume_flame":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":27.742395140378797,"executesPerFight":391.6506506506507,"intervalSec":0.8258225706722552,"critPercent":36.99217308304168,"avgHit":24114.995699895906,"totalDamageMean":9444653.756301874,"isSkipped":false},"disintegrate":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":30.81830787463543,"executesPerFight":97.50950950950951,"intervalSec":3.0670080502055295,"critPercent":null,"avgHit":107597.92734038635,"totalDamageMean":10491821.119200917,"isSkipped":false},"eternity_surge":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":5.071775415890532,"executesPerFight":19.60960960960961,"intervalSec":15.63977735511298,"critPercent":38.58223448839824,"avgHit":88050.76924379825,"totalDamageMean":1726641.2106967045,"isSkipped":false},"fire_breath":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":10.260860809847335,"executesPerFight":22.42942942942943,"intervalSec":13.507312451361893,"critPercent":39.48669963908568,"avgHit":155742.68528862603,"totalDamageMean":3493219.5688310745,"isSkipped":false},"living_flame":{"name":"living_flame","spellName":"Living Flame","portionPercent":2.2227933360018293,"executesPerFight":25.053053053053052,"intervalSec":9.96153891184577,"critPercent":38.627563733946715,"avgHit":30205.11656201026,"totalDamageMean":756730.3877016944,"isSkipped":false},"twin_flame":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":4.293082734163294,"executesPerFight":55.286286286286284,"intervalSec":5.427402519125239,"critPercent":38.671338776099994,"avgHit":26435.889493090956,"totalDamageMean":1461542.1547476542,"isSkipped":false}}},"assistedHighlight":{"dps":63482.67939390034,"fightLengthSec":299.930871871872,"profileSource":"default","timeline":[208131.4185644995,14461.753526398825,161121.59009963245,16696.002255322383,0,256645.59044528764,100003.09362184213,224135.59961143832,33738.67020521876,275845.73000288056,144493.59107038847,43166.77770785749,217762.1851642818,38919.1579068709,166038.941985709,100019.59229928147,10512.760343148793,167644.70039835596,83698.52632461768,8467.803515435387,96517.32878430978,12017.90584093661,109403.27718282749,55381.75700108069,65960.29663400631,44807.62782044262,25899.147944185806,11478.43661500816,94352.7610815472,64533.283161182524,49133.24974843137,31552.886835338875,67632.6374572744,71218.58820004707,31018.179618303187,74059.58625151074,58065.70934324645,25020.260588560093,71439.16736543074,64523.34724981437,37425.0782538235,67688.69634652633,49939.279673886354,35137.57058764182,34010.051864692265,72100.24145090872,72341.69697971019,49915.99811685909,59295.48342776212,42241.69822836555,135617.28852055137,88417.99197984354,61238.83129430325,60074.81034748292,95675.58071951565,44096.2031720713,88537.09478835358,71013.81338919148,50529.70152472198,76072.62847062759,47988.54220318466,21910.82212994829,42690.47207738011,41972.194333050815,67516.8073998345,64154.91432316241,45742.23641009789,33806.64707562274,22001.04954671215,27936.324588363637,59692.35525653867,61157.92055038566,44465.39812391743,32652.962403753765,34890.91911287472,41861.471235150835,33668.55582505133,47729.28655011801,43970.273888341675,33985.82096216463,48358.699984480554,62657.565264701334,54629.687197682295,41881.70910882674,19880.203868763536,29234.06568784409,70236.96758331239,92593.65562240523,67097.74570999331,49334.824648823356,43721.43649131024,62073.396193778986,116224.77092961025,88677.95483343137,62413.10510028073,54849.08860783884,63833.80966230546,63617.26462246959,75860.2984874604,46133.9720647567,36794.97871457679,59940.07803497172,53259.076013656966,43732.75302744233,53362.04730963406,41346.46201132433,64176.15905160728,62689.79378334412,62030.80556773893,40035.655569012924,31854.268224310465,24929.663768671453,52029.06494603292,58202.34573588793,48157.99683998195,32119.563217975352,30217.509554281118,29303.57193187369,40312.75994223458,42638.483304817346],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"dragonrage","spellName":"Dragonrage","target":"Fluffy_Pillow"},{"timeSec":0.986,"name":"tip_the_scales","spellName":"Tip the Scales","target":"Fluffy_Pillow"},{"timeSec":0.986,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0.986,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":1.494,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":4.8420000000000005,"name":"deep_breath","spellName":"Deep Breath","target":"Fluffy_Pillow"},{"timeSec":11.014,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":13.826,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":15.335,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":16.825,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":18.325,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":21.068,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":22.511,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":25.665,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":27.058,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":28.468,"name":"living_flame","spellName":"Living Flame","target":"Fluffy_Pillow"},{"timeSec":29.289,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":30.684,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":32.081,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":34.552,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":35.936,"name":"living_flame","spellName":"Living Flame","target":"Fluffy_Pillow"},{"timeSec":36.757,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":38.166000000000004,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":41.046,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":42.822,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":44.625,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":46.421,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":49.579,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":51.367000000000004,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":53.163000000000004,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":54.988,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":59.229,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"}],"abilitiesByKey":{"consume_flame":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":12.533244619089926,"executesPerFight":115.38338338338339,"intervalSec":2.558238933488273,"critPercent":36.36866391303597,"avgHit":20679.04745256934,"totalDamageMean":2386018.4602229856,"isSkipped":false},"disintegrate":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":39.812403881960996,"executesPerFight":70.43443443443444,"intervalSec":4.0733786356143735,"critPercent":null,"avgHit":107607.7752787765,"totalDamageMean":7579292.792508339,"isSkipped":false},"eternity_surge":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":6.652404886896108,"executesPerFight":15.128128128128129,"intervalSec":20.38789571353892,"critPercent":38.97501002271816,"avgHit":83715.09281242477,"totalDamageMean":1266452.6503245002,"isSkipped":false},"fire_breath":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":15.562777913790631,"executesPerFight":20.47947947947948,"intervalSec":14.930330051126695,"critPercent":38.87007313601335,"avgHit":144670.00254789204,"totalDamageMean":2962766.348475799,"isSkipped":false},"living_flame":{"name":"living_flame","spellName":"Living Flame","portionPercent":3.775927016819928,"executesPerFight":16.984984984984983,"intervalSec":16.11350344986201,"critPercent":38.56103924943097,"avgHit":42322.246018332575,"totalDamageMean":718842.7131522193,"isSkipped":false},"twin_flame":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":5.143178072834218,"executesPerFight":43.17917917917918,"intervalSec":6.652374518051163,"critPercent":38.76385001503551,"avgHit":22676.0529371886,"totalDamageMean":979133.3528514189,"isSkipped":false}}},"oneButton":{"dps":65320.54921632423,"fightLengthSec":299.9302702702701,"profileSource":"default","timeline":[21201.780426636622,14041.36993161158,143549.0010068108,307432.18528043496,51663.5413940767,283039.1600374518,46845.70219825515,266813.39761486405,16025.701339993786,151985.60118495402,163876.14051103365,13778.075812522344,201178.964207372,16235.058326915616,162251.93985904809,57972.40340587618,148080.54859006262,125599.63970793138,74182.58438186352,5775.4176934796415,45014.29847577188,44965.15089033884,116338.4432881767,42962.127044699475,62820.16783757613,30681.380029065724,47278.316349551824,14727.312367891986,116417.75285339286,66503.09320026386,50328.60260926324,31519.506363265533,88088.91538938794,68633.36174729279,12796.292092671392,67155.05662089713,42574.27294349123,46983.07438456614,79093.20342241466,61845.64398629575,29594.013384863734,32116.202567550372,62784.6847463284,57206.53600895651,93715.72338749297,72843.62899794563,73319.34575338251,29765.085688113333,25673.520135676285,92023.0963294877,124073.62102708702,66142.02278138306,41893.76794623294,90989.3506097053,49363.58859535418,75580.57545192371,94230.49198317685,45923.68939866568,79481.06609368905,69712.98789033343,30682.406745964785,16613.66492577893,43511.015764994125,43890.512688985094,64616.90192705255,56037.65472958949,43865.54016494169,21209.075263190414,19278.720389809707,30145.231703811303,67882.12144377924,52005.7483638674,39451.73381225263,23997.759231550604,40828.053953783456,30625.928659229518,41754.6399878003,54893.3617915217,37703.85859344056,29081.607434973368,56200.769983758604,49820.23908847705,42827.97254879381,38894.61222017508,49814.86144828548,79424.77167049235,78029.79319120251,74064.58164916336,49567.26592266981,39865.92275315616,45103.069833391455,120912.16002790841,85885.71985717658,68169.08160075673,44052.84944619361,57607.93650617137,39256.83361253378,94751.17881230713,65179.48357747729,38147.74269886068,57466.178736283466,54750.00216768049,25869.86446391141,64949.84306484443,43087.12451871456,57785.242595674,72966.00327450938,57491.497407964285,38569.91639144267,25853.70176615056,40863.72238545736,48686.41992950975,61495.02609672565,43952.78526771146,35631.71759803466,20861.152740621215,25942.69119796166,34368.070905180866,51169.18412412532,40286.64306120225],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"dragonrage","spellName":"Dragonrage","target":"Fluffy_Pillow"},{"timeSec":1.229,"name":"tip_the_scales","spellName":"Tip the Scales","target":"Fluffy_Pillow"},{"timeSec":1.229,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":1.229,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":1.859,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":5.3420000000000005,"name":"deep_breath","spellName":"Deep Breath","target":"Fluffy_Pillow"},{"timeSec":8.104000000000001,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":9.651,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":12.565,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":14.068,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":15.56,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":17.042,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":19.924,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":21.359,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":24.661,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":26.073,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":27.482,"name":"living_flame","spellName":"Living Flame","target":"Fluffy_Pillow"},{"timeSec":28.507,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":29.929000000000002,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":31.321,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":34.037,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":35.438,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":36.846000000000004,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":39.86,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":41.266,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":43.067,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":44.858000000000004,"name":"fire_breath","spellName":"Fire Breath","target":"Fluffy_Pillow"},{"timeSec":48.19,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":49.999,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":51.804,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"},{"timeSec":53.605000000000004,"name":"eternity_surge","spellName":"Eternity Surge","target":"Fluffy_Pillow"},{"timeSec":58.071,"name":"disintegrate","spellName":"Disintegrate","target":"Fluffy_Pillow"}],"abilitiesByKey":{"consume_flame":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":12.480169614155233,"executesPerFight":118.3963963963964,"intervalSec":2.4293816788719567,"critPercent":36.95410526315789,"avgHit":20645.93653677657,"totalDamageMean":2444404.486183042,"isSkipped":false},"disintegrate":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":40.35895470789267,"executesPerFight":71.92192192192192,"intervalSec":4.067013989549944,"critPercent":null,"avgHit":109908.48199766142,"totalDamageMean":7904829.260792766,"isSkipped":false},"eternity_surge":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":6.47345616556771,"executesPerFight":15.245245245245245,"intervalSec":20.200790931989907,"critPercent":38.682690392404226,"avgHit":83167.64054960822,"totalDamageMean":1267911.0766471804,"isSkipped":false},"fire_breath":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":15.540824873709349,"executesPerFight":20.594594594594593,"intervalSec":14.814531733116372,"critPercent":38.75670404680643,"avgHit":147799.6493054418,"totalDamageMean":3043873.858668828,"isSkipped":false},"living_flame":{"name":"living_flame","spellName":"Living Flame","portionPercent":3.6427521923592594,"executesPerFight":16.59059059059059,"intervalSec":16.772828285420996,"critPercent":38.56940107862617,"avgHit":43005.14004910582,"totalDamageMean":713480.6718457256,"isSkipped":false},"twin_flame":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":5.139970505897832,"executesPerFight":44.06306306306306,"intervalSec":6.604821250691736,"critPercent":38.78036620739667,"avgHit":22847.491649002426,"totalDamageMean":1006730.4653628006,"isSkipped":false}}},"abilities":[{"key":"disintegrate","displayName":"Disintegrate","simc":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":30.81830787463543,"executesPerFight":97.50950950950951,"intervalSec":3.0670080502055295,"critPercent":null,"avgHit":107597.92734038635,"totalDamageMean":10491821.119200917,"isSkipped":false},"assistedHighlight":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":39.812403881960996,"executesPerFight":70.43443443443444,"intervalSec":4.0733786356143735,"critPercent":null,"avgHit":107607.7752787765,"totalDamageMean":7579292.792508339,"isSkipped":false},"oneButton":{"name":"disintegrate","spellName":"Disintegrate","portionPercent":40.35895470789267,"executesPerFight":71.92192192192192,"intervalSec":4.067013989549944,"critPercent":null,"avgHit":109908.48199766142,"totalDamageMean":7904829.260792766,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":30.81830787463543},{"key":"consume_flame","displayName":"Consume Flame","simc":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":27.742395140378797,"executesPerFight":391.6506506506507,"intervalSec":0.8258225706722552,"critPercent":36.99217308304168,"avgHit":24114.995699895906,"totalDamageMean":9444653.756301874,"isSkipped":false},"assistedHighlight":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":12.533244619089926,"executesPerFight":115.38338338338339,"intervalSec":2.558238933488273,"critPercent":36.36866391303597,"avgHit":20679.04745256934,"totalDamageMean":2386018.4602229856,"isSkipped":false},"oneButton":{"name":"consume_flame","spellName":"Consume Flame","portionPercent":12.480169614155233,"executesPerFight":118.3963963963964,"intervalSec":2.4293816788719567,"critPercent":36.95410526315789,"avgHit":20645.93653677657,"totalDamageMean":2444404.486183042,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":27.742395140378797},{"key":"fire_breath","displayName":"Fire Breath","simc":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":10.260860809847335,"executesPerFight":22.42942942942943,"intervalSec":13.507312451361893,"critPercent":39.48669963908568,"avgHit":155742.68528862603,"totalDamageMean":3493219.5688310745,"isSkipped":false},"assistedHighlight":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":15.562777913790631,"executesPerFight":20.47947947947948,"intervalSec":14.930330051126695,"critPercent":38.87007313601335,"avgHit":144670.00254789204,"totalDamageMean":2962766.348475799,"isSkipped":false},"oneButton":{"name":"fire_breath","spellName":"Fire Breath","portionPercent":15.540824873709349,"executesPerFight":20.594594594594593,"intervalSec":14.814531733116372,"critPercent":38.75670404680643,"avgHit":147799.6493054418,"totalDamageMean":3043873.858668828,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":10.260860809847335},{"key":"azure_sweep","displayName":"Azure Sweep","simc":{"name":"azure_sweep","spellName":"Azure Sweep","portionPercent":8.644283406195179,"executesPerFight":32.945945945945944,"intervalSec":8.80161312921636,"critPercent":38.36934810241511,"avgHit":89324.19344431441,"totalDamageMean":2942870.0488816015,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":8.644283406195179},{"key":"eternity_surge","displayName":"Eternity Surge","simc":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":5.071775415890532,"executesPerFight":19.60960960960961,"intervalSec":15.63977735511298,"critPercent":38.58223448839824,"avgHit":88050.76924379825,"totalDamageMean":1726641.2106967045,"isSkipped":false},"assistedHighlight":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":6.652404886896108,"executesPerFight":15.128128128128129,"intervalSec":20.38789571353892,"critPercent":38.97501002271816,"avgHit":83715.09281242477,"totalDamageMean":1266452.6503245002,"isSkipped":false},"oneButton":{"name":"eternity_surge","spellName":"Eternity Surge","portionPercent":6.47345616556771,"executesPerFight":15.245245245245245,"intervalSec":20.200790931989907,"critPercent":38.682690392404226,"avgHit":83167.64054960822,"totalDamageMean":1267911.0766471804,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.071775415890532},{"key":"twin_flame","displayName":"Twin Flame","simc":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":4.293082734163294,"executesPerFight":55.286286286286284,"intervalSec":5.427402519125239,"critPercent":38.671338776099994,"avgHit":26435.889493090956,"totalDamageMean":1461542.1547476542,"isSkipped":false},"assistedHighlight":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":5.143178072834218,"executesPerFight":43.17917917917918,"intervalSec":6.652374518051163,"critPercent":38.76385001503551,"avgHit":22676.0529371886,"totalDamageMean":979133.3528514189,"isSkipped":false},"oneButton":{"name":"twin_flame","spellName":"Twin Flame","portionPercent":5.139970505897832,"executesPerFight":44.06306306306306,"intervalSec":6.604821250691736,"critPercent":38.78036620739667,"avgHit":22847.491649002426,"totalDamageMean":1006730.4653628006,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.293082734163294},{"key":"living_flame","displayName":"Living Flame","simc":{"name":"living_flame","spellName":"Living Flame","portionPercent":2.2227933360018293,"executesPerFight":25.053053053053052,"intervalSec":9.96153891184577,"critPercent":38.627563733946715,"avgHit":30205.11656201026,"totalDamageMean":756730.3877016944,"isSkipped":false},"assistedHighlight":{"name":"living_flame","spellName":"Living Flame","portionPercent":3.775927016819928,"executesPerFight":16.984984984984983,"intervalSec":16.11350344986201,"critPercent":38.56103924943097,"avgHit":42322.246018332575,"totalDamageMean":718842.7131522193,"isSkipped":false},"oneButton":{"name":"living_flame","spellName":"Living Flame","portionPercent":3.6427521923592594,"executesPerFight":16.59059059059059,"intervalSec":16.772828285420996,"critPercent":38.56940107862617,"avgHit":43005.14004910582,"totalDamageMean":713480.6718457256,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":2.2227933360018293}],"fightStyle":"Patchwerk","iterations":1000}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: 113543.5025831707,
+    ahDps: 63482.67939390034,
+    obDps: 65320.54921632423,
+    likelyBroken: false,
+    deltaPct: -44.08955338734664,
+    obDeltaPct: -42.47090522112714,
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>
