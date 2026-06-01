@@ -25,8 +25,12 @@ var outputConfig = configuration.GetSection("Output").Get<OutputConfig>()
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
+var runner  = new SimcRunner(simcConfig);
+var dockerImage = await runner.GetDockerImageInfoAsync(cts.Token);
+var results = new ConcurrentBag<SimulationResult>();
+
 Console.WriteLine("=== SBA SimC — Optimal vs Assisted Highlight vs One Button Rotation ===");
-Console.WriteLine($"  Docker image : {simcConfig.DockerImage}");
+Console.WriteLine($"  Docker image : {dockerImage.DisplayLabel}");
 Console.WriteLine($"  Iterations   : {simcConfig.Iterations:N0}");
 Console.WriteLine($"  Parallelism  : {simcConfig.MaxParallelism}");
 Console.WriteLine($"  Output dir   : {outputConfig.Directory}");
@@ -46,9 +50,6 @@ Console.WriteLine();
 // ---------------------------------------------------------------------------
 var tempDir = Path.Combine(Path.GetTempPath(), "sba-simc");
 Directory.CreateDirectory(tempDir);
-
-var runner  = new SimcRunner(simcConfig);
-var results = new ConcurrentBag<SimulationResult>();
 
 Console.WriteLine("Running simulations...");
 
@@ -120,7 +121,7 @@ if (firstResultFile is not null)
 // ---------------------------------------------------------------------------
 Console.WriteLine("Generating static site...");
 var generator = new SiteGenerator(outputConfig.Directory);
-await generator.GenerateAsync(results, simcVersion, simcConfig.Iterations, cts.Token);
+await generator.GenerateAsync(results, simcVersion, dockerImage, simcConfig.Iterations, cts.Token);
 
 Console.WriteLine();
 Console.WriteLine("Done.");

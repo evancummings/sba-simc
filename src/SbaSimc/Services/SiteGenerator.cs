@@ -14,6 +14,7 @@ public class SiteGenerator(string outputDir)
     public async Task GenerateAsync(
         IEnumerable<SimulationResult> results,
         string simcVersion,
+        DockerImageInfo dockerImage,
         int iterations,
         CancellationToken ct = default)
     {
@@ -46,6 +47,11 @@ public class SiteGenerator(string outputDir)
             classes,
             generated_at = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") + " UTC",
             simc_version = simcVersion,
+            docker_image = dockerImage.Tag,
+            docker_digest = dockerImage.Digest,
+            docker_digest_short = dockerImage.DigestShort,
+            docker_image_id = dockerImage.ImageId,
+            docker_image_label = dockerImage.DisplayLabel,
             iterations,
             total_specs = sortedResults.Count,
             good_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Good),

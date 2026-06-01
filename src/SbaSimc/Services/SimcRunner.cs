@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
+using SbaSimc.Models;
 
 namespace SbaSimc.Services;
 
@@ -70,6 +72,55 @@ public class SimcRunner(SimcConfig config)
     }
 
     /// <summary>
+    /// Resolves the configured Docker tag to its digest (or image ID) for site stamping.
+    /// </summary>
+    public async Task<DockerImageInfo> GetDockerImageInfoAsync(CancellationToken ct = default)
+    {
+        var tag = config.DockerImage;
+
+        var psi = new ProcessStartInfo("docker", $"image inspect {tag}")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        using var process = Process.Start(psi);
+        if (process is null)
+            return new DockerImageInfo(tag, null, null);
+
+        var output = await process.StandardOutput.ReadToEndAsync(ct);
+        await process.WaitForExitAsync(ct);
+
+        if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
+            return new DockerImageInfo(tag, null, null);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(output);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
+                return new DockerImageInfo(tag, null, null);
+
+            var image = doc.RootElement[0];
+            var digest = image.TryGetProperty("RepoDigests", out var digests)
+                         && digests.ValueKind == JsonValueKind.Array
+                         && digests.GetArrayLength() > 0
+                ? digests[0].GetString()
+                : null;
+
+            var imageId = image.TryGetProperty("Id", out var idProp)
+                ? ShortImageId(idProp.GetString())
+                : null;
+
+            return new DockerImageInfo(tag, digest, imageId);
+        }
+        catch (JsonException)
+        {
+            return new DockerImageInfo(tag, null, null);
+        }
+    }
+
+    /// <summary>
     /// Queries the SimC container for its version string, used to stamp the generated site.
     /// </summary>
     public async Task<string> GetSimcVersionAsync(CancellationToken ct = default)
@@ -131,5 +182,18 @@ public class SimcRunner(SimcConfig config)
         }
 
         return sb.ToString();
+    }
+
+    private static string? ShortImageId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        const string prefix = "sha256:";
+        var hash = id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? id[prefix.Length..]
+            : id;
+
+        return hash.Length <= 12 ? hash : hash[..12];
     }
 }

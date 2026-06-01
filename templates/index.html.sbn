@@ -34,6 +34,12 @@
 
     .subtitle a { color: #a1a1aa; }
 
+    .subtitle code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
     /* Summary pills */
     .summary {
       display: flex;
@@ -190,7 +196,9 @@
   <p class="subtitle">
     Comparing the SimulationCraft community-optimal APL against Blizzard's Assisted Highlight (no GCD penalty)
     and One Button Rotation (with GCD penalty), for every class/spec/hero-talent combination.
-    SimC version: <strong>{{ simc_version }}</strong> &mdash; {{ iterations | math.format "N0" }} iterations per sim.
+    SimC version: <strong>{{ simc_version }}</strong> &mdash;
+    Docker: <strong>{{ docker_image }}</strong>{{ if docker_digest_short }} @ <code title="{{ docker_digest }}">{{ docker_digest_short }}</code>{{ else if docker_image_id }} (id {{ docker_image_id }}){{ end }} &mdash;
+    {{ iterations | math.format "N0" }} iterations per sim.
   </p>
 
   <div class="summary">
