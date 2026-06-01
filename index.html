@@ -131,6 +131,29 @@
       border-bottom: 1px solid #27272a;
     }
 
+    thead tr.header-groups {
+      border-bottom: none;
+    }
+
+    th.col-group {
+      text-align: center;
+      cursor: default;
+      color: #d4d4d8;
+      border-bottom: 1px solid #27272a;
+    }
+
+    th.col-group:hover { color: #d4d4d8; }
+
+    thead tr.header-columns th {
+      font-weight: 500;
+      font-size: .75rem;
+    }
+
+    th.col-divider,
+    td.col-divider {
+      border-left: 1px solid #3f3f46;
+    }
+
     th {
       padding: .55rem .7rem;
       text-align: left;
@@ -231,15 +254,19 @@
 <div class="table-wrap">
   <table id="results-table">
     <thead>
-      <tr>
-        <th onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">AH DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight Delta vs SimC APL">AH Δ <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(6)" style="text-align:right" title="One Button DPS (Blizzard APL + GCD penalty)">OB DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(7)" style="text-align:right" title="One Button Delta vs SimC APL">OB Δ <span class="sort-arrow">↕</span></th>
+      <tr class="header-groups">
+        <th rowspan="2" data-col="0" onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="1" onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="2" onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="3" onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
+        <th colspan="2" class="col-group">Assisted Highlight</th>
+        <th colspan="2" class="col-group col-divider">One Button Rotation</th>
+      </tr>
+      <tr class="header-columns">
+        <th data-col="4" onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="5" onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
+        <th data-col="6" class="col-divider" onclick="sortTable(6)" style="text-align:right" title="One Button Rotation DPS (Blizzard APL + GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="7" onclick="sortTable(7)" style="text-align:right" title="One Button Rotation delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
       </tr>
     </thead>
     <tbody>
@@ -247,69 +274,69 @@
         <td><span class="class-badge">Death Knight</span></td>
         <td>Blood</td>
         <td>Deathbringer</td>
-        <td class="dps" data-val="58534">58534</td>
-        <td class="dps" data-val="50361">50361</td>
-        <td class="delta delta-moderate" data-val="-13.963173268475316" title="">
-          -14.0%
+        <td class="dps" data-val="58172">58172</td>
+        <td class="dps" data-val="50534">50534</td>
+        <td class="delta delta-moderate" data-val="-13.130523701347824" title="">
+          -13.1%
         </td>
-        <td class="dps" data-val="48628">48628</td>
-        <td class="delta delta-poor" data-val="-16.924659904288102" title="">
-          -16.9%
+        <td class="dps col-divider" data-val="48963">48963</td>
+        <td class="delta delta-poor" data-val="-15.830491829766668" title="">
+          -15.8%
         </td>
       </tr>
       <tr data-class="Death Knight">
         <td><span class="class-badge">Death Knight</span></td>
         <td>Blood</td>
         <td>San'layn</td>
-        <td class="dps" data-val="69278">69278</td>
+        <td class="dps" data-val="69474">69474</td>
         <td class="dps" data-val="49764">49764</td>
-        <td class="delta delta-poor" data-val="-28.166842627879017" title="">
-          -28.2%
+        <td class="delta delta-poor" data-val="-28.370454432515114" title="">
+          -28.4%
         </td>
-        <td class="dps" data-val="45331">45331</td>
-        <td class="delta delta-poor" data-val="-34.56614439233338" title="">
-          -34.6%
+        <td class="dps col-divider" data-val="45350">45350</td>
+        <td class="delta delta-poor" data-val="-34.72386261770688" title="">
+          -34.7%
         </td>
       </tr>
       <tr data-class="Death Knight">
         <td><span class="class-badge">Death Knight</span></td>
         <td>Frost</td>
         <td>Deathbringer</td>
-        <td class="dps" data-val="130074">130074</td>
-        <td class="dps" data-val="127726">127726</td>
-        <td class="delta delta-good" data-val="-1.8047729866128033" title="">
-          -1.8%
+        <td class="dps" data-val="129930">129930</td>
+        <td class="dps" data-val="127716">127716</td>
+        <td class="delta delta-good" data-val="-1.7036216796297194" title="">
+          -1.7%
         </td>
-        <td class="dps" data-val="112974">112974</td>
-        <td class="delta delta-moderate" data-val="-13.146476884416824" title="">
-          -13.1%
+        <td class="dps col-divider" data-val="112700">112700</td>
+        <td class="delta delta-moderate" data-val="-13.260958875042453" title="">
+          -13.3%
         </td>
       </tr>
       <tr data-class="Death Knight">
         <td><span class="class-badge">Death Knight</span></td>
         <td>Frost</td>
         <td>Rider of the Apocalypse</td>
-        <td class="dps" data-val="126980">126980</td>
-        <td class="dps" data-val="124483">124483</td>
-        <td class="delta delta-good" data-val="-1.9664133294114423" title="">
+        <td class="dps" data-val="127153">127153</td>
+        <td class="dps" data-val="124548">124548</td>
+        <td class="delta delta-good" data-val="-2.048269978789018" title="">
           -2.0%
         </td>
-        <td class="dps" data-val="107085">107085</td>
-        <td class="delta delta-poor" data-val="-15.66810462382958" title="">
-          -15.7%
+        <td class="dps col-divider" data-val="107007">107007</td>
+        <td class="delta delta-poor" data-val="-15.843505415947199" title="">
+          -15.8%
         </td>
       </tr>
       <tr data-class="Death Knight">
         <td><span class="class-badge">Death Knight</span></td>
         <td>Unholy</td>
         <td>Rider of the Apocalypse</td>
-        <td class="dps" data-val="122400">122400</td>
-        <td class="dps" data-val="113319">113319</td>
-        <td class="delta delta-moderate" data-val="-7.419093084126703" title="">
-          -7.4%
+        <td class="dps" data-val="122264">122264</td>
+        <td class="dps" data-val="113325">113325</td>
+        <td class="delta delta-moderate" data-val="-7.31113293008967" title="">
+          -7.3%
         </td>
-        <td class="dps" data-val="98609">98609</td>
-        <td class="delta delta-poor" data-val="-19.43692350968596" title="">
+        <td class="dps col-divider" data-val="98495">98495</td>
+        <td class="delta delta-poor" data-val="-19.440189267387886" title="">
           -19.4%
         </td>
       </tr>
@@ -317,26 +344,26 @@
         <td><span class="class-badge">Death Knight</span></td>
         <td>Unholy</td>
         <td>San'layn</td>
-        <td class="dps" data-val="113999">113999</td>
-        <td class="dps" data-val="105025">105025</td>
-        <td class="delta delta-moderate" data-val="-7.871692541352965" title="">
-          -7.9%
+        <td class="dps" data-val="114170">114170</td>
+        <td class="dps" data-val="104891">104891</td>
+        <td class="delta delta-moderate" data-val="-8.12734394267949" title="">
+          -8.1%
         </td>
-        <td class="dps" data-val="89574">89574</td>
-        <td class="delta delta-poor" data-val="-21.425234445011032" title="">
-          -21.4%
+        <td class="dps col-divider" data-val="89546">89546</td>
+        <td class="delta delta-poor" data-val="-21.56810162868365" title="">
+          -21.6%
         </td>
       </tr>
       <tr data-class="Demon Hunter" class="apl-broken">
         <td><span class="class-badge">Demon Hunter</span></td>
         <td>Devourer</td>
         <td>Annihilator</td>
-        <td class="dps" data-val="100614">100614</td>
-        <td class="dps" data-val="42393">42393</td>
+        <td class="dps" data-val="100892">100892</td>
+        <td class="dps" data-val="42390">42390</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.">
           <span class="apl-broken-badge">⚠ SimC APL</span>—
         </td>
-        <td class="dps" data-val="32552">32552</td>
+        <td class="dps col-divider" data-val="32567">32567</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.">
           —
         </td>
@@ -345,12 +372,12 @@
         <td><span class="class-badge">Demon Hunter</span></td>
         <td>Devourer</td>
         <td>Void-Scarred</td>
-        <td class="dps" data-val="103637">103637</td>
-        <td class="dps" data-val="46223">46223</td>
+        <td class="dps" data-val="103943">103943</td>
+        <td class="dps" data-val="46403">46403</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.">
           <span class="apl-broken-badge">⚠ SimC APL</span>—
         </td>
-        <td class="dps" data-val="39471">39471</td>
+        <td class="dps col-divider" data-val="39407">39407</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.">
           —
         </td>
@@ -359,12 +386,12 @@
         <td><span class="class-badge">Demon Hunter</span></td>
         <td>Vengeance</td>
         <td>Aldrachi Reaver</td>
-        <td class="dps" data-val="79610">79610</td>
-        <td class="dps" data-val="30711">30711</td>
+        <td class="dps" data-val="79586">79586</td>
+        <td class="dps" data-val="30684">30684</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.">
           <span class="apl-broken-badge">⚠ SimC APL</span>—
         </td>
-        <td class="dps" data-val="30519">30519</td>
+        <td class="dps col-divider" data-val="30541">30541</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.">
           —
         </td>
@@ -373,27 +400,27 @@
         <td><span class="class-badge">Demon Hunter</span></td>
         <td>Vengeance</td>
         <td>Annihilator</td>
-        <td class="dps" data-val="75323">75323</td>
-        <td class="dps" data-val="52401">52401</td>
-        <td class="delta delta-poor" data-val="-30.431247864198546" title="">
-          -30.4%
+        <td class="dps" data-val="75388">75388</td>
+        <td class="dps" data-val="52405">52405</td>
+        <td class="delta delta-poor" data-val="-30.487250700095842" title="">
+          -30.5%
         </td>
-        <td class="dps" data-val="51734">51734</td>
-        <td class="delta delta-poor" data-val="-31.317450212180976" title="">
-          -31.3%
+        <td class="dps col-divider" data-val="51407">51407</td>
+        <td class="delta delta-poor" data-val="-31.810163201481963" title="">
+          -31.8%
         </td>
       </tr>
       <tr data-class="Druid">
         <td><span class="class-badge">Druid</span></td>
         <td>Balance</td>
         <td>Elune's Chosen</td>
-        <td class="dps" data-val="111871">111871</td>
-        <td class="dps" data-val="84929">84929</td>
-        <td class="delta delta-poor" data-val="-24.08289023979924" title="">
-          -24.1%
+        <td class="dps" data-val="111628">111628</td>
+        <td class="dps" data-val="84844">84844</td>
+        <td class="delta delta-poor" data-val="-23.993811036833605" title="">
+          -24.0%
         </td>
-        <td class="dps" data-val="77867">77867</td>
-        <td class="delta delta-poor" data-val="-30.396139443386822" title="">
+        <td class="dps col-divider" data-val="77706">77706</td>
+        <td class="delta delta-poor" data-val="-30.388534256745924" title="">
           -30.4%
         </td>
       </tr>
@@ -401,27 +428,27 @@
         <td><span class="class-badge">Druid</span></td>
         <td>Feral</td>
         <td>Wildstalker</td>
-        <td class="dps" data-val="127156">127156</td>
-        <td class="dps" data-val="113371">113371</td>
-        <td class="delta delta-moderate" data-val="-10.841078616212483" title="">
+        <td class="dps" data-val="127251">127251</td>
+        <td class="dps" data-val="113555">113555</td>
+        <td class="delta delta-moderate" data-val="-10.76351697392687" title="">
           -10.8%
         </td>
-        <td class="dps" data-val="104472">104472</td>
-        <td class="delta delta-poor" data-val="-17.83898883437368" title="">
-          -17.8%
+        <td class="dps col-divider" data-val="104487">104487</td>
+        <td class="delta delta-poor" data-val="-17.88925837237671" title="">
+          -17.9%
         </td>
       </tr>
       <tr data-class="Druid">
         <td><span class="class-badge">Druid</span></td>
         <td>Guardian</td>
         <td>Elune's Chosen</td>
-        <td class="dps" data-val="79364">79364</td>
-        <td class="dps" data-val="48718">48718</td>
-        <td class="delta delta-poor" data-val="-38.615147961703315" title="">
-          -38.6%
+        <td class="dps" data-val="79374">79374</td>
+        <td class="dps" data-val="48798">48798</td>
+        <td class="delta delta-poor" data-val="-38.52186312368318" title="">
+          -38.5%
         </td>
-        <td class="dps" data-val="45803">45803</td>
-        <td class="delta delta-poor" data-val="-42.28780744851355" title="">
+        <td class="dps col-divider" data-val="45790">45790</td>
+        <td class="delta delta-poor" data-val="-42.31163491001781" title="">
           -42.3%
         </td>
       </tr>
@@ -429,111 +456,111 @@
         <td><span class="class-badge">Evoker</span></td>
         <td>Devastation</td>
         <td>Flameshaper</td>
-        <td class="dps" data-val="113411">113411</td>
-        <td class="dps" data-val="63519">63519</td>
-        <td class="delta delta-poor" data-val="-43.99234063618724" title="">
+        <td class="dps" data-val="113415">113415</td>
+        <td class="dps" data-val="63566">63566</td>
+        <td class="delta delta-poor" data-val="-43.952814892898125" title="">
           -44.0%
         </td>
-        <td class="dps" data-val="65334">65334</td>
-        <td class="delta delta-poor" data-val="-42.39181445988265" title="">
-          -42.4%
+        <td class="dps col-divider" data-val="65407">65407</td>
+        <td class="delta delta-poor" data-val="-42.32962107626664" title="">
+          -42.3%
         </td>
       </tr>
       <tr data-class="Evoker">
         <td><span class="class-badge">Evoker</span></td>
         <td>Devastation</td>
         <td>Scalecommander</td>
-        <td class="dps" data-val="111328">111328</td>
-        <td class="dps" data-val="75592">75592</td>
-        <td class="delta delta-poor" data-val="-32.10014087529539" title="">
-          -32.1%
+        <td class="dps" data-val="111421">111421</td>
+        <td class="dps" data-val="75460">75460</td>
+        <td class="delta delta-poor" data-val="-32.2747266898258" title="">
+          -32.3%
         </td>
-        <td class="dps" data-val="74699">74699</td>
-        <td class="delta delta-poor" data-val="-32.90159661158672" title="">
-          -32.9%
+        <td class="dps col-divider" data-val="74692">74692</td>
+        <td class="delta delta-poor" data-val="-32.96433382269561" title="">
+          -33.0%
         </td>
       </tr>
       <tr data-class="Hunter">
         <td><span class="class-badge">Hunter</span></td>
         <td>Beast Mastery</td>
         <td>Dark Ranger</td>
-        <td class="dps" data-val="121638">121638</td>
-        <td class="dps" data-val="119178">119178</td>
-        <td class="delta delta-good" data-val="-2.0219715293222427" title="">
-          -2.0%
+        <td class="dps" data-val="121371">121371</td>
+        <td class="dps" data-val="119140">119140</td>
+        <td class="delta delta-good" data-val="-1.838582982383297" title="">
+          -1.8%
         </td>
-        <td class="dps" data-val="104867">104867</td>
-        <td class="delta delta-moderate" data-val="-13.787162265943396" title="">
-          -13.8%
+        <td class="dps col-divider" data-val="104866">104866</td>
+        <td class="delta delta-moderate" data-val="-13.59943432484354" title="">
+          -13.6%
         </td>
       </tr>
       <tr data-class="Hunter">
         <td><span class="class-badge">Hunter</span></td>
         <td>Marksmanship</td>
         <td>Dark Ranger</td>
-        <td class="dps" data-val="128267">128267</td>
-        <td class="dps" data-val="116608">116608</td>
-        <td class="delta delta-moderate" data-val="-9.089371999310732" title="">
-          -9.1%
+        <td class="dps" data-val="128081">128081</td>
+        <td class="dps" data-val="116588">116588</td>
+        <td class="delta delta-moderate" data-val="-8.973294072099128" title="">
+          -9.0%
         </td>
-        <td class="dps" data-val="109209">109209</td>
-        <td class="delta delta-moderate" data-val="-14.85769879124684" title="">
-          -14.9%
+        <td class="dps col-divider" data-val="109098">109098</td>
+        <td class="delta delta-moderate" data-val="-14.820755853177078" title="">
+          -14.8%
         </td>
       </tr>
       <tr data-class="Hunter">
         <td><span class="class-badge">Hunter</span></td>
         <td>Survival</td>
         <td>Sentinel (2H)</td>
-        <td class="dps" data-val="118668">118668</td>
-        <td class="dps" data-val="114580">114580</td>
-        <td class="delta delta-good" data-val="-3.445172212016845" title="">
-          -3.4%
+        <td class="dps" data-val="118731">118731</td>
+        <td class="dps" data-val="114766">114766</td>
+        <td class="delta delta-good" data-val="-3.339005121520221" title="">
+          -3.3%
         </td>
-        <td class="dps" data-val="98027">98027</td>
-        <td class="delta delta-poor" data-val="-17.393569570113563" title="">
-          -17.4%
+        <td class="dps col-divider" data-val="97835">97835</td>
+        <td class="delta delta-poor" data-val="-17.59903968058439" title="">
+          -17.6%
         </td>
       </tr>
       <tr data-class="Mage">
         <td><span class="class-badge">Mage</span></td>
         <td>Arcane</td>
         <td>Spellslinger</td>
-        <td class="dps" data-val="109657">109657</td>
-        <td class="dps" data-val="82531">82531</td>
-        <td class="delta delta-poor" data-val="-24.73764275397201" title="">
-          -24.7%
+        <td class="dps" data-val="109552">109552</td>
+        <td class="dps" data-val="82694">82694</td>
+        <td class="delta delta-poor" data-val="-24.5157317135119" title="">
+          -24.5%
         </td>
-        <td class="dps" data-val="73439">73439</td>
-        <td class="delta delta-poor" data-val="-33.02901407340727" title="">
-          -33.0%
+        <td class="dps col-divider" data-val="73462">73462</td>
+        <td class="delta delta-poor" data-val="-32.94297347753466" title="">
+          -32.9%
         </td>
       </tr>
       <tr data-class="Mage">
         <td><span class="class-badge">Mage</span></td>
         <td>Arcane</td>
         <td>Sunfury</td>
-        <td class="dps" data-val="109185">109185</td>
-        <td class="dps" data-val="93072">93072</td>
-        <td class="delta delta-moderate" data-val="-14.758207927994087" title="">
-          -14.8%
+        <td class="dps" data-val="108981">108981</td>
+        <td class="dps" data-val="92910">92910</td>
+        <td class="delta delta-moderate" data-val="-14.746515170737847" title="">
+          -14.7%
         </td>
-        <td class="dps" data-val="83642">83642</td>
-        <td class="delta delta-poor" data-val="-23.394719329837006" title="">
-          -23.4%
+        <td class="dps col-divider" data-val="83666">83666</td>
+        <td class="delta delta-poor" data-val="-23.228293976138076" title="">
+          -23.2%
         </td>
       </tr>
       <tr data-class="Mage">
         <td><span class="class-badge">Mage</span></td>
         <td>Fire</td>
         <td>Frostfire</td>
-        <td class="dps" data-val="114614">114614</td>
-        <td class="dps" data-val="111669">111669</td>
-        <td class="delta delta-good" data-val="-2.569375850037508" title="">
+        <td class="dps" data-val="114510">114510</td>
+        <td class="dps" data-val="111549">111549</td>
+        <td class="delta delta-good" data-val="-2.5860043284825305" title="">
           -2.6%
         </td>
-        <td class="dps" data-val="93439">93439</td>
-        <td class="delta delta-poor" data-val="-18.474863446114412" title="">
+        <td class="dps col-divider" data-val="93359">93359</td>
+        <td class="delta delta-poor" data-val="-18.471656312775295" title="">
           -18.5%
         </td>
       </tr>
@@ -541,153 +568,153 @@
         <td><span class="class-badge">Mage</span></td>
         <td>Fire</td>
         <td>Sunfury</td>
-        <td class="dps" data-val="112009">112009</td>
-        <td class="dps" data-val="104888">104888</td>
-        <td class="delta delta-moderate" data-val="-6.3575828210713405" title="">
-          -6.4%
+        <td class="dps" data-val="112130">112130</td>
+        <td class="dps" data-val="104785">104785</td>
+        <td class="delta delta-moderate" data-val="-6.5509937301665655" title="">
+          -6.6%
         </td>
-        <td class="dps" data-val="88058">88058</td>
-        <td class="delta delta-poor" data-val="-21.382741126288064" title="">
-          -21.4%
+        <td class="dps col-divider" data-val="88226">88226</td>
+        <td class="delta delta-poor" data-val="-21.317993387908864" title="">
+          -21.3%
         </td>
       </tr>
       <tr data-class="Mage">
         <td><span class="class-badge">Mage</span></td>
         <td>Frost</td>
         <td>Frostfire</td>
-        <td class="dps" data-val="108058">108058</td>
-        <td class="dps" data-val="96963">96963</td>
-        <td class="delta delta-moderate" data-val="-10.266983131913886" title="">
-          -10.3%
+        <td class="dps" data-val="108174">108174</td>
+        <td class="dps" data-val="96870">96870</td>
+        <td class="delta delta-moderate" data-val="-10.449432792862696" title="">
+          -10.4%
         </td>
-        <td class="dps" data-val="78544">78544</td>
-        <td class="delta delta-poor" data-val="-27.312575141590468" title="">
-          -27.3%
+        <td class="dps col-divider" data-val="78495">78495</td>
+        <td class="delta delta-poor" data-val="-27.436315987582237" title="">
+          -27.4%
         </td>
       </tr>
       <tr data-class="Mage">
         <td><span class="class-badge">Mage</span></td>
         <td>Frost</td>
         <td>Spellslinger</td>
-        <td class="dps" data-val="115800">115800</td>
-        <td class="dps" data-val="102771">102771</td>
-        <td class="delta delta-moderate" data-val="-11.25145720668144" title="">
-          -11.3%
+        <td class="dps" data-val="115688">115688</td>
+        <td class="dps" data-val="102939">102939</td>
+        <td class="delta delta-moderate" data-val="-11.020669568044053" title="">
+          -11.0%
         </td>
-        <td class="dps" data-val="80209">80209</td>
-        <td class="delta delta-poor" data-val="-30.735028893355693" title="">
-          -30.7%
+        <td class="dps col-divider" data-val="80246">80246</td>
+        <td class="delta delta-poor" data-val="-30.63585519782927" title="">
+          -30.6%
         </td>
       </tr>
       <tr data-class="Monk">
         <td><span class="class-badge">Monk</span></td>
         <td>Brewmaster</td>
         <td>Master of Harmony</td>
-        <td class="dps" data-val="86430">86430</td>
-        <td class="dps" data-val="61309">61309</td>
-        <td class="delta delta-poor" data-val="-29.065116460969552" title="">
-          -29.1%
+        <td class="dps" data-val="86110">86110</td>
+        <td class="dps" data-val="61291">61291</td>
+        <td class="delta delta-poor" data-val="-28.82226662519562" title="">
+          -28.8%
         </td>
-        <td class="dps" data-val="61763">61763</td>
-        <td class="delta delta-poor" data-val="-28.5405551865783" title="">
-          -28.5%
+        <td class="dps col-divider" data-val="61749">61749</td>
+        <td class="delta delta-poor" data-val="-28.29034077230648" title="">
+          -28.3%
         </td>
       </tr>
       <tr data-class="Monk">
         <td><span class="class-badge">Monk</span></td>
         <td>Windwalker</td>
         <td>Conduit of the Celestials</td>
-        <td class="dps" data-val="106137">106137</td>
-        <td class="dps" data-val="92556">92556</td>
-        <td class="delta delta-moderate" data-val="-12.795701468398882" title="">
-          -12.8%
+        <td class="dps" data-val="105975">105975</td>
+        <td class="dps" data-val="92257">92257</td>
+        <td class="delta delta-moderate" data-val="-12.944187086193043" title="">
+          -12.9%
         </td>
-        <td class="dps" data-val="84549">84549</td>
-        <td class="delta delta-poor" data-val="-20.340246903095544" title="">
-          -20.3%
+        <td class="dps col-divider" data-val="84618">84618</td>
+        <td class="delta delta-poor" data-val="-20.153082374249625" title="">
+          -20.2%
         </td>
       </tr>
       <tr data-class="Monk">
         <td><span class="class-badge">Monk</span></td>
         <td>Windwalker</td>
         <td>Shado-Pan</td>
-        <td class="dps" data-val="118249">118249</td>
-        <td class="dps" data-val="102997">102997</td>
-        <td class="delta delta-moderate" data-val="-12.897872350503276" title="">
-          -12.9%
+        <td class="dps" data-val="118494">118494</td>
+        <td class="dps" data-val="102927">102927</td>
+        <td class="delta delta-moderate" data-val="-13.137798097035203" title="">
+          -13.1%
         </td>
-        <td class="dps" data-val="94287">94287</td>
-        <td class="delta delta-poor" data-val="-20.263973979828922" title="">
-          -20.3%
+        <td class="dps col-divider" data-val="94213">94213</td>
+        <td class="delta delta-poor" data-val="-20.491592516356658" title="">
+          -20.5%
         </td>
       </tr>
       <tr data-class="Paladin">
         <td><span class="class-badge">Paladin</span></td>
         <td>Protection</td>
         <td>Lightsmith</td>
-        <td class="dps" data-val="57042">57042</td>
-        <td class="dps" data-val="48017">48017</td>
-        <td class="delta delta-poor" data-val="-15.821828761696871" title="">
+        <td class="dps" data-val="57009">57009</td>
+        <td class="dps" data-val="48030">48030</td>
+        <td class="delta delta-poor" data-val="-15.75001301917252" title="">
           -15.8%
         </td>
-        <td class="dps" data-val="45983">45983</td>
-        <td class="delta delta-poor" data-val="-19.38768218119815" title="">
-          -19.4%
+        <td class="dps col-divider" data-val="46077">46077</td>
+        <td class="delta delta-poor" data-val="-19.17664743756907" title="">
+          -19.2%
         </td>
       </tr>
       <tr data-class="Paladin">
         <td><span class="class-badge">Paladin</span></td>
         <td>Protection</td>
         <td>Templar</td>
-        <td class="dps" data-val="73876">73876</td>
-        <td class="dps" data-val="42492">42492</td>
-        <td class="delta delta-poor" data-val="-42.48234651754771" title="">
+        <td class="dps" data-val="73832">73832</td>
+        <td class="dps" data-val="42451">42451</td>
+        <td class="delta delta-poor" data-val="-42.50372642246879" title="">
           -42.5%
         </td>
-        <td class="dps" data-val="41099">41099</td>
-        <td class="delta delta-poor" data-val="-44.367756752284485" title="">
-          -44.4%
+        <td class="dps col-divider" data-val="41204">41204</td>
+        <td class="delta delta-poor" data-val="-44.19312142209094" title="">
+          -44.2%
         </td>
       </tr>
       <tr data-class="Paladin">
         <td><span class="class-badge">Paladin</span></td>
         <td>Retribution</td>
         <td>Herald of the Sun</td>
-        <td class="dps" data-val="112139">112139</td>
-        <td class="dps" data-val="94330">94330</td>
-        <td class="delta delta-poor" data-val="-15.880464274851894" title="">
-          -15.9%
+        <td class="dps" data-val="111944">111944</td>
+        <td class="dps" data-val="94397">94397</td>
+        <td class="delta delta-poor" data-val="-15.674733394247534" title="">
+          -15.7%
         </td>
-        <td class="dps" data-val="85069">85069</td>
-        <td class="delta delta-poor" data-val="-24.139148284370616" title="">
-          -24.1%
+        <td class="dps col-divider" data-val="85043">85043</td>
+        <td class="delta delta-poor" data-val="-24.031056205804603" title="">
+          -24.0%
         </td>
       </tr>
       <tr data-class="Paladin">
         <td><span class="class-badge">Paladin</span></td>
         <td>Retribution</td>
         <td>Templar</td>
-        <td class="dps" data-val="112042">112042</td>
-        <td class="dps" data-val="98562">98562</td>
-        <td class="delta delta-moderate" data-val="-12.031124568311245" title="">
-          -12.0%
+        <td class="dps" data-val="111815">111815</td>
+        <td class="dps" data-val="98528">98528</td>
+        <td class="delta delta-moderate" data-val="-11.883445974769684" title="">
+          -11.9%
         </td>
-        <td class="dps" data-val="90994">90994</td>
-        <td class="delta delta-poor" data-val="-18.78618598735409" title="">
-          -18.8%
+        <td class="dps col-divider" data-val="90912">90912</td>
+        <td class="delta delta-poor" data-val="-18.694073353731063" title="">
+          -18.7%
         </td>
       </tr>
       <tr data-class="Priest">
         <td><span class="class-badge">Priest</span></td>
         <td>Shadow</td>
         <td>Archon</td>
-        <td class="dps" data-val="106720">106720</td>
-        <td class="dps" data-val="93406">93406</td>
-        <td class="delta delta-moderate" data-val="-12.475752659204845" title="">
+        <td class="dps" data-val="106638">106638</td>
+        <td class="dps" data-val="93339">93339</td>
+        <td class="delta delta-moderate" data-val="-12.47134511158316" title="">
           -12.5%
         </td>
-        <td class="dps" data-val="84905">84905</td>
-        <td class="delta delta-poor" data-val="-20.44110456978818" title="">
+        <td class="dps col-divider" data-val="84841">84841</td>
+        <td class="delta delta-poor" data-val="-20.440409723652355" title="">
           -20.4%
         </td>
       </tr>
@@ -695,13 +722,13 @@
         <td><span class="class-badge">Priest</span></td>
         <td>Shadow</td>
         <td>Voidweaver</td>
-        <td class="dps" data-val="105440">105440</td>
-        <td class="dps" data-val="92937">92937</td>
-        <td class="delta delta-moderate" data-val="-11.858290441422374" title="">
+        <td class="dps" data-val="105442">105442</td>
+        <td class="dps" data-val="92888">92888</td>
+        <td class="delta delta-moderate" data-val="-11.905972512912838" title="">
           -11.9%
         </td>
-        <td class="dps" data-val="85603">85603</td>
-        <td class="delta delta-poor" data-val="-18.813238935805614" title="">
+        <td class="dps col-divider" data-val="85599">85599</td>
+        <td class="delta delta-poor" data-val="-18.81922145907186" title="">
           -18.8%
         </td>
       </tr>
@@ -709,13 +736,13 @@
         <td><span class="class-badge">Rogue</span></td>
         <td>Assassination</td>
         <td>Deathstalker</td>
-        <td class="dps" data-val="108258">108258</td>
-        <td class="dps" data-val="105180">105180</td>
-        <td class="delta delta-good" data-val="-2.843266328944097" title="">
-          -2.8%
+        <td class="dps" data-val="108230">108230</td>
+        <td class="dps" data-val="104977">104977</td>
+        <td class="delta delta-good" data-val="-3.006007471579187" title="">
+          -3.0%
         </td>
-        <td class="dps" data-val="98132">98132</td>
-        <td class="delta delta-moderate" data-val="-9.35354545901444" title="">
+        <td class="dps col-divider" data-val="98098">98098</td>
+        <td class="delta delta-moderate" data-val="-9.361580840214417" title="">
           -9.4%
         </td>
       </tr>
@@ -723,13 +750,13 @@
         <td><span class="class-badge">Rogue</span></td>
         <td>Outlaw</td>
         <td>Fatebound</td>
-        <td class="dps" data-val="126860">126860</td>
-        <td class="dps" data-val="116702">116702</td>
-        <td class="delta delta-moderate" data-val="-8.0077534038455" title="">
-          -8.0%
+        <td class="dps" data-val="127315">127315</td>
+        <td class="dps" data-val="116376">116376</td>
+        <td class="delta delta-moderate" data-val="-8.592773879902287" title="">
+          -8.6%
         </td>
-        <td class="dps" data-val="90324">90324</td>
-        <td class="delta delta-poor" data-val="-28.80032863263572" title="">
+        <td class="dps col-divider" data-val="90634">90634</td>
+        <td class="delta delta-poor" data-val="-28.811169210063568" title="">
           -28.8%
         </td>
       </tr>
@@ -737,54 +764,54 @@
         <td><span class="class-badge">Rogue</span></td>
         <td>Outlaw</td>
         <td>Trickster</td>
-        <td class="dps" data-val="128665">128665</td>
-        <td class="dps" data-val="114549">114549</td>
-        <td class="delta delta-moderate" data-val="-10.971559225855676" title="">
-          -11.0%
+        <td class="dps" data-val="128237">128237</td>
+        <td class="dps" data-val="114577">114577</td>
+        <td class="delta delta-moderate" data-val="-10.652456304744106" title="">
+          -10.7%
         </td>
-        <td class="dps" data-val="91567">91567</td>
-        <td class="delta delta-poor" data-val="-28.833180618756828" title="">
-          -28.8%
+        <td class="dps col-divider" data-val="91508">91508</td>
+        <td class="delta delta-poor" data-val="-28.641635440988406" title="">
+          -28.6%
         </td>
       </tr>
       <tr data-class="Rogue">
         <td><span class="class-badge">Rogue</span></td>
         <td>Subtlety</td>
         <td>Trickster</td>
-        <td class="dps" data-val="123413">123413</td>
-        <td class="dps" data-val="113605">113605</td>
-        <td class="delta delta-moderate" data-val="-7.947043569979916" title="">
-          -7.9%
+        <td class="dps" data-val="123470">123470</td>
+        <td class="dps" data-val="113469">113469</td>
+        <td class="delta delta-moderate" data-val="-8.100129690453304" title="">
+          -8.1%
         </td>
-        <td class="dps" data-val="104717">104717</td>
-        <td class="delta delta-poor" data-val="-15.149032499326964" title="">
-          -15.1%
+        <td class="dps col-divider" data-val="104650">104650</td>
+        <td class="delta delta-poor" data-val="-15.242965369739434" title="">
+          -15.2%
         </td>
       </tr>
       <tr data-class="Shaman">
         <td><span class="class-badge">Shaman</span></td>
         <td>Elemental</td>
         <td>Stormbringer</td>
-        <td class="dps" data-val="126924">126924</td>
-        <td class="dps" data-val="123111">123111</td>
-        <td class="delta delta-good" data-val="-3.0036144105776588" title="">
-          -3.0%
+        <td class="dps" data-val="126872">126872</td>
+        <td class="dps" data-val="123232">123232</td>
+        <td class="delta delta-good" data-val="-2.8692024024981553" title="">
+          -2.9%
         </td>
-        <td class="dps" data-val="115293">115293</td>
-        <td class="delta delta-moderate" data-val="-9.163557571439025" title="">
-          -9.2%
+        <td class="dps col-divider" data-val="114798">114798</td>
+        <td class="delta delta-moderate" data-val="-9.516199865585088" title="">
+          -9.5%
         </td>
       </tr>
       <tr data-class="Shaman" class="apl-broken">
         <td><span class="class-badge">Shaman</span></td>
         <td>Enhancement</td>
         <td>Stormbringer</td>
-        <td class="dps" data-val="110583">110583</td>
-        <td class="dps" data-val="2500">2500</td>
+        <td class="dps" data-val="110458">110458</td>
+        <td class="dps" data-val="2502">2502</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.">
           <span class="apl-broken-badge">⚠ SimC APL</span>—
         </td>
-        <td class="dps" data-val="2485">2485</td>
+        <td class="dps col-divider" data-val="2499">2499</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.">
           —
         </td>
@@ -793,12 +820,12 @@
         <td><span class="class-badge">Shaman</span></td>
         <td>Enhancement</td>
         <td>Totemic</td>
-        <td class="dps" data-val="112934">112934</td>
-        <td class="dps" data-val="3071">3071</td>
+        <td class="dps" data-val="112895">112895</td>
+        <td class="dps" data-val="3076">3076</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.">
           <span class="apl-broken-badge">⚠ SimC APL</span>—
         </td>
-        <td class="dps" data-val="3072">3072</td>
+        <td class="dps col-divider" data-val="3064">3064</td>
         <td class="delta delta-unreliable" data-val="-9999" title="SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.">
           —
         </td>
@@ -807,27 +834,27 @@
         <td><span class="class-badge">Warlock</span></td>
         <td>Affliction</td>
         <td>Hellcaller</td>
-        <td class="dps" data-val="110565">110565</td>
-        <td class="dps" data-val="97683">97683</td>
-        <td class="delta delta-moderate" data-val="-11.651365442578433" title="">
-          -11.7%
+        <td class="dps" data-val="110516">110516</td>
+        <td class="dps" data-val="97488">97488</td>
+        <td class="delta delta-moderate" data-val="-11.788343816983751" title="">
+          -11.8%
         </td>
-        <td class="dps" data-val="91917">91917</td>
-        <td class="delta delta-poor" data-val="-16.866346935535184" title="">
-          -16.9%
+        <td class="dps col-divider" data-val="91986">91986</td>
+        <td class="delta delta-poor" data-val="-16.766605337675976" title="">
+          -16.8%
         </td>
       </tr>
       <tr data-class="Warlock">
         <td><span class="class-badge">Warlock</span></td>
         <td>Affliction</td>
         <td>Soul Harvester</td>
-        <td class="dps" data-val="114219">114219</td>
-        <td class="dps" data-val="73233">73233</td>
-        <td class="delta delta-poor" data-val="-35.88372948290675" title="">
+        <td class="dps" data-val="114264">114264</td>
+        <td class="dps" data-val="73205">73205</td>
+        <td class="delta delta-poor" data-val="-35.93340994530838" title="">
           -35.9%
         </td>
-        <td class="dps" data-val="66591">66591</td>
-        <td class="delta delta-poor" data-val="-41.699097916033104" title="">
+        <td class="dps col-divider" data-val="66659">66659</td>
+        <td class="delta delta-poor" data-val="-41.662080523045745" title="">
           -41.7%
         </td>
       </tr>
@@ -835,13 +862,13 @@
         <td><span class="class-badge">Warlock</span></td>
         <td>Demonology</td>
         <td>Diabolist</td>
-        <td class="dps" data-val="118937">118937</td>
-        <td class="dps" data-val="104572">104572</td>
-        <td class="delta delta-moderate" data-val="-12.077273473462975" title="">
-          -12.1%
+        <td class="dps" data-val="119014">119014</td>
+        <td class="dps" data-val="104770">104770</td>
+        <td class="delta delta-moderate" data-val="-11.968465113955377" title="">
+          -12.0%
         </td>
-        <td class="dps" data-val="92569">92569</td>
-        <td class="delta delta-poor" data-val="-22.16934804611348" title="">
+        <td class="dps col-divider" data-val="92599">92599</td>
+        <td class="delta delta-poor" data-val="-22.194942648703364" title="">
           -22.2%
         </td>
       </tr>
@@ -849,27 +876,27 @@
         <td><span class="class-badge">Warlock</span></td>
         <td>Destruction</td>
         <td>Diabolist</td>
-        <td class="dps" data-val="115417">115417</td>
-        <td class="dps" data-val="110096">110096</td>
-        <td class="delta delta-good" data-val="-4.61020065547613" title="">
-          -4.6%
+        <td class="dps" data-val="115613">115613</td>
+        <td class="dps" data-val="110193">110193</td>
+        <td class="delta delta-good" data-val="-4.688239705176272" title="">
+          -4.7%
         </td>
-        <td class="dps" data-val="100968">100968</td>
-        <td class="delta delta-moderate" data-val="-12.519277525010652" title="">
-          -12.5%
+        <td class="dps col-divider" data-val="100609">100609</td>
+        <td class="delta delta-moderate" data-val="-12.978087873113134" title="">
+          -13.0%
         </td>
       </tr>
       <tr data-class="Warlock">
         <td><span class="class-badge">Warlock</span></td>
         <td>Destruction</td>
         <td>Hellcaller</td>
-        <td class="dps" data-val="112089">112089</td>
-        <td class="dps" data-val="109547">109547</td>
-        <td class="delta delta-good" data-val="-2.267908213785263" title="">
-          -2.3%
+        <td class="dps" data-val="111896">111896</td>
+        <td class="dps" data-val="109671">109671</td>
+        <td class="delta delta-good" data-val="-1.9883424381916048" title="">
+          -2.0%
         </td>
-        <td class="dps" data-val="99952">99952</td>
-        <td class="delta delta-moderate" data-val="-10.828056224412794" title="">
+        <td class="dps col-divider" data-val="99837">99837</td>
+        <td class="delta delta-moderate" data-val="-10.77628075771183" title="">
           -10.8%
         </td>
       </tr>
@@ -877,27 +904,27 @@
         <td><span class="class-badge">Warrior</span></td>
         <td>Arms</td>
         <td>Slayer</td>
-        <td class="dps" data-val="107384">107384</td>
-        <td class="dps" data-val="94342">94342</td>
-        <td class="delta delta-moderate" data-val="-12.145094882559457" title="">
-          -12.1%
+        <td class="dps" data-val="107557">107557</td>
+        <td class="dps" data-val="94154">94154</td>
+        <td class="delta delta-moderate" data-val="-12.461459926875861" title="">
+          -12.5%
         </td>
-        <td class="dps" data-val="76156">76156</td>
-        <td class="delta delta-poor" data-val="-29.080920533288925" title="">
-          -29.1%
+        <td class="dps col-divider" data-val="75988">75988</td>
+        <td class="delta delta-poor" data-val="-29.3506721526204" title="">
+          -29.4%
         </td>
       </tr>
       <tr data-class="Warrior">
         <td><span class="class-badge">Warrior</span></td>
         <td>Fury</td>
         <td>Slayer</td>
-        <td class="dps" data-val="114294">114294</td>
-        <td class="dps" data-val="95291">95291</td>
-        <td class="delta delta-poor" data-val="-16.626569582977062" title="">
-          -16.6%
+        <td class="dps" data-val="114314">114314</td>
+        <td class="dps" data-val="95417">95417</td>
+        <td class="delta delta-poor" data-val="-16.530190429033905" title="">
+          -16.5%
         </td>
-        <td class="dps" data-val="80416">80416</td>
-        <td class="delta delta-poor" data-val="-29.64075509054186" title="">
+        <td class="dps col-divider" data-val="80453">80453</td>
+        <td class="delta delta-poor" data-val="-29.621116452726444" title="">
           -29.6%
         </td>
       </tr>
@@ -905,13 +932,13 @@
         <td><span class="class-badge">Warrior</span></td>
         <td>Protection</td>
         <td>Colossus</td>
-        <td class="dps" data-val="84411">84411</td>
-        <td class="dps" data-val="80545">80545</td>
-        <td class="delta delta-good" data-val="-4.579897916475288" title="">
+        <td class="dps" data-val="84470">84470</td>
+        <td class="dps" data-val="80557">80557</td>
+        <td class="delta delta-good" data-val="-4.632669811383708" title="">
           -4.6%
         </td>
-        <td class="dps" data-val="68452">68452</td>
-        <td class="delta delta-poor" data-val="-18.905840748605975" title="">
+        <td class="dps col-divider" data-val="68477">68477</td>
+        <td class="delta delta-poor" data-val="-18.93292577250626" title="">
           -18.9%
         </td>
       </tr>
@@ -920,7 +947,7 @@
 </div>
 
 <footer>
-  Generated 2026-06-01 16:27 UTC &mdash;
+  Generated 2026-06-01 16:40 UTC &mdash;
   <a href="https://github.com/simulationcraft/simc" style="color:#52525b">SimulationCraft</a> &mdash;
   <a href="https://hub.docker.com/r/simulationcraftorg/simc@sha256:1c3dec6c337097b3809ee95d3e11be1dc36896c745145c37b0ed9c0f8bf893f6" style="color:#52525b">simulationcraftorg/simc:latest @ simulationcraftorg/simc@sha256:1c3dec6c337097b3809ee95d3e11be1dc36896c745145c37b0ed9c0f8bf893f6</a> &mdash;
   <a href="https://github.com/evancummings/sba-simc" style="color:#52525b">Source</a>
@@ -1034,7 +1061,8 @@
     filterClass(document.querySelector(`.filter-btn[data-class="${activeClass}"]`), activeClass);
 
     // Update arrow indicators
-    document.querySelectorAll('th').forEach((th, i) => {
+    document.querySelectorAll('th[data-col]').forEach(th => {
+      const i = parseInt(th.dataset.col, 10);
       th.classList.toggle('sorted', i === col);
       const arrow = th.querySelector('.sort-arrow');
       if (arrow) arrow.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
