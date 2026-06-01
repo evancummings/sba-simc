@@ -151,7 +151,7 @@
 
     th.col-divider,
     td.col-divider {
-      border-left: 1px solid #3f3f46;
+      border-left: 2px solid #52525b;
     }
 
     th {
@@ -253,12 +253,13 @@
         <th rowspan="2" data-col="0" onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
         <th rowspan="2" data-col="1" onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
         <th rowspan="2" data-col="2" onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
-        <th rowspan="2" data-col="3" onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
-        <th colspan="2" class="col-group">Assisted Highlight</th>
+        <th class="col-group col-divider">SimC</th>
+        <th colspan="2" class="col-group col-divider">Assisted Highlight</th>
         <th colspan="2" class="col-group col-divider">One Button Rotation</th>
       </tr>
       <tr class="header-columns">
-        <th data-col="4" onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="3" class="col-divider" onclick="sortTable(3)" style="text-align:right" title="SimulationCraft optimal APL DPS">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="4" class="col-divider" onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
         <th data-col="5" onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
         <th data-col="6" class="col-divider" onclick="sortTable(6)" style="text-align:right" title="One Button Rotation DPS (Blizzard APL + GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
         <th data-col="7" onclick="sortTable(7)" style="text-align:right" title="One Button Rotation delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
@@ -286,8 +287,8 @@
         <td><span class="class-badge">{{ r.spec.class }}</span></td>
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
-        <td class="dps" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
-        <td class="dps{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.assisted_highlight_dps | math.round }}{{ end }}">
+        <td class="dps col-divider" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
+        <td class="dps col-divider{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.assisted_highlight_dps | math.round }}{{ end }}">
           {{- if r.likely_broken_apl }}
           <span class="apl-broken-badge">⚠ SimC APL</span>
           {{- else }}
