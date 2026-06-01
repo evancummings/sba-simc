@@ -52,6 +52,7 @@ public class SiteGenerator(string outputDir)
             docker_digest_short = dockerImage.DigestShort,
             docker_image_id = dockerImage.ImageId,
             docker_image_label = dockerImage.DisplayLabel,
+            docker_hub_url = dockerImage.HubUrl,
             iterations,
             total_specs = sortedResults.Count,
             broken_apl_count = sortedResults.Count(r => r.LikelyBrokenApl),

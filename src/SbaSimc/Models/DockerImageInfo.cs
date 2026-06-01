@@ -27,4 +27,21 @@ public record DockerImageInfo(string Tag, string? Digest, string? ImageId)
             return Digest.Length <= 24 ? Digest : $"{Digest[..24]}…";
         }
     }
+
+    /// <summary>Docker Hub page for this image (pinned to digest when available).</summary>
+    public string HubUrl
+    {
+        get
+        {
+            var repo = Tag.Split(':')[0];
+            if (Digest is not null)
+            {
+                var at = Digest.IndexOf('@');
+                if (at >= 0)
+                    return $"https://hub.docker.com/r/{repo}@{Digest[(at + 1)..]}";
+            }
+
+            return $"https://hub.docker.com/r/{repo}";
+        }
+    }
 }

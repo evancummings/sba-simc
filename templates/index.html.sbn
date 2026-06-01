@@ -282,7 +282,8 @@
 <footer>
   Generated {{ generated_at }} &mdash;
   <a href="https://github.com/simulationcraft/simc" style="color:#52525b">SimulationCraft</a> &mdash;
-  <a href="https://github.com/ecummings/sba-simc" style="color:#52525b">Source</a>
+  <a href="{{ docker_hub_url }}" style="color:#52525b">{{ docker_image_label }}</a> &mdash;
+  <a href="https://github.com/evancummings/sba-simc" style="color:#52525b">Source</a>
 </footer>
 
 <script>
