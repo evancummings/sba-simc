@@ -131,6 +131,29 @@
       border-bottom: 1px solid #27272a;
     }
 
+    thead tr.header-groups {
+      border-bottom: none;
+    }
+
+    th.col-group {
+      text-align: center;
+      cursor: default;
+      color: #d4d4d8;
+      border-bottom: 1px solid #27272a;
+    }
+
+    th.col-group:hover { color: #d4d4d8; }
+
+    thead tr.header-columns th {
+      font-weight: 500;
+      font-size: .75rem;
+    }
+
+    th.col-divider,
+    td.col-divider {
+      border-left: 1px solid #3f3f46;
+    }
+
     th {
       padding: .55rem .7rem;
       text-align: left;
@@ -223,15 +246,19 @@
 <div class="table-wrap">
   <table id="results-table">
     <thead>
-      <tr>
-        <th onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">AH DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight Delta vs SimC APL">AH Δ <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(6)" style="text-align:right" title="One Button DPS (Blizzard APL + GCD penalty)">OB DPS <span class="sort-arrow">↕</span></th>
-        <th onclick="sortTable(7)" style="text-align:right" title="One Button Delta vs SimC APL">OB Δ <span class="sort-arrow">↕</span></th>
+      <tr class="header-groups">
+        <th rowspan="2" data-col="0" onclick="sortTable(0)">Class <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="1" onclick="sortTable(1)">Spec <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="2" onclick="sortTable(2)">Hero Talent <span class="sort-arrow">↕</span></th>
+        <th rowspan="2" data-col="3" onclick="sortTable(3)" style="text-align:right">SimC DPS <span class="sort-arrow">↕</span></th>
+        <th colspan="2" class="col-group">Assisted Highlight</th>
+        <th colspan="2" class="col-group col-divider">One Button Rotation</th>
+      </tr>
+      <tr class="header-columns">
+        <th data-col="4" onclick="sortTable(4)" style="text-align:right" title="Assisted Highlight DPS (Blizzard APL, no GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="5" onclick="sortTable(5)" style="text-align:right" title="Assisted Highlight delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
+        <th data-col="6" class="col-divider" onclick="sortTable(6)" style="text-align:right" title="One Button Rotation DPS (Blizzard APL + GCD penalty)">DPS <span class="sort-arrow">↕</span></th>
+        <th data-col="7" onclick="sortTable(7)" style="text-align:right" title="One Button Rotation delta vs SimC APL">Δ <span class="sort-arrow">↕</span></th>
       </tr>
     </thead>
     <tbody>
@@ -265,7 +292,7 @@
           {{ r.delta_formatted }}
           {{- end }}
         </td>
-        <td class="dps" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
+        <td class="dps col-divider" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
         <td class="delta {{ if r.likely_broken_apl }}delta-unreliable{{ else }}{{ ob_severity_class }}{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.one_button_delta_percent }}{{ end }}" title="{{ if r.likely_broken_apl }}SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.{{ end }}">
           {{- if r.likely_broken_apl }}
           —
@@ -394,7 +421,8 @@
     filterClass(document.querySelector(`.filter-btn[data-class="${activeClass}"]`), activeClass);
 
     // Update arrow indicators
-    document.querySelectorAll('th').forEach((th, i) => {
+    document.querySelectorAll('th[data-col]').forEach(th => {
+      const i = parseInt(th.dataset.col, 10);
       th.classList.toggle('sorted', i === col);
       const arrow = th.querySelector('.sort-arrow');
       if (arrow) arrow.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
