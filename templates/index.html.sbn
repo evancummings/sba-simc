@@ -67,7 +67,6 @@
 
     .apl-broken-badge {
       display: inline-block;
-      margin-right: .35rem;
       padding: .1rem .4rem;
       border-radius: 4px;
       font-size: .68rem;
@@ -193,7 +192,7 @@
     }
 
     .dps { font-variant-numeric: tabular-nums; text-align: right; }
-    .dps.dps-unreliable { text-align: left; }
+    .dps.dps-unreliable { text-align: center; }
 
     .delta {
       font-variant-numeric: tabular-nums;
@@ -290,7 +289,7 @@
         <td class="dps col-divider" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
         <td class="dps col-divider{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.assisted_highlight_dps | math.round }}{{ end }}">
           {{- if r.likely_broken_apl }}
-          <span class="apl-broken-badge">⚠ SimC APL</span>
+          <span class="apl-broken-badge">⚠ APL Missing</span>
           {{- else }}
           {{ r.assisted_highlight_dps | math.round }}
           {{- end }}
@@ -302,7 +301,7 @@
         </td>
         <td class="dps col-divider{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.one_button_dps | math.round }}{{ end }}">
           {{- if r.likely_broken_apl }}
-          <span class="apl-broken-badge">⚠ SimC APL</span>
+          <span class="apl-broken-badge">⚠ APL Missing</span>
           {{- else }}
           {{ r.one_button_dps | math.round }}
           {{- end }}

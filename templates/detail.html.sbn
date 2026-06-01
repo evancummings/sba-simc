@@ -312,7 +312,7 @@
 
   <h1>{{ result.spec.class }} {{ result.spec.spec }} <span style="color:#71717a;font-weight:500">· {{ result.spec.hero_talent }}</span>
     {{- if result.likely_broken_apl }}
-    <span class="apl-broken-badge">⚠ SimC APL</span>
+    <span class="apl-broken-badge">⚠ APL Missing</span>
     {{- end }}
   </h1>
   <p class="meta">
