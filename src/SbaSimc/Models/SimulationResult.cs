@@ -8,6 +8,18 @@ public record SimulationResult(
 )
 {
     /// <summary>
+    /// AH DPS below this fraction of optimal strongly suggests SimC's Blizzard APL is broken
+    /// for this profile (e.g. Enhancement Shaman ~3k vs ~112k), not a real in-game result.
+    /// </summary>
+    public const double BrokenAplThreshold = 0.5;
+
+    /// <summary>
+    /// True when Assisted Highlight DPS is far below optimal — likely a SimC assisted_combat bug.
+    /// </summary>
+    public bool LikelyBrokenApl => OptimalDps > 0
+        && AssistedHighlightDps < OptimalDps * BrokenAplThreshold;
+
+    /// <summary>
     /// How much DPS the Assisted Highlight APL loses relative to the optimal APL.
     /// Negative means underperformance (expected). Positive would mean it outperforms.
     /// </summary>

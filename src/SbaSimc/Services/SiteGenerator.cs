@@ -54,9 +54,10 @@ public class SiteGenerator(string outputDir)
             docker_image_label = dockerImage.DisplayLabel,
             iterations,
             total_specs = sortedResults.Count,
-            good_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Good),
-            moderate_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Moderate),
-            poor_count = sortedResults.Count(r => r.Severity == DeltaSeverity.Poor),
+            broken_apl_count = sortedResults.Count(r => r.LikelyBrokenApl),
+            good_count = sortedResults.Count(r => !r.LikelyBrokenApl && r.Severity == DeltaSeverity.Good),
+            moderate_count = sortedResults.Count(r => !r.LikelyBrokenApl && r.Severity == DeltaSeverity.Moderate),
+            poor_count = sortedResults.Count(r => !r.LikelyBrokenApl && r.Severity == DeltaSeverity.Poor),
         });
 
         var context = new TemplateContext();
