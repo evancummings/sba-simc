@@ -8,6 +8,12 @@ public record DockerImageInfo(string Tag, string? Digest, string? ImageId)
         : ImageId is not null ? $"{Tag} ({ImageId})"
         : Tag;
 
+    /// <summary>Short label for links (tag + compact digest).</summary>
+    public string LinkLabel =>
+        DigestShort is not null ? $"{Tag} @ {DigestShort}"
+        : ImageId is not null ? $"{Tag} ({ImageId})"
+        : Tag;
+
     /// <summary>Compact digest for display; full value remains in <see cref="Digest"/>.</summary>
     public string? DigestShort
     {

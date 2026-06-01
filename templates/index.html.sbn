@@ -191,6 +191,7 @@
     }
 
     .dps { font-variant-numeric: tabular-nums; text-align: right; }
+    .dps.dps-unreliable { text-align: left; }
 
     .delta {
       font-variant-numeric: tabular-nums;
@@ -284,19 +285,27 @@
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
         <td class="dps" data-val="{{ r.optimal_dps | math.round }}">{{ r.optimal_dps | math.round }}</td>
-        <td class="dps" data-val="{{ r.assisted_highlight_dps | math.round }}">{{ r.assisted_highlight_dps | math.round }}</td>
-        <td class="delta {{ if r.likely_broken_apl }}delta-unreliable{{ else }}{{ severity_class }}{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.delta_percent }}{{ end }}" title="{{ if r.likely_broken_apl }}SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.{{ end }}">
+        <td class="dps{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.assisted_highlight_dps | math.round }}{{ end }}">
           {{- if r.likely_broken_apl }}
-          <span class="apl-broken-badge">⚠ SimC APL</span>—
+          <span class="apl-broken-badge">⚠ SimC APL</span>
           {{- else }}
+          {{ r.assisted_highlight_dps | math.round }}
+          {{- end }}
+        </td>
+        <td class="delta {{ if r.likely_broken_apl }}delta-unreliable{{ else }}{{ severity_class }}{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.delta_percent }}{{ end }}" title="{{ if r.likely_broken_apl }}SimC's assisted_combat APL appears broken for this profile (AH DPS &lt; 50% of optimal). Delta is not meaningful.{{ end }}">
+          {{- if !r.likely_broken_apl }}
           {{ r.delta_formatted }}
           {{- end }}
         </td>
-        <td class="dps col-divider" data-val="{{ r.one_button_dps | math.round }}">{{ r.one_button_dps | math.round }}</td>
-        <td class="delta {{ if r.likely_broken_apl }}delta-unreliable{{ else }}{{ ob_severity_class }}{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.one_button_delta_percent }}{{ end }}" title="{{ if r.likely_broken_apl }}SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.{{ end }}">
+        <td class="dps col-divider{{ if r.likely_broken_apl }} dps-unreliable{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.one_button_dps | math.round }}{{ end }}">
           {{- if r.likely_broken_apl }}
-          —
+          <span class="apl-broken-badge">⚠ SimC APL</span>
           {{- else }}
+          {{ r.one_button_dps | math.round }}
+          {{- end }}
+        </td>
+        <td class="delta {{ if r.likely_broken_apl }}delta-unreliable{{ else }}{{ ob_severity_class }}{{ end }}" data-val="{{ if r.likely_broken_apl }}-9999{{ else }}{{ r.one_button_delta_percent }}{{ end }}" title="{{ if r.likely_broken_apl }}SimC's assisted_combat APL appears broken for this profile. Delta is not meaningful.{{ end }}">
+          {{- if !r.likely_broken_apl }}
           {{ r.one_button_delta_formatted }}
           {{- end }}
         </td>
@@ -309,7 +318,7 @@
 <footer>
   Generated {{ generated_at }} &mdash;
   <a href="https://github.com/simulationcraft/simc" style="color:#52525b">SimulationCraft</a> &mdash;
-  <a href="{{ docker_hub_url }}" style="color:#52525b">{{ docker_image_label }}</a> &mdash;
+  <a href="{{ docker_hub_url }}" style="color:#52525b" title="{{ docker_image_label }}">{{ docker_link_label }}</a> &mdash;
   <a href="https://github.com/evancummings/sba-simc" style="color:#52525b">Source</a>
 </footer>
 
@@ -345,7 +354,8 @@
   // Humanize numbers already set as text — re-format after Scriban renders
   document.querySelectorAll('td.dps').forEach(td => {
     const v = parseFloat(td.dataset.val);
-    if (!isNaN(v)) td.textContent = fmt.format(Math.round(v));
+    if (isNaN(v) || v < 0) return;
+    td.textContent = fmt.format(Math.round(v));
   });
 
   // Apply class colors to table badges
