@@ -4,9 +4,12 @@ public record SimulationResult(
     WowSpec Spec,
     double OptimalDps,
     double AssistedHighlightDps,
-    double OneButtonDps
+    double OneButtonDps,
+    bool HasDetailPage = false
 )
 {
+    public string DetailSlug => SpecDetail.SlugFrom(Spec);
+
     /// <summary>
     /// AH DPS below this fraction of optimal strongly suggests SimC's Blizzard APL is broken
     /// for this profile (e.g. Enhancement Shaman ~3k vs ~112k), not a real in-game result.

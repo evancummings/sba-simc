@@ -177,6 +177,8 @@
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: #18181b; }
     tbody tr.hidden { display: none; }
+    tbody tr.clickable { cursor: pointer; }
+    tbody tr.clickable:hover { background: rgba(63, 63, 70, 0.35); }
 
     td { padding: .45rem .7rem; white-space: nowrap; }
 
@@ -280,7 +282,7 @@
           else
             ob_severity_class = "delta-poor"
           end }}
-      <tr data-class="{{ r.spec.class }}"{{ if r.likely_broken_apl }} class="apl-broken"{{ end }}>
+      <tr data-class="{{ r.spec.class }}"{{ if r.likely_broken_apl }} class="apl-broken{{ if r.has_detail_page }} clickable{{ end }}"{{ else if r.has_detail_page }} class="clickable"{{ end }}{{ if r.has_detail_page }} data-href="details/{{ r.detail_slug }}.html"{{ end }}>
         <td><span class="class-badge">{{ r.spec.class }}</span></td>
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
@@ -441,6 +443,14 @@
 
   // Default sort: AH delta descending (closest to optimal at top; broken rows sort last via -9999)
   sortTable(5);
+
+  // Detail page navigation
+  document.querySelectorAll('#results-table tbody tr[data-href]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      window.location.href = row.dataset.href;
+    });
+  });
 </script>
 </body>
 </html>

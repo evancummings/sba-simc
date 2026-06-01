@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ result.spec.class }} {{ result.spec.spec }} — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html">← All specs</a>
+
+  <h1>{{ result.spec.class }} {{ result.spec.spec }} <span style="color:#71717a;font-weight:500">· {{ result.spec.hero_talent }}</span>
+    {{- if result.likely_broken_apl }}
+    <span class="apl-broken-badge">⚠ SimC APL</span>
+    {{- end }}
+  </h1>
+  <p class="meta">
+    Profile: <code>{{ result.spec.simc_profile_name }}</code>
+    · Player: <code id="player-name"></code>
+    · {{ iterations }} iterations · SimC {{ simc_version }} · {{ docker_link_label }}
+  </p>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated {{ generated_at }} ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="detail-data">{{ detail_json }}</script>
+<script>
+  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  const resultMeta = {
+    optimalDps: {{ result.optimal_dps }},
+    ahDps: {{ result.assisted_highlight_dps }},
+    obDps: {{ result.one_button_dps }},
+    likelyBroken: {{ result.likely_broken_apl }},
+    deltaPct: {{ result.delta_percent }},
+    obDeltaPct: {{ result.one_button_delta_percent }},
+  };
+
+  document.getElementById('player-name').textContent = detail.playerName;
+
+  function deltaClass(pctVal) {
+    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta.likelyBroken) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  // DPS summary cards
+  const dpsGrid = document.getElementById('dps-grid');
+  [
+    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
+    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
+  ].forEach(({ label, value, delta }) => {
+    const card = document.createElement('div');
+    card.className = 'dps-card';
+    card.innerHTML = `
+      <div class="label">${label}</div>
+      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+    `;
+    dpsGrid.appendChild(card);
+  });
+
+  // Damage bars — top 12 by SimC portion
+  const topAbilities = [...detail.abilities]
+    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+    .slice(0, 12);
+
+  const barChart = document.getElementById('damage-bars');
+  topAbilities.forEach(row => {
+    const maxPct = Math.max(
+      row.simc?.portionPercent ?? 0,
+      row.assistedHighlight?.portionPercent ?? 0,
+      row.oneButton?.portionPercent ?? 0,
+      1
+    );
+
+    function seg(mode, cls) {
+      const stat = row[mode];
+      if (!stat || stat.isSkipped) {
+        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
+      }
+      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+    }
+
+    // Three stacked mini-rows per ability
+    const el = document.createElement('div');
+    el.className = 'bar-row';
+    el.innerHTML = `
+      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+      <div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
+        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
+        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
+      </div>
+    `;
+    barChart.appendChild(el);
+  });
+
+  // Fix bar skipped display - show hatched placeholder when skipped
+  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+    const row = topAbilities[i];
+    const tracks = rowEl.querySelectorAll('.bar-track');
+    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
+      const stat = row[mode];
+      const track = tracks[ti];
+      if (!stat || stat.isSkipped) {
+        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+      }
+    });
+  });
+
+  // Timeline chart
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
+      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const maxLen = Math.max(...series.map(s => s.data.length), 1);
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  drawTimeline();
+  window.addEventListener('resize', drawTimeline);
+
+  // Ability table
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderAbilities();
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  // Sample rotation tabs
+  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let activeMode = 'simc';
+
+  const modeMap = {
+    simc: detail.simc,
+    ah: detail.assistedHighlight,
+    ob: detail.oneButton,
+  };
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  renderRotation();
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+</script>
+</body>
+</html>

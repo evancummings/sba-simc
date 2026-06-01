@@ -4,6 +4,9 @@ using SbaSimc.Models;
 using SbaSimc.Services;
 using System.Collections.Concurrent;
 
+if (args.Length > 0 && args[0] == "test-detail")
+    return await RunDetailPageTest(args.Skip(1).ToArray());
+
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
@@ -28,6 +31,7 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 var runner  = new SimcRunner(simcConfig);
 var dockerImage = await runner.GetDockerImageInfoAsync(cts.Token);
 var results = new ConcurrentBag<SimulationResult>();
+var details = new ConcurrentBag<SpecDetail>();
 
 Console.WriteLine("=== SBA SimC — Optimal vs Assisted Highlight vs One Button Rotation ===");
 Console.WriteLine($"  Docker image : {dockerImage.DisplayLabel}");
@@ -92,6 +96,12 @@ await Parallel.ForEachAsync(
         var result = new SimulationResult(spec, optDps.Value, ahDps.Value, obDps.Value);
         results.Add(result);
 
+        var detail = DetailExtractor.Extract(spec, optJson, ahJson, obJson, simcConfig.Iterations);
+        if (detail is not null)
+            details.Add(detail);
+        else
+            Console.Error.WriteLine($"  ⚠ {label} — detail extraction failed (index row kept).");
+
         Console.WriteLine($"  ✓ {label}");
         Console.WriteLine($"      Optimal: {optDps.Value:N0}  |  AH: {ahDps.Value:N0}  |  OB: {obDps.Value:N0}  |  Δ {result.DeltaFormatted}");
     });
@@ -121,8 +131,42 @@ if (firstResultFile is not null)
 // ---------------------------------------------------------------------------
 Console.WriteLine("Generating static site...");
 var generator = new SiteGenerator(outputConfig.Directory);
-await generator.GenerateAsync(results, simcVersion, dockerImage, simcConfig.Iterations, cts.Token);
+await generator.GenerateAsync(results, details, simcVersion, dockerImage, simcConfig.Iterations, cts.Token);
 
 Console.WriteLine();
 Console.WriteLine("Done.");
 return 0;
+
+static async Task<int> RunDetailPageTest(string[] args)
+{
+    var optPath = args.ElementAtOrDefault(0) ?? @"C:\Temp\simc-test\probe.json";
+    var ahPath  = args.ElementAtOrDefault(1) ?? @"C:\Temp\simc-test\probe_ah.json";
+    var obPath  = args.ElementAtOrDefault(2) ?? @"C:\Temp\simc-test\probe_ob.json";
+
+    var spec = new WowSpec("Warrior", "Arms", "Slayer", "MID1_Warrior_Arms");
+    var optJson = await File.ReadAllTextAsync(optPath);
+    var ahJson  = await File.ReadAllTextAsync(ahPath);
+    var obJson  = await File.ReadAllTextAsync(obPath);
+
+    var detail = DetailExtractor.Extract(spec, optJson, ahJson, obJson, iterations: 5);
+    if (detail is null)
+    {
+        Console.Error.WriteLine("Detail extraction failed.");
+        return 1;
+    }
+
+    var result = new SimulationResult(spec, detail.Simc.Dps, detail.AssistedHighlight.Dps, detail.OneButton.Dps, HasDetailPage: true);
+    var dockerImage = new DockerImageInfo("simulationcraftorg/simc:latest", "sha256:test", "test");
+    var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "output");
+    var generator = new SiteGenerator(outputDir);
+    await generator.GenerateAsync(
+        [result],
+        [detail],
+        ResultParser.ExtractVersion(optJson) ?? "test",
+        dockerImage,
+        5);
+
+    Console.WriteLine($"Detail page → {Path.Combine(outputDir, "details", detail.Slug + ".html")}");
+    Console.WriteLine($"Abilities extracted: {detail.Abilities.Count}");
+    return 0;
+}
