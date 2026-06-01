@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using SbaSimc;
 using SbaSimc.Models;
 
 namespace SbaSimc.Services;
@@ -10,7 +11,13 @@ public static class DetailExtractor
     private const int MaxSampleActions = 120;
     private const double MaxSampleTimeSec = 60.0;
 
-    public static SpecDetail? Extract(WowSpec spec, string optimalJson, string ahJson, string obJson, int iterations)
+    public static SpecDetail? Extract(
+        WowSpec spec,
+        FightProfile fightProfile,
+        string optimalJson,
+        string ahJson,
+        string obJson,
+        int iterations)
     {
         var simc = ExtractMode(optimalJson);
         var ah = ExtractMode(ahJson);
@@ -28,6 +35,8 @@ public static class DetailExtractor
 
         return new SpecDetail(
             Slug: slug,
+            FightProfileId: fightProfile.Id,
+            FightProfileLabel: fightProfile.Label,
             Class: spec.Class,
             Spec: spec.Spec,
             HeroTalent: spec.HeroTalent,

@@ -189,6 +189,22 @@
       margin-bottom: .75rem;
     }
 
+    .profile-btn {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .profile-btn.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
     .filter-chip {
       padding: .3rem .7rem;
       border-radius: 9999px;
@@ -308,18 +324,23 @@
 </head>
 <body>
 <div class="container">
-  <a class="back-link" href="../index.html">← All specs</a>
+  <a class="back-link" href="../index.html" id="back-link">← All specs</a>
 
   <h1>{{ result.spec.class }} {{ result.spec.spec }} <span style="color:#71717a;font-weight:500">· {{ result.spec.hero_talent }}</span>
-    {{- if result.likely_broken_apl }}
-    <span class="apl-broken-badge">⚠ APL Missing</span>
-    {{- end }}
+    <span class="apl-broken-badge" id="broken-badge" style="display:none">⚠ APL Missing</span>
   </h1>
   <p class="meta">
     Profile: <code>{{ result.spec.simc_profile_name }}</code>
     · Player: <code id="player-name"></code>
+    · Fight: <strong id="fight-profile-label"></strong> (<code id="fight-style-label"></code>)
     · {{ iterations }} iterations · SimC {{ simc_version }} · {{ docker_link_label }}
   </p>
+
+  <div class="filters" id="fight-profile-filters">
+    {{- for fp in fight_profiles }}
+    <button type="button" class="profile-btn{{ if fp.id == default_fight_profile_id }} active{{ end }}" data-profile="{{ fp.id }}" title="{{ fp.description }}">{{ fp.label }}</button>
+    {{- end }}
+  </div>
 
   <div class="dps-grid" id="dps-grid"></div>
 
@@ -393,108 +414,114 @@
   </footer>
 </div>
 
-<script type="application/json" id="detail-data">{{ detail_json }}</script>
+<script type="application/json" id="details-by-profile">{{ details_by_profile_json }}</script>
+<script type="application/json" id="results-by-profile">{{ results_by_profile_json }}</script>
+<script type="application/json" id="fight-profiles-data">{{ fight_profiles_json }}</script>
 <script>
-  const detail = JSON.parse(document.getElementById('detail-data').textContent);
+  const detailsByProfile = JSON.parse(document.getElementById('details-by-profile').textContent);
+  const resultsByProfile = JSON.parse(document.getElementById('results-by-profile').textContent);
+  const fightProfiles = JSON.parse(document.getElementById('fight-profiles-data').textContent);
+  const defaultProfileId = '{{ default_fight_profile_id }}';
+
+  const params = new URLSearchParams(window.location.search);
+  let activeProfile = params.get('profile') || defaultProfileId;
+  if (!detailsByProfile[activeProfile]) {
+    activeProfile = Object.keys(detailsByProfile)[0] || defaultProfileId;
+  }
+
+  let detail = detailsByProfile[activeProfile];
+  let resultMeta = resultsByProfile[activeProfile];
+
   const fmt = new Intl.NumberFormat('en-US');
   const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
   const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
 
-  const resultMeta = {
-    optimalDps: {{ result.optimal_dps }},
-    ahDps: {{ result.assisted_highlight_dps }},
-    obDps: {{ result.one_button_dps }},
-    likelyBroken: {{ result.likely_broken_apl }},
-    deltaPct: {{ result.delta_percent }},
-    obDeltaPct: {{ result.one_button_delta_percent }},
-  };
-
-  document.getElementById('player-name').textContent = detail.playerName;
-
   function deltaClass(pctVal) {
-    if (resultMeta.likelyBroken) return 'delta-unreliable';
+    if (resultMeta?.likelyBrokenApl) return 'delta-unreliable';
     if (pctVal >= -5) return 'delta-good';
     if (pctVal >= -15) return 'delta-moderate';
     return 'delta-poor';
   }
 
   function fmtDelta(pctVal) {
-    if (resultMeta.likelyBroken) return '—';
+    if (resultMeta?.likelyBrokenApl) return '—';
     return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
   }
 
-  // DPS summary cards
-  const dpsGrid = document.getElementById('dps-grid');
-  [
-    { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
-    { label: 'Assisted Highlight', value: resultMeta.ahDps, delta: resultMeta.deltaPct },
-    { label: 'One Button Rotation', value: resultMeta.obDps, delta: resultMeta.obDeltaPct },
-  ].forEach(({ label, value, delta }) => {
-    const card = document.createElement('div');
-    card.className = 'dps-card';
-    card.innerHTML = `
-      <div class="label">${label}</div>
-      <div class="value">${resultMeta.likelyBroken && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
-      ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
-    `;
-    dpsGrid.appendChild(card);
-  });
+  function renderDpsGrid() {
+    const dpsGrid = document.getElementById('dps-grid');
+    dpsGrid.innerHTML = '';
+    if (!resultMeta) return;
 
-  // Damage bars — top 12 by SimC portion
-  const topAbilities = [...detail.abilities]
-    .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
-    .slice(0, 12);
-
-  const barChart = document.getElementById('damage-bars');
-  topAbilities.forEach(row => {
-    const maxPct = Math.max(
-      row.simc?.portionPercent ?? 0,
-      row.assistedHighlight?.portionPercent ?? 0,
-      row.oneButton?.portionPercent ?? 0,
-      1
-    );
-
-    function seg(mode, cls) {
-      const stat = row[mode];
-      if (!stat || stat.isSkipped) {
-        return `<div class="bar-seg bar-seg-skipped" style="width:${(maxPct > 0 ? 0 : 0)}%" title="Not used"></div>`;
-      }
-      const w = (stat.portionPercent / maxPct * 100).toFixed(1);
-      return `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
-    }
-
-    // Three stacked mini-rows per ability
-    const el = document.createElement('div');
-    el.className = 'bar-row';
-    el.innerHTML = `
-      <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
-      <div>
-        <div class="bar-track" style="margin-bottom:2px">${seg('simc', 'bar-seg-simc')}</div>
-        <div class="bar-track" style="margin-bottom:2px">${seg('assistedHighlight', 'bar-seg-ah')}</div>
-        <div class="bar-track">${seg('oneButton', 'bar-seg-ob')}</div>
-      </div>
-    `;
-    barChart.appendChild(el);
-  });
-
-  // Fix bar skipped display - show hatched placeholder when skipped
-  barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
-    const row = topAbilities[i];
-    const tracks = rowEl.querySelectorAll('.bar-track');
-    ['simc', 'assistedHighlight', 'oneButton'].forEach((mode, ti) => {
-      const stat = row[mode];
-      const track = tracks[ti];
-      if (!stat || stat.isSkipped) {
-        track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
-      }
+    [
+      { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+      { label: 'Assisted Highlight', value: resultMeta.assistedHighlightDps, delta: resultMeta.deltaPercent },
+      { label: 'One Button Rotation', value: resultMeta.oneButtonDps, delta: resultMeta.oneButtonDeltaPercent },
+    ].forEach(({ label, value, delta }) => {
+      const card = document.createElement('div');
+      card.className = 'dps-card';
+      card.innerHTML = `
+        <div class="label">${label}</div>
+        <div class="value">${resultMeta.likelyBrokenApl && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+        ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+      `;
+      dpsGrid.appendChild(card);
     });
-  });
+  }
 
-  // Timeline chart
+  function renderDamageBars() {
+    const barChart = document.getElementById('damage-bars');
+    barChart.innerHTML = '';
+    if (!detail) return;
+
+    const topAbilities = [...detail.abilities]
+      .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+      .slice(0, 12);
+
+    topAbilities.forEach(row => {
+      const el = document.createElement('div');
+      el.className = 'bar-row';
+      el.innerHTML = `
+        <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+        <div>
+          <div class="bar-track bar-track-simc" style="margin-bottom:2px"></div>
+          <div class="bar-track bar-track-ah" style="margin-bottom:2px"></div>
+          <div class="bar-track bar-track-ob"></div>
+        </div>
+      `;
+      barChart.appendChild(el);
+    });
+
+    barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+      const row = topAbilities[i];
+      const tracks = rowEl.querySelectorAll('.bar-track');
+      [
+        { mode: 'simc', cls: 'bar-seg-simc', track: tracks[0] },
+        { mode: 'assistedHighlight', cls: 'bar-seg-ah', track: tracks[1] },
+        { mode: 'oneButton', cls: 'bar-seg-ob', track: tracks[2] },
+      ].forEach(({ mode, cls, track }) => {
+        const stat = row[mode];
+        if (!stat || stat.isSkipped) {
+          track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+        } else {
+          const maxPct = Math.max(
+            row.simc?.portionPercent ?? 0,
+            row.assistedHighlight?.portionPercent ?? 0,
+            row.oneButton?.portionPercent ?? 0,
+            1
+          );
+          const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+          track.innerHTML = `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+        }
+      });
+    });
+  }
+
   const canvas = document.getElementById('timeline-chart');
   const ctx = canvas.getContext('2d');
 
   function drawTimeline() {
+    if (!detail) return;
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -508,12 +535,11 @@
     const plotH = h - pad.t - pad.b;
 
     const series = [
-      { data: detail.simc.timeline, color: '#3b82f6', label: 'SimC' },
-      { data: detail.assistedHighlight.timeline, color: '#22c55e', label: 'AH' },
-      { data: detail.oneButton.timeline, color: '#a855f7', label: 'OBR' },
+      { data: detail.simc.timeline, color: '#3b82f6' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e' },
+      { data: detail.oneButton.timeline, color: '#a855f7' },
     ].filter(s => s.data && s.data.length > 0);
 
-    const maxLen = Math.max(...series.map(s => s.data.length), 1);
     const allVals = series.flatMap(s => s.data);
     const maxY = Math.max(...allVals, 1);
     const fightLen = detail.simc.fightLengthSec;
@@ -521,7 +547,6 @@
     ctx.fillStyle = '#18181b';
     ctx.fillRect(0, 0, w, h);
 
-    // Grid
     ctx.strokeStyle = '#27272a';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
@@ -532,7 +557,6 @@
       ctx.stroke();
     }
 
-    // Axes labels
     ctx.fillStyle = '#71717a';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'right';
@@ -559,10 +583,6 @@
     });
   }
 
-  drawTimeline();
-  window.addEventListener('resize', drawTimeline);
-
-  // Ability table
   const tbody = document.getElementById('ability-tbody');
   let activeFilter = 'all';
 
@@ -582,6 +602,7 @@
 
   function renderAbilities() {
     tbody.innerHTML = '';
+    if (!detail) return;
     detail.abilities.forEach(row => {
       if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
       if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
@@ -601,30 +622,21 @@
     });
   }
 
-  renderAbilities();
-
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeFilter = chip.dataset.filter;
-      renderAbilities();
-    });
-  });
-
-  // Sample rotation tabs
-  const simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+  let simcSpells = new Set();
   let activeMode = 'simc';
-
-  const modeMap = {
-    simc: detail.simc,
-    ah: detail.assistedHighlight,
-    ob: detail.oneButton,
-  };
 
   function renderRotation() {
     const rotBody = document.getElementById('rotation-tbody');
     rotBody.innerHTML = '';
+    if (!detail) return;
+
+    const modeMap = {
+      simc: detail.simc,
+      ah: detail.assistedHighlight,
+      ob: detail.oneButton,
+    };
+    simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+
     const mode = modeMap[activeMode];
     const actions = mode?.sampleActions ?? [];
     const modeSpells = new Set(actions.map(a => a.name));
@@ -643,7 +655,49 @@
     });
   }
 
-  renderRotation();
+  function renderAll() {
+    detail = detailsByProfile[activeProfile];
+    resultMeta = resultsByProfile[activeProfile];
+
+    const profile = fightProfiles.find(p => p.id === activeProfile);
+    document.getElementById('fight-profile-label').textContent = profile?.label || activeProfile;
+    document.getElementById('fight-style-label').textContent = detail?.fightStyle || '—';
+    document.getElementById('player-name').textContent = detail?.playerName || '—';
+
+    const brokenBadge = document.getElementById('broken-badge');
+    brokenBadge.style.display = resultMeta?.likelyBrokenApl ? 'inline-block' : 'none';
+
+    renderDpsGrid();
+    renderDamageBars();
+    drawTimeline();
+    renderAbilities();
+    renderRotation();
+  }
+
+  function applyFightProfile(profileId) {
+    if (!detailsByProfile[profileId]) return;
+    activeProfile = profileId;
+    document.querySelectorAll('.profile-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.profile === profileId);
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.set('profile', profileId);
+    history.replaceState(null, '', url);
+    renderAll();
+  }
+
+  document.querySelectorAll('.profile-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyFightProfile(btn.dataset.profile));
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
 
   document.querySelectorAll('.mode-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -653,6 +707,9 @@
       renderRotation();
     });
   });
+
+  renderAll();
+  window.addEventListener('resize', drawTimeline);
 </script>
 </body>
 </html>

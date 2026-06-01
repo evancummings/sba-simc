@@ -2,6 +2,7 @@ namespace SbaSimc.Models;
 
 public record SimulationResult(
     WowSpec Spec,
+    string FightProfileId,
     double OptimalDps,
     double AssistedHighlightDps,
     double OneButtonDps,

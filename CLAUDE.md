@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 `sba-simc` is a nightly CI pipeline that:
 1. Pulls the community `simulationcraftorg/simc` Docker image
-2. Runs SimulationCraft for every WoW class/spec/hero-talent combination using three APL modes: the **optimal community APL**, **Blizzard's Assisted Highlight** (no GCD penalty), and **One Button Rotation** (with a 25%-of-GCD timing penalty)
+2. Runs SimulationCraft for every WoW class/spec/hero-talent combination across **three fight profiles** (Patchwerk, Dungeon Slice, Hectic Add Cleave) using three APL modes: the **optimal community APL**, **Blizzard's Assisted Highlight** (no GCD penalty), and **One Button Rotation** (with a 25%-of-GCD timing penalty)
 3. Computes the DPS delta between Assisted Highlight and optimal for each spec
 4. Generates a static comparison website deployed to GitHub Pages
 
@@ -23,6 +23,9 @@ dotnet run --project src/SbaSimc/SbaSimc.csproj
 
 # Run with a custom iteration count (env var override)
 SIMC__Iterations=100 dotnet run --project src/SbaSimc/SbaSimc.csproj
+
+# Test multi-profile site generation from probe json (requires probe files in C:\Temp\simc-test)
+dotnet run --project src/SbaSimc/SbaSimc.csproj -- test-profiles
 
 # Build release binary
 dotnet build src/SbaSimc/SbaSimc.csproj --configuration Release
@@ -67,10 +70,13 @@ output/                         → Generated site (gitignored; deployed to gh-p
 
 1. `SpecLoader` reads `specs.json` → list of `WowSpec` records
 2. `Program.cs` fans out with `Parallel.ForEachAsync` (bounded by `SimcConfig.MaxParallelism`)
-3. For each spec, `SimcRunner` runs three `docker run --rm` containers: optimal APL (no flags), Assisted Highlight (`use_blizzard_action_list=1`), and One Button Rotation (`use_blizzard_action_list=1 one_button_mode=1`)
+3. For each spec × fight profile, `SimcRunner` runs three `docker run --rm` containers: optimal APL (no flags), Assisted Highlight (`use_blizzard_action_list=1`), and One Button Rotation (`use_blizzard_action_list=1 one_button_mode=1`). Fight profile options (e.g. `fight_style=DungeonSlice`) are appended from `FightProfiles` in appsettings.json.
 4. `ResultParser` extracts `sim.players[0].collected_data.dps.mean` from the `json2` output
-5. `SiteGenerator` renders `templates/index.html.sbn` with Scriban and writes `output/index.html`
-6. GitHub Actions deploys `output/` to the `gh-pages` branch
+5. `DetailExtractor` parses ability breakdowns from json2 for detail pages
+6. `SiteGenerator` renders `templates/index.html.sbn` and `templates/detail.html.sbn` with embedded JSON for fight-profile switching
+7. GitHub Actions deploys `output/` to the `gh-pages` branch
+
+**Nightly run volume:** 50 specs × 3 fight profiles × 3 APL modes = **450 Docker runs**.
 
 ### Configuration
 
@@ -82,7 +88,17 @@ Settings live in `src/SbaSimc/appsettings.json` and are overridable via environm
 | `SimC.MaxParallelism` | `SIMC__MaxParallelism` | `4` | Each unit spawns a Docker container. |
 | `SimC.DockerImage` | `SIMC__DockerImage` | `simulationcraftorg/simc:latest` | |
 | `SimC.ContainerProfilesPath` | `SIMC__ContainerProfilesPath` | `/app/SimulationCraft/profiles/MID1` | Update after image changes (see below). |
-| `Output.Directory` | `OUTPUT__Directory` | `./output` | |
+| `Output.Directory` | `OUTPUT__Directory` | `./output` |
+
+### Fight profiles (`FightProfiles` in appsettings.json)
+
+| Id | SimC option | Label |
+|---|---|---|
+| `patchwerk` | `fight_style=Patchwerk` | Single Target (Raid) — default view; matches SimC MID1_Raid |
+| `dungeonslice` | `fight_style=DungeonSlice` | M+ (Dungeon Slice) |
+| `hectic_add_cleave` | `fight_style=HecticAddCleave` | AoE / Adds |
+
+The index and detail pages include a fight-profile switcher; all profiles' results are embedded in each page as JSON. |
 
 ## SimC container internals (verified 2026-05-29, SimC 1205-01, WoW 12.0.5.67823)
 

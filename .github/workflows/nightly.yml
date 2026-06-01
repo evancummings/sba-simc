@@ -22,7 +22,7 @@ permissions:
 jobs:
   simulate-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 120   # guard against a hung simulation
+    timeout-minutes: 180   # 450 Docker runs (50 specs × 3 fight profiles × 3 APL modes)
 
     steps:
       # -----------------------------------------------------------------------

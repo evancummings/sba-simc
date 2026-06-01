@@ -25,11 +25,13 @@ public class SimcRunner(SimcConfig config)
     /// </param>
     /// <param name="hostOutputFile">Absolute path on the host where the JSON result should be written.</param>
     /// <param name="additionalOptions">Extra simc options for this spec (e.g. hero talent selection).</param>
+    /// <param name="fightProfileOptions">SimC options for the fight scenario, e.g. fight_style=DungeonSlice.</param>
     public async Task<string?> RunAsync(
         string profileName,
         string? aplSource,
         string hostOutputFile,
         string additionalOptions = "",
+        string fightProfileOptions = "",
         CancellationToken ct = default)
     {
         var hostOutputDir = Path.GetDirectoryName(hostOutputFile)!;
@@ -38,7 +40,7 @@ public class SimcRunner(SimcConfig config)
         var containerOutputFile = $"/output/{Path.GetFileName(hostOutputFile)}";
         var profilePath = $"{config.ContainerProfilesPath}/{profileName}.simc";
 
-        var args = BuildDockerArgs(hostOutputDir, profilePath, aplSource, containerOutputFile, additionalOptions);
+        var args = BuildDockerArgs(hostOutputDir, profilePath, aplSource, containerOutputFile, additionalOptions, fightProfileOptions);
 
         Console.WriteLine($"    docker {args[..Math.Min(120, args.Length)]}...");
 
@@ -145,7 +147,8 @@ public class SimcRunner(SimcConfig config)
         string containerProfilePath,
         string? aplSource,
         string containerOutputFile,
-        string additionalOptions)
+        string additionalOptions,
+        string fightProfileOptions)
     {
         var sb = new StringBuilder();
         sb.Append("run --rm");
@@ -157,6 +160,9 @@ public class SimcRunner(SimcConfig config)
         sb.Append($" {config.DockerImage}");
         sb.Append($" {containerProfilePath}");
         sb.Append($" iterations={config.Iterations}");
+
+        if (!string.IsNullOrWhiteSpace(fightProfileOptions))
+            sb.Append($" {fightProfileOptions.Trim()}");
 
         // json2 is SimC's structured JSON output format (v2). The path is inside the container.
         sb.Append($" json2={containerOutputFile}");

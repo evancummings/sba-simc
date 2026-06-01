@@ -221,21 +221,28 @@
   <p class="subtitle">
     Comparing the SimulationCraft community-optimal APL against Blizzard's Assisted Highlight (no GCD penalty)
     and One Button Rotation (with GCD penalty), for every class/spec/hero-talent combination.
+    <br />
+    Fight profile: <strong id="fight-profile-label">{{ default_fight_profile_id }}</strong> &mdash;
     SimC version: <strong>{{ simc_version }}</strong> &mdash;
     Docker: <strong>{{ docker_image }}</strong>{{ if docker_digest_short }} @ <code title="{{ docker_digest }}">{{ docker_digest_short }}</code>{{ else if docker_image_id }} (id {{ docker_image_id }}){{ end }} &mdash;
     {{ iterations | math.format "N0" }} iterations per sim.
   </p>
 
-  <div class="summary">
-    <span class="pill pill-total">{{ total_specs }} combinations</span>
-    <span class="pill pill-good">✓ {{ good_count }} within 5%</span>
-    <span class="pill pill-moderate">~ {{ moderate_count }} within 5–15%</span>
-    <span class="pill pill-poor">✗ {{ poor_count }} over 15% loss</span>
-    {{- if broken_apl_count > 0 }}
-    <span class="pill pill-broken">⚠ {{ broken_apl_count }} broken SimC APL</span>
-    {{- end }}
+  <div class="summary" id="summary-pills">
+    <span class="pill pill-total" id="pill-total">{{ total_specs }} combinations</span>
+    <span class="pill pill-good" id="pill-good">✓ {{ good_count }} within 5%</span>
+    <span class="pill pill-moderate" id="pill-moderate">~ {{ moderate_count }} within 5–15%</span>
+    <span class="pill pill-poor" id="pill-poor">✗ {{ poor_count }} over 15% loss</span>
+    <span class="pill pill-broken" id="pill-broken"{{ if broken_apl_count == 0 }} style="display:none"{{ end }}>⚠ {{ broken_apl_count }} broken SimC APL</span>
   </div>
 </header>
+
+<div class="filters">
+  <span class="filter-label">Fight profile:</span>
+  {{- for fp in fight_profiles }}
+  <button type="button" class="filter-btn profile-btn{{ if fp.id == default_fight_profile_id }} active{{ end }}" data-profile="{{ fp.id }}" title="{{ fp.description }}">{{ fp.label }}</button>
+  {{- end }}
+</div>
 
 <div class="filters">
   <span class="filter-label">Filter by class:</span>
@@ -282,7 +289,7 @@
           else
             ob_severity_class = "delta-poor"
           end }}
-      <tr data-class="{{ r.spec.class }}"{{ if r.likely_broken_apl }} class="apl-broken{{ if r.has_detail_page }} clickable{{ end }}"{{ else if r.has_detail_page }} class="clickable"{{ end }}{{ if r.has_detail_page }} data-href="details/{{ r.detail_slug }}.html"{{ end }}>
+      <tr data-class="{{ r.spec.class }}" data-slug="{{ r.detail_slug }}"{{ if r.likely_broken_apl }} class="apl-broken{{ if r.has_detail_page }} clickable{{ end }}"{{ else if r.has_detail_page }} class="clickable"{{ end }}{{ if r.has_detail_page }} data-href="details/{{ r.detail_slug }}.html" data-has-detail="1"{{ end }}>
         <td><span class="class-badge">{{ r.spec.class }}</span></td>
         <td>{{ r.spec.spec }}</td>
         <td>{{ r.spec.hero_talent }}</td>
@@ -324,8 +331,10 @@
   <a href="https://github.com/evancummings/sba-simc" style="color:#52525b">Source</a>
 </footer>
 
+<script type="application/json" id="index-data">{{ index_data_json }}</script>
 <script>
-  // Official WoW class colors
+  const indexData = JSON.parse(document.getElementById('index-data').textContent);
+  let activeProfile = '{{ default_fight_profile_id }}';
   const CLASS_COLORS = {
     'Death Knight': '#C41E3A',
     'Demon Hunter': '#A330C9',
@@ -350,10 +359,109 @@
     };
   }
 
-  // Number formatter
   const fmt = new Intl.NumberFormat('en-US');
 
-  // Humanize numbers already set as text — re-format after Scriban renders
+  function severityClass(severity) {
+    if (severity === 0) return 'delta-good';
+    if (severity === 1) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function formatDelta(pct) {
+    return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+  }
+
+  function updateSummaryPills(profileId) {
+    const s = indexData.summaries[profileId];
+    if (!s) return;
+    document.getElementById('pill-total').textContent = `${s.total} combinations`;
+    document.getElementById('pill-good').textContent = `✓ ${s.good} within 5%`;
+    document.getElementById('pill-moderate').textContent = `~ ${s.moderate} within 5–15%`;
+    document.getElementById('pill-poor').textContent = `✗ ${s.poor} over 15% loss`;
+    const brokenPill = document.getElementById('pill-broken');
+    if (s.broken > 0) {
+      brokenPill.style.display = '';
+      brokenPill.textContent = `⚠ ${s.broken} broken SimC APL`;
+    } else {
+      brokenPill.style.display = 'none';
+    }
+  }
+
+  function updateRowForProfile(row, profileId) {
+    const rowData = indexData.rows.find(r => r.slug === row.dataset.slug);
+    if (!rowData) return;
+    const p = rowData.byProfile[profileId];
+    if (!p) return;
+
+    row.classList.toggle('apl-broken', p.likelyBrokenApl);
+
+    const optCell = row.cells[3];
+    optCell.dataset.val = Math.round(p.optimalDps);
+    optCell.textContent = fmt.format(Math.round(p.optimalDps));
+
+    const ahCell = row.cells[4];
+    const ahDeltaCell = row.cells[5];
+    const obCell = row.cells[6];
+    const obDeltaCell = row.cells[7];
+
+    if (p.likelyBrokenApl) {
+      ahCell.className = 'dps col-divider dps-unreliable';
+      ahCell.dataset.val = '-9999';
+      ahCell.innerHTML = '<span class="apl-broken-badge">⚠ APL Missing</span>';
+      ahDeltaCell.className = 'delta delta-unreliable';
+      ahDeltaCell.dataset.val = '-9999';
+      ahDeltaCell.textContent = '';
+      obCell.className = 'dps col-divider dps-unreliable';
+      obCell.dataset.val = '-9999';
+      obCell.innerHTML = '<span class="apl-broken-badge">⚠ APL Missing</span>';
+      obDeltaCell.className = 'delta delta-unreliable';
+      obDeltaCell.dataset.val = '-9999';
+      obDeltaCell.textContent = '';
+    } else {
+      ahCell.className = 'dps col-divider';
+      ahCell.dataset.val = Math.round(p.assistedHighlightDps);
+      ahCell.textContent = fmt.format(Math.round(p.assistedHighlightDps));
+      ahDeltaCell.className = `delta ${severityClass(p.severity)}`;
+      ahDeltaCell.dataset.val = p.deltaPercent;
+      ahDeltaCell.textContent = formatDelta(p.deltaPercent);
+      obCell.className = 'dps col-divider';
+      obCell.dataset.val = Math.round(p.oneButtonDps);
+      obCell.textContent = fmt.format(Math.round(p.oneButtonDps));
+      obDeltaCell.className = `delta ${severityClass(p.oneButtonSeverity)}`;
+      obDeltaCell.dataset.val = p.oneButtonDeltaPercent;
+      obDeltaCell.textContent = formatDelta(p.oneButtonDeltaPercent);
+    }
+
+    if (row.dataset.hasDetail === '1') {
+      row.dataset.href = `details/${row.dataset.slug}.html?profile=${profileId}`;
+    }
+  }
+
+  function applyFightProfile(btn, profileId) {
+    activeProfile = profileId;
+    document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const profile = indexData.profiles.find(p => p.id === profileId);
+    if (profile) {
+      document.getElementById('fight-profile-label').textContent = profile.label;
+    }
+    updateSummaryPills(profileId);
+    document.querySelectorAll('#results-table tbody tr').forEach(row => updateRowForProfile(row, profileId));
+    sortTable(sortCol);
+  }
+
+  document.querySelectorAll('.profile-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyFightProfile(btn, btn.dataset.profile));
+  });
+
+  const initialProfileBtn = document.querySelector(`.profile-btn[data-profile="${activeProfile}"]`);
+  if (initialProfileBtn) {
+    document.getElementById('fight-profile-label').textContent =
+      indexData.profiles.find(p => p.id === activeProfile)?.label || activeProfile;
+  }
+
+  document.querySelectorAll('#results-table tbody tr').forEach(row => updateRowForProfile(row, activeProfile));
+
   document.querySelectorAll('td.dps').forEach(td => {
     const v = parseFloat(td.dataset.val);
     if (isNaN(v) || v < 0) return;
@@ -395,7 +503,7 @@
   let activeClass = 'all';
   function filterClass(btn, cls) {
     activeClass = cls;
-    document.querySelectorAll('.filter-btn').forEach(b => {
+    document.querySelectorAll('.filter-btn[data-class]').forEach(b => {
       b.classList.remove('active');
       applyIdleStyle(b);
     });
@@ -445,7 +553,7 @@
   sortTable(5);
 
   // Detail page navigation
-  document.querySelectorAll('#results-table tbody tr[data-href]').forEach(row => {
+  document.querySelectorAll('#results-table tbody tr[data-has-detail]').forEach(row => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('a')) return;
       window.location.href = row.dataset.href;

@@ -34,3 +34,13 @@ public class OutputConfig
 {
     public string Directory { get; set; } = "./output";
 }
+
+/// <summary>
+/// A SimC fight scenario (fight_style preset) run for every spec.
+/// </summary>
+public record FightProfile(
+    string Id,
+    string Label,
+    string Description,
+    string SimcOptions
+);

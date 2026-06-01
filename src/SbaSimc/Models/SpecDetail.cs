@@ -49,6 +49,8 @@ public record AbilityRow(
 
 public record SpecDetail(
     string Slug,
+    string FightProfileId,
+    string FightProfileLabel,
     string Class,
     string Spec,
     string HeroTalent,
