@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warlock Affliction — SBA SimC Detail</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0e0e12;
+      color: #d4d4d8;
+      min-height: 100vh;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    a { color: #a1a1aa; text-decoration: none; }
+    a:hover { color: #f4f4f5; }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .back-link {
+      display: inline-block;
+      font-size: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: .25rem;
+    }
+
+    .meta {
+      font-size: .82rem;
+      color: #71717a;
+      margin-bottom: 1rem;
+    }
+
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: #a1a1aa;
+    }
+
+    .apl-broken-badge {
+      display: inline-block;
+      margin-left: .5rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.35);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      vertical-align: middle;
+    }
+
+    .dps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .dps-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .85rem 1rem;
+    }
+
+    .dps-card .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: #71717a;
+      margin-bottom: .35rem;
+    }
+
+    .dps-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .dps-card .delta {
+      font-size: .85rem;
+      margin-top: .2rem;
+    }
+
+    .delta-good { color: #86efac; }
+    .delta-moderate { color: #fde68a; }
+    .delta-poor { color: #fca5a5; }
+    .delta-unreliable { color: #71717a; }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-bottom: .75rem;
+    }
+
+    .section-note {
+      font-size: .78rem;
+      color: #71717a;
+      margin-bottom: .75rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      margin-bottom: .75rem;
+    }
+
+    .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .swatch-simc { background: #3b82f6; }
+    .swatch-ah { background: #22c55e; }
+    .swatch-ob { background: #a855f7; }
+    .swatch-skipped {
+      background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 3px, #27272a 3px, #27272a 6px);
+      border: 1px dashed #52525b;
+    }
+
+    .bar-chart { display: flex; flex-direction: column; gap: .55rem; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      font-size: .8rem;
+    }
+
+    .bar-label {
+      text-align: right;
+      color: #a1a1aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-track {
+      display: flex;
+      height: 18px;
+      background: #18181b;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+
+    .bar-seg { height: 100%; min-width: 0; transition: width .2s; }
+    .bar-seg-simc { background: #3b82f6; }
+    .bar-seg-ah { background: #22c55e; }
+    .bar-seg-ob { background: #a855f7; }
+    .bar-seg-skipped { background: repeating-linear-gradient(45deg, #3f3f46, #3f3f46 2px, #27272a 2px, #27272a 4px); opacity: .7; }
+
+    .timeline-wrap {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    canvas#timeline-chart {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+
+    .filters {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .75rem;
+    }
+
+    .profile-btn {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .profile-btn.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .filter-chip {
+      padding: .3rem .7rem;
+      border-radius: 9999px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+      border-color: #52525b;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    th, td {
+      padding: .45rem .55rem;
+      border-bottom: 1px solid #27272a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: #141417;
+      z-index: 1;
+    }
+
+    th {
+      background: #18181b;
+      color: #71717a;
+      font-weight: 600;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    tr:hover td { background: rgba(63, 63, 70, 0.25); }
+    tr.row-skipped td:first-child { color: #fdba74; }
+
+    .cell-skipped {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    .skip-badge {
+      display: inline-block;
+      margin-left: .25rem;
+      padding: .05rem .3rem;
+      border-radius: 3px;
+      font-size: .62rem;
+      font-weight: 600;
+      color: #fdba74;
+      background: rgba(154, 52, 18, 0.25);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: .35rem;
+      margin-bottom: .75rem;
+    }
+
+    .mode-tab {
+      padding: .35rem .75rem;
+      border-radius: 6px;
+      border: 1px solid #3f3f46;
+      background: #18181b;
+      color: #a1a1aa;
+      font-size: .78rem;
+      cursor: pointer;
+    }
+
+    .mode-tab.active {
+      background: #3f3f46;
+      color: #f4f4f5;
+    }
+
+    .rotation-panel {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+    }
+
+    .rotation-panel table td:first-child { font-variant-numeric: tabular-nums; }
+
+    tr.spell-skipped td { color: #71717a; font-style: italic; }
+    tr.spell-skipped td:nth-child(2)::after {
+      content: ' (not in SimC rotation sample)';
+      font-size: .68rem;
+      color: #fdba74;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: #52525b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="../index.html" id="back-link">← All specs</a>
+
+  <h1>Warlock Affliction <span style="color:#71717a;font-weight:500">· Soul Harvester</span>
+    <span class="apl-broken-badge" id="broken-badge" style="display:none">⚠ APL Missing</span>
+  </h1>
+  <p class="meta">
+    Profile: <code>MID1_Warlock_Affliction</code>
+    · Player: <code id="player-name"></code>
+    · Fight: <strong id="fight-profile-label"></strong> (<code id="fight-style-label"></code>)
+    · 1000 iterations · SimC 1210-01 · simulationcraftorg/simc:latest @ sha256:042966307205…
+  </p>
+
+  <div class="filters" id="fight-profile-filters">
+    <button type="button" class="profile-btn active" data-profile="patchwerk" title="Stationary single-target boss (Patchwerk). Matches SimC MID1_Raid defaults.">Single Target (Raid)</button>
+    <button type="button" class="profile-btn" data-profile="dungeonslice" title="Mixed boss and trash pulls approximating a Mythic+ dungeon slice (~6 min).">M+ (Dungeon Slice)</button>
+    <button type="button" class="profile-btn" data-profile="hectic_add_cleave" title="Boss with periodic add spawns and movement (Hectic Add Cleave).">AoE / Adds</button>
+  </div>
+
+  <div class="dps-grid" id="dps-grid"></div>
+
+  <section>
+    <h2>Damage profile — top abilities</h2>
+    <p class="section-note">Percent of total damage per ability. Hatched segments = ability not used in that APL.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch swatch-simc"></span> SimC optimal</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ah"></span> Assisted Highlight</span>
+      <span class="legend-item"><span class="legend-swatch swatch-ob"></span> One Button Rotation</span>
+      <span class="legend-item"><span class="legend-swatch swatch-skipped"></span> Not used</span>
+    </div>
+    <div class="bar-chart" id="damage-bars"></div>
+  </section>
+
+  <section>
+    <h2>DPS timeline</h2>
+    <p class="section-note">Smoothed DPS over fight time (downsampled from SimC json2).</p>
+    <div class="timeline-wrap">
+      <canvas id="timeline-chart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <h2>Abilities</h2>
+    <div class="filters">
+      <button type="button" class="filter-chip active" data-filter="all">All abilities</button>
+      <button type="button" class="filter-chip" data-filter="skip-ah">Skipped by AH</button>
+      <button type="button" class="filter-chip" data-filter="skip-ob">Skipped by OBR</button>
+    </div>
+    <div class="table-wrap">
+      <table id="ability-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Ability</th>
+            <th colspan="3">DPS %</th>
+            <th colspan="3">Casts / fight</th>
+          </tr>
+          <tr>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+            <th>SimC</th><th>AH</th><th>OBR</th>
+          </tr>
+        </thead>
+        <tbody id="ability-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample rotation</h2>
+    <p class="section-note">Single iteration pull (not averaged). Spells highlighted if they appear in SimC but not in AH/OBR sample.</p>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="simc">SimC</button>
+      <button type="button" class="mode-tab" data-mode="ah">Assisted Highlight</button>
+      <button type="button" class="mode-tab" data-mode="ob">One Button Rotation</button>
+    </div>
+    <div class="rotation-panel">
+      <table>
+        <thead>
+          <tr><th style="text-align:left">Time (s)</th><th style="text-align:left">Spell</th><th style="text-align:left">Target</th></tr>
+        </thead>
+        <tbody id="rotation-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated 2026-08-14 07:28 UTC ·
+    <a href="https://www.simulationcraft.org/reports/MID1_Raid.html">SimC optimal-only report</a> ·
+    <a href="https://github.com/evancummings/sba-simc">Source</a>
+  </footer>
+</div>
+
+<script type="application/json" id="details-by-profile">{"patchwerk":{"slug":"MID1_Warlock_Affliction_Soul_Harvester","fightProfileId":"patchwerk","fightProfileLabel":"Single Target (Raid)","class":"Warlock","spec":"Affliction","heroTalent":"Soul Harvester","simcProfileName":"MID1_Warlock_Affliction","playerName":"MID1_Warlock_Affliction_Soul_Harvester","talents":"CkQAAAAAAAAAAAAAAAAAAAAAAwMzMzoZhhZmZmlBAAYmZZ2MzsMzAAjllBGwEMDbBG2GAAAmBAAwMDzMjxwwMmZmxgZmZGAwMwA","simc":{"dps":117779.50298069319,"fightLengthSec":300.0503833833834,"profileSource":"default","timeline":[87994.75844316941,26801.675786474705,81413.00802457274,207231.88712678122,281392.2527092439,285127.80584424065,244171.4514560497,200272.8378211064,180893.88437859673,168001.3926525013,189653.68711915726,166169.13668022308,132088.13521509204,105919.3017373132,111786.52603855066,89697.28541343917,109131.72075643322,152925.84960594715,76562.18777697269,90910.32268111425,79347.0489453526,70866.34836128449,114994.64549397856,82934.75545940042,70117.60422210617,72237.17340075331,65926.96911862299,96537.47818087383,134178.12744292084,114077.62611807843,113036.4893335271,110480.34691742656,96351.62623694658,125239.94395073301,83046.87788861926,75194.97823321068,68880.58176935096,57246.33764916672,80417.4952558152,108589.69290862523,94760.73696848447,106780.03324815843,93388.14216620718,142572.10816225572,181368.90442584179,159176.12064169586,139551.77813943726,127005.72056253538,107245.44626427637,113662.4312970691,131539.71605949118,83383.38891837078,69586.8822811401,87124.59670848737,85256.84724749264,125826.52035970426,123221.3664631587,109710.66305943056,107671.73113855986,96532.63623367132,83016.42373108835,107299.97254114048,81306.98261223975,68430.1139591889,69014.87217805856,78881.74029004385,96750.52809517318,109336.93793212787,102065.19889231236,126283.487289129,122979.08272567256,137535.38971398168,117333.0345932849,108092.17120927715,90009.12977032164,81744.31832615478,85209.63071632772,121582.64244312677,91159.3776305597,88301.58049838789,101757.28035235374,114713.52797929087,134348.22863145857,166924.42047882776,163485.12514146548,172711.93948262188,165009.25658928786,172429.22561508627,175832.5527144542,145787.26028846658,113384.29251270906,96321.82593189602,98391.7238436085,125212.51905497501,128019.94104163889,134812.14510612123,124176.85037389155,131872.99989937045,150563.25408459295,161424.02318161938,130795.64917917618,112854.30070817587,86244.56411689363,116786.55797883593,151710.65848865113,144486.00687037708,138421.21697536387,135226.0504680606,131682.2749430438,167438.27096538036,206028.42298699846,192346.308148632,162914.69535535233,144866.86276331355,129406.32942841211,162114.1636821093,157953.3958700473,131978.67832711956,118435.21411764555,114805.2703399489],"sampleActions":[{"timeSec":0,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.1260000000000001,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":1.994,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":2.862,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":3.731,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":5.714,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":6.54,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":6.54,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":6.54,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":7.998,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.752,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":9.506,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":10.26,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":11.016,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":11.771,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":13.313,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":14.067,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":14.823,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":15.754,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":16.509,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":18.086000000000002,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":18.84,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":19.593,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":20.573,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":23.400000000000002,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":24.225,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":25.052,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":27.244,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":28.592000000000002,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":29.42,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":30.248,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":31.605,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":32.432,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":34.072,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":34.899,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":36.429,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":37.255,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":38.081,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":40.09,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":42.471000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":43.544000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":44.617000000000004,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":46.643,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":47.717,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":48.791000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":49.863,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":51.992000000000004,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":53.066,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":55.112,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":56.185,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":57.257,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":58.33,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":59.754,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":7.5768454578457325,"executesPerFight":17.144144144144143,"intervalSec":17.959758568548363,"critPercent":null,"avgHit":156175.2845840056,"totalDamageMean":2677491.5906609246,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.009046589045217384,"executesPerFight":1,"intervalSec":null,"critPercent":22.831505483549353,"avgHit":3196.8668527682626,"totalDamageMean":3196.8668527682626,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":7.318246300312939,"executesPerFight":0,"intervalSec":null,"critPercent":23.500793772724947,"avgHit":0,"totalDamageMean":2586108.300147973,"isSkipped":true},"drain_soul":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":15.427308663625489,"executesPerFight":74.56256256256256,"intervalSec":3.9286878759592243,"critPercent":null,"avgHit":73115.42852182266,"totalDamageMean":5451673.713446973,"isSkipped":false},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":5.6157837649340046,"executesPerFight":17.75075075075075,"intervalSec":16.357917596175838,"critPercent":23.721946798869876,"avgHit":1895666.457116047,"totalDamageMean":33649502.78682569,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":4.273154138592699,"executesPerFight":0,"intervalSec":null,"critPercent":23.604962430364395,"avgHit":0,"totalDamageMean":1510039.2815630832,"isSkipped":true},"shadowbolt_volley":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":1.8152297247686702,"executesPerFight":0,"intervalSec":null,"critPercent":23.503908926898173,"avgHit":0,"totalDamageMean":641462.5123643134,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.3546359827589156,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":478698.75034707907,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.9655125483899307,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1401325.4671810667,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":21.235954698883212,"executesPerFight":110.96996996996997,"intervalSec":2.681134088860996,"critPercent":null,"avgHit":67624.80222986627,"totalDamageMean":7504322.272673418,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9905799932098159,"executesPerFight":16.455455455455457,"intervalSec":17.337275997063877,"critPercent":null,"avgHit":21272.539136738298,"totalDamageMean":350049.32018902997,"isSkipped":false},"wicked_reaping":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":7.219307950239412,"executesPerFight":0,"intervalSec":null,"critPercent":23.36050156739812,"avgHit":0,"totalDamageMean":2551145.649558152,"isSkipped":true}}},"assistedHighlight":{"dps":75529.21307593737,"fightLengthSec":300.0543513513514,"profileSource":"default","timeline":[84775.3841615617,170991.90449722172,176733.71504385237,171746.26957193585,229368.0763235427,178874.63601149138,143897.1925119227,109773.91753814316,117427.64860632413,53536.95757441445,64340.57629887558,119349.25654702423,53480.53657271146,47357.39239102758,52689.491655494036,91833.62197204509,96824.14860563153,102842.27853105175,69956.11924304647,65667.53506848795,55232.91216638923,38216.59517648825,56833.32361082592,28140.865814343517,38966.18657732166,37369.53898157635,38119.50355340003,110874.48510907755,40865.88903338242,55390.41977114983,80002.99253424161,103251.9368894809,93099.62273170885,77436.99429351707,58939.10290947644,51677.838077532055,43121.51950242621,31170.509469450782,55989.13688113705,34373.8074705836,35798.37058008267,73439.35106608932,75639.846977552,137876.4564947783,106606.95298456763,147783.49369398112,123275.9340294571,102744.69730604411,126964.55124478675,50259.66698774822,47859.54491695299,39543.33084036253,36412.87893853947,36093.72773639833,57455.956504393245,32468.287629061204,37594.52272921405,32565.71107849668,48500.25178440077,95704.80375308146,76530.5852501585,106359.68280646391,84903.38353812671,68415.13244775274,101382.89524343959,52686.16258146324,42077.7512620153,38673.1902588721,35317.82019840643,44874.559302262925,62597.84040061219,37673.129471540866,40013.2329712407,53634.00157859172,73571.38092994262,111142.83513087145,100506.48266538589,87249.06966520389,73035.23203218423,57863.54815282566,83559.89728719427,88903.28236644134,78823.91830352685,77297.54537114034,73183.2460616344,86768.2623734939,84115.37934381666,72063.52546515984,88999.57990735538,84865.5205282478,90484.91022203439,119068.35259688625,100266.06738161173,72185.75348395249,61802.00303953148,51236.53294081914,76931.30278711565,54332.85358683692,43028.457561432595,40202.51777473906,41260.26926302302,55139.95106151823,88518.2753981042,85779.8733637289,110276.33572199888,118348.46076442134,121804.37546998127,127165.5027225344,105964.70964458185,76876.88024714822,61816.45637941231,48924.2934445437,74899.831846169,46444.37174945795,44834.34784114841,41266.437145889344,42245.03630288601,49688.225691553234,83185.97495251877,82718.86715401651],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":0.778,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.555,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":2.331,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":4.096,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":4.87,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":5.6450000000000005,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":6.402,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.154,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.908,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.663,"name":"unknown","spellName":"unknown","target":""},{"timeSec":12.035,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":12.791,"name":"unknown","spellName":"unknown","target":""},{"timeSec":14.756,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":15.829,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":16.655,"name":"unknown","spellName":"unknown","target":""},{"timeSec":17.803,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":18.63,"name":"unknown","spellName":"unknown","target":""},{"timeSec":22.232,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":23.059,"name":"unknown","spellName":"unknown","target":""},{"timeSec":30.065,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":30.891000000000002,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":31.716,"name":"unknown","spellName":"unknown","target":""},{"timeSec":32.815,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":33.641,"name":"unknown","spellName":"unknown","target":""},{"timeSec":35.365,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":36.19,"name":"unknown","spellName":"unknown","target":""},{"timeSec":40.67,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":41.742,"name":"unknown","spellName":"unknown","target":""},{"timeSec":42.587,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":45.224000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":46.298,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":47.372,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":48.445,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":49.519,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":50.591,"name":"unknown","spellName":"unknown","target":""},{"timeSec":50.869,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":51.943,"name":"unknown","spellName":"unknown","target":""},{"timeSec":58.866,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":59.94,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":11.766994485405103,"executesPerFight":17.323323323323322,"intervalSec":17.76957408768062,"critPercent":null,"avgHit":153835.21631482127,"totalDamageMean":2664937.190735032,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.021498174738405165,"executesPerFight":1,"intervalSec":null,"critPercent":21.934197407776672,"avgHit":4868.812122276092,"totalDamageMean":4868.812122276092,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":10.523287325573992,"executesPerFight":0,"intervalSec":null,"critPercent":23.558200322562705,"avgHit":0,"totalDamageMean":2383267.85973226,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":8.927816867699677,"executesPerFight":18.275275275275277,"intervalSec":15.984484722222856,"critPercent":24.14526588845655,"avgHit":1828150.5194075594,"totalDamageMean":33409953.986810625,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":6.578145426177348,"executesPerFight":0,"intervalSec":null,"critPercent":23.48322875648301,"avgHit":0,"totalDamageMean":1489789.462723628,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":2.8181079370927336,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":638232.6989597001,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":22.591472961794036,"executesPerFight":75.71771771771772,"intervalSec":3.9140879550320267,"critPercent":null,"avgHit":67572.26251233726,"totalDamageMean":5116417.498456672,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.5417833204431959,"executesPerFight":16.54854854854855,"intervalSec":17.378262056647106,"critPercent":null,"avgHit":21100.116948514897,"totalDamageMean":349176.3097025508,"isSkipped":false}}},"oneButton":{"dps":68820.59505164433,"fightLengthSec":300.05110410410407,"profileSource":"default","timeline":[84630.69299096006,121614.51021733727,159643.9477495998,144421.14564618142,185269.893623271,185502.7428835747,194023.90841941448,119133.2041980912,111080.42817069746,57735.0317108124,60203.826821379684,117252.21895506758,49850.453263329706,43021.3789536303,49351.34156557504,82807.36143217214,85959.86724313485,71210.24791378989,57649.56945327671,52347.25662582336,45546.35422018848,34783.11542741205,94571.53923112765,29873.00013312174,37188.40365091317,37647.14014505363,34956.01074330145,77954.17481788297,35701.94601266749,36342.43720705625,68043.05033146015,88154.39621822913,78228.52186736032,71180.05954673277,48591.477668137915,50045.394820275615,44254.38567079151,32893.99075463381,71083.83471855217,34832.319687571784,33844.000408202395,72827.15872254805,75387.1480457593,131294.2393884202,68586.92995966545,103951.03358157647,117419.39233565284,94760.67210530317,107700.8382791762,54920.13569203518,50507.94416040525,44113.59549985065,38510.322156345326,37539.85944207666,83155.39557755103,33988.25303027859,37167.79068941091,33053.90733173194,39103.48206514722,64856.09266170215,60889.65428241332,82670.43267392572,82543.42191041808,64216.57334134805,72157.79402503703,55857.87380813735,48346.04450295871,39676.61196807745,35393.78242726225,39043.144004780945,80874.8282635902,38422.586829885426,38341.41154143817,36121.36622360583,38451.72247022659,63467.53826930553,82056.73116807555,87281.47413444331,83142.38155215258,66377.63845378852,79900.6997327272,104727.39381224567,80428.76863529396,76508.85778292449,73440.94103830068,80644.63960394397,85174.43801322699,71562.39719332603,72010.72657888429,42111.51055057678,47336.90575463747,89792.64739156014,97109.94650042297,84086.47650200568,71302.24578091566,64953.73858357906,75596.55447467495,63373.305198445465,44212.19693249608,41469.706620023724,41192.380790675656,54622.981259320295,85347.92906939762,56439.492798149404,54100.15194188062,58162.13306564374,74505.54895099578,109681.59274982827,109082.96832026074,107757.00543264476,84118.15777459649,68274.81910095716,75591.42321160286,60243.80634865192,54375.581197951615,43968.07062474359,41871.1017480175,34578.933846797685,52791.09864348393,55828.235401648875],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":0.777,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.747,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":2.718,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":4,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":4.968,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":5.938,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":6.88,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.823,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.765,"name":"unknown","spellName":"unknown","target":""},{"timeSec":8.861,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":9.805,"name":"unknown","spellName":"unknown","target":""},{"timeSec":12.040000000000001,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":12.982000000000001,"name":"unknown","spellName":"unknown","target":""},{"timeSec":14.829,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":15.77,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":16.802,"name":"unknown","spellName":"unknown","target":""},{"timeSec":17.795,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":18.827,"name":"unknown","spellName":"unknown","target":""},{"timeSec":23.081,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":24.113,"name":"unknown","spellName":"unknown","target":""},{"timeSec":30.084,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":31.115000000000002,"name":"unknown","spellName":"unknown","target":""},{"timeSec":31.213,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":32.459,"name":"unknown","spellName":"unknown","target":""},{"timeSec":32.826,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":33.857,"name":"unknown","spellName":"unknown","target":""},{"timeSec":35.366,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":36.397,"name":"unknown","spellName":"unknown","target":""},{"timeSec":45.197,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":46.537,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":48.099000000000004,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":49.44,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":50.781,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":52.124,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":53.465,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":54.805,"name":"unknown","spellName":"unknown","target":""},{"timeSec":55.475,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":56.817,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":12.906697443670707,"executesPerFight":17.32032032032032,"intervalSec":17.77682188735176,"critPercent":null,"avgHit":153706.91171955797,"totalDamageMean":2662252.946429942,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.023554496689769146,"executesPerFight":1,"intervalSec":null,"critPercent":21.535393818544364,"avgHit":4858.56498052207,"totalDamageMean":4858.56498052207,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":8.732785716055332,"executesPerFight":0,"intervalSec":null,"critPercent":23.605906986995812,"avgHit":0,"totalDamageMean":1801303.9047808934,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":9.718538778154851,"executesPerFight":18.21021021021021,"intervalSec":16.017070007024778,"critPercent":23.53982300884956,"avgHit":1824268.8312381608,"totalDamageMean":33220318.896781404,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":7.220986098472502,"executesPerFight":0,"intervalSec":null,"critPercent":23.37052015060661,"avgHit":0,"totalDamageMean":1489466.3488230554,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":2.323090808463506,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":479181.8648146251,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":22.330944252637348,"executesPerFight":68.57057057057057,"intervalSec":4.337892066530968,"critPercent":null,"avgHit":67174.35591579789,"totalDamageMean":4606183.912856843,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.7221524065385845,"executesPerFight":16.58158158158158,"intervalSec":17.30738324742272,"critPercent":null,"avgHit":21422.976812350407,"totalDamageMean":355226.8377343188,"isSkipped":false}}},"abilities":[{"key":"unstable_affliction","displayName":"Unstable Affliction","simc":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":21.235954698883212,"executesPerFight":110.96996996996997,"intervalSec":2.681134088860996,"critPercent":null,"avgHit":67624.80222986627,"totalDamageMean":7504322.272673418,"isSkipped":false},"assistedHighlight":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":22.591472961794036,"executesPerFight":75.71771771771772,"intervalSec":3.9140879550320267,"critPercent":null,"avgHit":67572.26251233726,"totalDamageMean":5116417.498456672,"isSkipped":false},"oneButton":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":22.330944252637348,"executesPerFight":68.57057057057057,"intervalSec":4.337892066530968,"critPercent":null,"avgHit":67174.35591579789,"totalDamageMean":4606183.912856843,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":21.235954698883212},{"key":"drain_soul","displayName":"Drain Soul","simc":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":15.427308663625489,"executesPerFight":74.56256256256256,"intervalSec":3.9286878759592243,"critPercent":null,"avgHit":73115.42852182266,"totalDamageMean":5451673.713446973,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":15.427308663625489},{"key":"agony","displayName":"Agony","simc":{"name":"agony","spellName":"Agony","portionPercent":7.5768454578457325,"executesPerFight":17.144144144144143,"intervalSec":17.959758568548363,"critPercent":null,"avgHit":156175.2845840056,"totalDamageMean":2677491.5906609246,"isSkipped":false},"assistedHighlight":{"name":"agony","spellName":"Agony","portionPercent":11.766994485405103,"executesPerFight":17.323323323323322,"intervalSec":17.76957408768062,"critPercent":null,"avgHit":153835.21631482127,"totalDamageMean":2664937.190735032,"isSkipped":false},"oneButton":{"name":"agony","spellName":"Agony","portionPercent":12.906697443670707,"executesPerFight":17.32032032032032,"intervalSec":17.77682188735176,"critPercent":null,"avgHit":153706.91171955797,"totalDamageMean":2662252.946429942,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.5768454578457325},{"key":"demonic_soul","displayName":"Demonic Soul","simc":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":7.318246300312939,"executesPerFight":0,"intervalSec":null,"critPercent":23.500793772724947,"avgHit":0,"totalDamageMean":2586108.300147973,"isSkipped":true},"assistedHighlight":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":10.523287325573992,"executesPerFight":0,"intervalSec":null,"critPercent":23.558200322562705,"avgHit":0,"totalDamageMean":2383267.85973226,"isSkipped":true},"oneButton":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":8.732785716055332,"executesPerFight":0,"intervalSec":null,"critPercent":23.605906986995812,"avgHit":0,"totalDamageMean":1801303.9047808934,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.318246300312939},{"key":"wicked_reaping","displayName":"Wicked Reaping","simc":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":7.219307950239412,"executesPerFight":0,"intervalSec":null,"critPercent":23.36050156739812,"avgHit":0,"totalDamageMean":2551145.649558152,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":7.219307950239412},{"key":"haunt","displayName":"Haunt","simc":{"name":"haunt","spellName":"Haunt","portionPercent":5.6157837649340046,"executesPerFight":17.75075075075075,"intervalSec":16.357917596175838,"critPercent":23.721946798869876,"avgHit":1895666.457116047,"totalDamageMean":33649502.78682569,"isSkipped":false},"assistedHighlight":{"name":"haunt","spellName":"Haunt","portionPercent":8.927816867699677,"executesPerFight":18.275275275275277,"intervalSec":15.984484722222856,"critPercent":24.14526588845655,"avgHit":1828150.5194075594,"totalDamageMean":33409953.986810625,"isSkipped":false},"oneButton":{"name":"haunt","spellName":"Haunt","portionPercent":9.718538778154851,"executesPerFight":18.21021021021021,"intervalSec":16.017070007024778,"critPercent":23.53982300884956,"avgHit":1824268.8312381608,"totalDamageMean":33220318.896781404,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.6157837649340046},{"key":"shadow_of_nathreza","displayName":"Shadow of Nathreza","simc":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":4.273154138592699,"executesPerFight":0,"intervalSec":null,"critPercent":23.604962430364395,"avgHit":0,"totalDamageMean":1510039.2815630832,"isSkipped":true},"assistedHighlight":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":6.578145426177348,"executesPerFight":0,"intervalSec":null,"critPercent":23.48322875648301,"avgHit":0,"totalDamageMean":1489789.462723628,"isSkipped":true},"oneButton":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":7.220986098472502,"executesPerFight":0,"intervalSec":null,"critPercent":23.37052015060661,"avgHit":0,"totalDamageMean":1489466.3488230554,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":4.273154138592699},{"key":"soul_anathema","displayName":"Soul Anathema","simc":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.9655125483899307,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1401325.4671810667,"isSkipped":true},"assistedHighlight":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":2.8181079370927336,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":638232.6989597001,"isSkipped":true},"oneButton":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":2.323090808463506,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":479181.8648146251,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.9655125483899307},{"key":"shadowbolt_volley","displayName":"Shadowbolt Volley","simc":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":1.8152297247686702,"executesPerFight":0,"intervalSec":null,"critPercent":23.503908926898173,"avgHit":0,"totalDamageMean":641462.5123643134,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":1.8152297247686702},{"key":"shared_fate","displayName":"Shared Fate","simc":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.3546359827589156,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":478698.75034707907,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":1.3546359827589156},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9905799932098159,"executesPerFight":16.455455455455457,"intervalSec":17.337275997063877,"critPercent":null,"avgHit":21272.539136738298,"totalDamageMean":350049.32018902997,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.5417833204431959,"executesPerFight":16.54854854854855,"intervalSec":17.378262056647106,"critPercent":null,"avgHit":21100.116948514897,"totalDamageMean":349176.3097025508,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.7221524065385845,"executesPerFight":16.58158158158158,"intervalSec":17.30738324742272,"critPercent":null,"avgHit":21422.976812350407,"totalDamageMean":355226.8377343188,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.9905799932098159},{"key":"corruption_direct","displayName":"Corruption","simc":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.009046589045217384,"executesPerFight":1,"intervalSec":null,"critPercent":22.831505483549353,"avgHit":3196.8668527682626,"totalDamageMean":3196.8668527682626,"isSkipped":true},"assistedHighlight":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.021498174738405165,"executesPerFight":1,"intervalSec":null,"critPercent":21.934197407776672,"avgHit":4868.812122276092,"totalDamageMean":4868.812122276092,"isSkipped":true},"oneButton":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.023554496689769146,"executesPerFight":1,"intervalSec":null,"critPercent":21.535393818544364,"avgHit":4858.56498052207,"totalDamageMean":4858.56498052207,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.009046589045217384}],"fightStyle":"Patchwerk","iterations":1000},"dungeonslice":{"slug":"MID1_Warlock_Affliction_Soul_Harvester","fightProfileId":"dungeonslice","fightProfileLabel":"M\u002B (Dungeon Slice)","class":"Warlock","spec":"Affliction","heroTalent":"Soul Harvester","simcProfileName":"MID1_Warlock_Affliction","playerName":"MID1_Warlock_Affliction_Soul_Harvester","talents":"CkQAAAAAAAAAAAAAAAAAAAAAAwMzMzoZhhZmZmlBAAYmZZ2MzsMzAAjllBGwEMDbBG2GAAAmBAAwMDzMjxwwMmZmxgZmZGAwMwA","simc":{"dps":109890.29994168018,"fightLengthSec":360.05911011011017,"profileSource":"default","timeline":[1930.840200591339,16369.84243020154,102037.2160280293,141770.15788492173,133031.23118614612,238715.25118618598,159597.80954005275,128969.96382421562,112218.36370796223,87629.44679053818,89965.21916286329,75074.24363457154,61308.22857851429,94189.1235897471,141950.88737190727,59718.85214576424,98283.84889209724,69440.03045823092,72104.20379984294,93257.78357515819,58784.41718407146,57853.18680064102,58143.96084408924,95426.59806974929,82974.38764726938,66719.20736009667,112188.35327348021,100905.35093404644,124855.07288093219,85058.47809337739,63818.20667960015,88031.0150024972,89147.3821913798,106177.59983461756,94669.64577699103,75313.08728300309,89994.31498316918,184744.4392168376,12474.075397319171,27224.081090773485,169321.9098341563,220559.02439603588,213907.85207431536,174103.0011872555,95782.13544010313,58025.849175233154,88789.47264924845,112911.38520016342,127947.27213228049,117552.12672577144,125914.65483580461,124170.79671568732,120098.72155145215,137627.27831625735,157977.07438055426,169633.90425723218,140611.99032628455,71899.72857739974,1807.8667583684094,91148.61595423594,81024.70373472129,111984.56036748852,114913.61564111075,88042.423536046,108406.19862239422,113761.52463561339,240692.8694348797,199606.20911628378,187172.4167322637,108715.42322486268,21229.039835449636,20.33445167562805,0,48024.629049818046,89964.756496635,136643.283560568,141234.95362530462,146076.65958149015,195220.43488737958,301052.4248842122,314387.18493063346,191873.69447790185,74523.68473439463,1255.6976852555026,0,0,0,38392.36930554315,78381.26689540035,122121.2609906227,150441.372501598,240506.3231925416,295663.3188505509,271396.2807030871,198467.22139942058,57696.10960495793,4459.795305718975,0,0,0,0,37990.54977216243,105804.03833895427,114119.5608549227,341379.1633876935,348375.34804460825,355117.70682115864,210924.90051163657,201226.81149835422,71557.29329817163,36.90967959217127,0,0,0,0,212331.31063765878,184098.3798954153,216952.86526199282,269015.17647759424,192599.50902595688],"sampleActions":[{"timeSec":0.099,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":1.225,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":2.352,"name":"corruption_direct","spellName":"Corruption","target":"Dungeon_Boss1"},{"timeSec":3.479,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":4.606,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":6.816,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":7.9430000000000005,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":10.317,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Dungeon_Boss1"},{"timeSec":11.391,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":11.391,"name":"use_items","spellName":"use_items","target":"Dungeon_Boss1"},{"timeSec":11.391,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":12.353,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":13.313,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":14.272,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":15.234,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":16.196,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":17.157,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":18.116,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":19.076,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":20.036,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":21.312,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":22.645,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":23.604,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":24.88,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":27.154,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":28.226,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":31.078,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":32.651,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":33.724000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":34.797000000000004,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":35.873,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":36.947,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":38.371,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":39.624,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":40.699,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":43.812,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":44.885,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":46.921,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":49.281,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":50.354,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":51.427,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":52.5,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":53.575,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":54.648,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":55.721000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":56.795,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":57.869,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"},{"timeSec":59.293,"name":"drain_soul","spellName":"Drain Soul","target":"Dungeon_Boss1"}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":11.483506319798918,"executesPerFight":41.925925925925924,"intervalSec":8.39994159570507,"critPercent":null,"avgHit":108448.35912262573,"totalDamageMean":4546797.871363419,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.014689436595974182,"executesPerFight":2.045045045045045,"intervalSec":178.0082407407408,"critPercent":22.975609756097562,"avgHit":2844.0249030337914,"totalDamageMean":5816.15903593397,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":9.31455974564546,"executesPerFight":0,"intervalSec":null,"critPercent":23.518622354428214,"avgHit":0,"totalDamageMean":3688021.6934412555,"isSkipped":true},"drain_soul":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":7.95239705131468,"executesPerFight":44.68068068068068,"intervalSec":7.607259718703501,"critPercent":null,"avgHit":70470.83366161863,"totalDamageMean":3148684.8161361455,"isSkipped":false},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":5.083380720658909,"executesPerFight":24.7987987987988,"intervalSec":14.408799809038852,"critPercent":23.286734214013936,"avgHit":1046363.8033404559,"totalDamageMean":25948565.42938584,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.371505664941594,"executesPerFight":0,"intervalSec":null,"critPercent":23.560102751355302,"avgHit":0,"totalDamageMean":2126802.5499550253,"isSkipped":true},"shadowbolt_volley":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":1.1881255510305193,"executesPerFight":0,"intervalSec":null,"critPercent":23.687770768412253,"avgHit":0,"totalDamageMean":470428.33224414074,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.9234520607978676,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":761574.6873955189,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.642867539637798,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1442362.803974498,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":9.417231259149473,"executesPerFight":73.65765765765765,"intervalSec":4.572738147566582,"critPercent":null,"avgHit":50621.66969999917,"totalDamageMean":3728673.61682156,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.567158048181594,"executesPerFight":16.866866866866868,"intervalSec":19.929608767772496,"critPercent":null,"avgHit":13313.76284010839,"totalDamageMean":224561.46532114752,"isSkipped":false},"wicked_reaping":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":4.212771351582142,"executesPerFight":0,"intervalSec":null,"critPercent":23.59725897279327,"avgHit":0,"totalDamageMean":1668011.4313944038,"isSkipped":true}}},"assistedHighlight":{"dps":79567.03167712758,"fightLengthSec":360.065093093093,"profileSource":"default","timeline":[1987.0432224476808,10558.528999180315,94857.22752400915,131495.579287224,134580.76394889038,106249.7621305283,81974.17415595725,34548.34590122852,28043.16613345057,30799.781574582437,32557.469326707756,30219.359351929816,27726.792142123362,64745.37563900335,86185.0924156319,82949.01056351584,67813.93519088015,55527.16470634483,43722.78510190575,81341.75848477503,39403.63452783837,31364.622883287277,35018.68578840828,29262.31514084891,42904.25987806363,46541.50534855487,75291.95867177345,92631.76450527625,105296.65340140113,59696.81058979618,49106.025619380096,39534.91956017952,37086.96229178744,42855.52815396984,69887.50482960066,76899.50014982012,79933.94563248962,101058.62614358182,7049.02164255756,4447.276122524305,111477.81821615974,149538.2250466168,198551.3197271416,135800.41986029668,74223.63953101044,33389.361358521666,57115.599867887904,47022.96353397678,50347.993707507805,53357.922428703714,84109.4450999775,84154.4331881398,179406.71125165015,148747.80538003094,137669.2405019567,134730.75672783755,96869.54590474784,43394.01518068296,705.9582687080617,11240.532568611601,48448.40221231162,61185.931730098055,81045.17604543261,96841.70936882358,117759.38672477331,197970.1286268663,129622.6258745064,107067.67473965696,157369.59375387846,107710.89729962565,13696.937022670922,181.34603305254748,0,30113.337534829865,62570.808774322635,94843.99526470211,121900.27784542913,171853.82441466354,179218.11337394788,116516.07487422974,101672.0192811933,71544.78019698491,32295.91276868935,1246.250724804477,0,0,0,17018.846612713565,129180.09684756612,146088.8767951399,209379.24164823216,189651.35370336412,190268.52043074442,108732.79168110363,100803.41741844229,19268.64837854283,1362.2077974288447,0,0,0,0,21834.999742625805,119162.21457685827,316596.5990300164,207121.0895913263,200656.59106471707,212872.34313689632,100293.98413062237,42489.76636680609,13400.07638602845,373.6668832723266,0,0,0,0,154511.65259843614,283214.1076819337,322899.4188629706,146067.99330305477,140699.92913621856],"sampleActions":[{"timeSec":0.099,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0.099,"name":"use_items","spellName":"use_items","target":"Dungeon_Boss1"},{"timeSec":0.099,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Dungeon_Boss1"},{"timeSec":1.107,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":2.115,"name":"corruption_direct","spellName":"Corruption","target":"Dungeon_Boss1"},{"timeSec":3.124,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":4.132,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":6.425,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":7.433,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":8.441,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":9.401,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":10.361,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":11.323,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":12.281,"name":"unknown","spellName":"unknown","target":""},{"timeSec":15.116,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":16.188,"name":"unknown","spellName":"unknown","target":""},{"timeSec":16.952,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":18.026,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.757,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":20.001,"name":"unknown","spellName":"unknown","target":""},{"timeSec":24.901,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":25.975,"name":"unknown","spellName":"unknown","target":""},{"timeSec":33.216,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":34.289,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":35.362,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":36.437,"name":"unknown","spellName":"unknown","target":""},{"timeSec":42.037,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":43.164,"name":"unknown","spellName":"unknown","target":""},{"timeSec":48.934,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":51.418,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":52.491,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":53.563,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":54.637,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":55.71,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":56.785000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":57.859,"name":"unknown","spellName":"unknown","target":""},{"timeSec":57.962,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":59.035000000000004,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":10.119818938862478,"executesPerFight":25.73273273273273,"intervalSec":14.136378985969335,"critPercent":null,"avgHit":112883.10130309124,"totalDamageMean":2904790.675874441,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.06389153436343997,"executesPerFight":6.37937937937938,"intervalSec":61.921621423330876,"critPercent":23.995622948256994,"avgHit":2874.795704135773,"totalDamageMean":18339.412434892176,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":16.91893719861712,"executesPerFight":0,"intervalSec":null,"critPercent":23.384249711629206,"avgHit":0,"totalDamageMean":4856408.135081961,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":6.719855261665546,"executesPerFight":23.393393393393392,"intervalSec":15.307294097039765,"critPercent":22.95362449347141,"avgHit":1047675.0026550977,"totalDamageMean":24508673.485535167,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":4.85133521551378,"executesPerFight":0,"intervalSec":null,"critPercent":23.48028211618984,"avgHit":0,"totalDamageMean":1392526.2284534292,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.2985866150474579,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":372746.0257929491,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":5.640676397978119,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1619098.553586733,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":14.200000057452252,"executesPerFight":86.46346346346347,"intervalSec":4.021933984428853,"critPercent":null,"avgHit":47140.89435108394,"totalDamageMean":4075964.9963599374,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.8117677358557189,"executesPerFight":17.31731731731732,"intervalSec":19.756559951159932,"critPercent":null,"avgHit":13455.296451486633,"totalDamageMean":233009.63824896773,"isSkipped":false}}},"oneButton":{"dps":71479.22887530884,"fightLengthSec":359.91546746746747,"profileSource":"default","timeline":[2021.333238903539,14191.450460843758,98168.66102707008,94599.31420522404,132027.78305688087,99381.95264454723,195457.330211409,39863.440815049114,36322.317408275994,30779.323662803014,26297.87707693245,30118.42618352341,28444.384961084394,51296.490377544535,80454.81763420135,43329.014707318616,52093.38971476082,49438.9810565231,41079.36824246175,40300.991057682826,30951.119642720347,29616.313819983396,32988.07028221418,28725.031594911314,63564.36359793879,35447.634349863285,59956.513538580846,68126.39019007357,63170.84739058142,61859.4549072263,45849.59195086174,41098.36100689286,37478.470257124995,61750.4700404984,71673.37764454765,75718.8001009563,76260.93181289229,75391.21863051373,6356.126428671895,3843.820610189711,19489.8422254932,103983.46760013571,127951.42083609922,133400.24251018322,73902.80481687929,30520.75174932616,54041.59355384668,44997.16710997901,48275.03855619698,43702.54191957867,50019.93822878366,53297.12150708675,134172.03238457107,151132.55608832385,128412.25880073757,143473.51846238886,102724.5798015131,39296.288741836026,1095.0349805273247,9857.361258331646,32863.35912625876,51824.505846759836,58921.51404849574,61156.462156114845,72146.83137476382,194359.02435161892,145941.61382113348,101702.94565547576,133743.33287955448,112597.9368367948,15958.06455474209,126.50529354719461,0,27912.979798962806,53288.79468964279,57292.368610733974,67841.26838886667,142331.7721621907,208026.74354577318,150767.38691051988,118683.61468748625,87367.56659763836,33205.63055342119,810.2490157604245,0,0,0,14704.810775334156,47128.90559770943,95085.34073363569,203128.73509969574,194880.99345149583,248381.222725473,156180.6448349969,104854.47192944508,21277.09699578318,1702.962111382412,0,0,0,0,21704.358929892107,91268.63038426738,168340.5269013477,215449.5741472023,199940.85402319615,154210.6100791459,105185.53500880074,59302.62258822337,14492.76791259279,249.99420344208812,0,0,0,0,14536.27301335889,143937.57491052523,184101.4688727555,195808.36333884182,173351.71202209566],"sampleActions":[{"timeSec":0.105,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0.105,"name":"use_items","spellName":"use_items","target":"Dungeon_Boss1"},{"timeSec":0.105,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Dungeon_Boss1"},{"timeSec":1.113,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":2.373,"name":"corruption_direct","spellName":"Corruption","target":"Dungeon_Boss1"},{"timeSec":3.632,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":4.892,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":6.534,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":7.792,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":9.051,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":10.251,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":11.453,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":12.652000000000001,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":13.852,"name":"unknown","spellName":"unknown","target":""},{"timeSec":13.96,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":15.159,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":16.5,"name":"unknown","spellName":"unknown","target":""},{"timeSec":19.186,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":20.776,"name":"unknown","spellName":"unknown","target":""},{"timeSec":21.534,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":22.872,"name":"unknown","spellName":"unknown","target":""},{"timeSec":27.225,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":28.565,"name":"unknown","spellName":"unknown","target":""},{"timeSec":32.896,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":34.237,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":35.577,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":36.918,"name":"unknown","spellName":"unknown","target":""},{"timeSec":41.987,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":43.327,"name":"unknown","spellName":"unknown","target":""},{"timeSec":48.251,"name":"dark_harvest","spellName":"Dark Harvest","target":"Dungeon_Boss1"},{"timeSec":50.051,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":51.458,"name":"agony","spellName":"Agony","target":"Dungeon_Boss1"},{"timeSec":52.865,"name":"haunt","spellName":"Haunt","target":"Dungeon_Boss1"},{"timeSec":54.272,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":55.679,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":57.018,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Dungeon_Boss1"},{"timeSec":58.359,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":11.192195080692823,"executesPerFight":25.44844844844845,"intervalSec":14.23012788603241,"critPercent":null,"avgHit":113348.04195994776,"totalDamageMean":2884531.8025503024,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.06942887580476821,"executesPerFight":6.253253253253253,"intervalSec":63.19671626831151,"critPercent":23.38966836734694,"avgHit":2861.5028029591954,"totalDamageMean":17893.70171179789,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":15.801435091848829,"executesPerFight":0,"intervalSec":null,"critPercent":23.5178409532444,"avgHit":0,"totalDamageMean":4072457.790429329,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":7.300709659418494,"executesPerFight":22.77177177177177,"intervalSec":15.760985027726505,"critPercent":23.111789463947087,"avgHit":1061843.137013832,"totalDamageMean":24180049.573501166,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.294363448463586,"executesPerFight":0,"intervalSec":null,"critPercent":23.535307843258494,"avgHit":0,"totalDamageMean":1364500.8536080432,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.4357003115030285,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":370018.85488985805,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":5.153415136205491,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1328174.6560844118,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":14.21410497336647,"executesPerFight":78.49949949949949,"intervalSec":4.44351810295558,"critPercent":null,"avgHit":46667.30171382972,"totalDamageMean":3663359.827527768,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9088126668771845,"executesPerFight":17.10910910910911,"intervalSec":19.78761884634512,"critPercent":null,"avgHit":13690.113091883002,"totalDamageMean":234225.63860506934,"isSkipped":false}}},"abilities":[{"key":"agony","displayName":"Agony","simc":{"name":"agony","spellName":"Agony","portionPercent":11.483506319798918,"executesPerFight":41.925925925925924,"intervalSec":8.39994159570507,"critPercent":null,"avgHit":108448.35912262573,"totalDamageMean":4546797.871363419,"isSkipped":false},"assistedHighlight":{"name":"agony","spellName":"Agony","portionPercent":10.119818938862478,"executesPerFight":25.73273273273273,"intervalSec":14.136378985969335,"critPercent":null,"avgHit":112883.10130309124,"totalDamageMean":2904790.675874441,"isSkipped":false},"oneButton":{"name":"agony","spellName":"Agony","portionPercent":11.192195080692823,"executesPerFight":25.44844844844845,"intervalSec":14.23012788603241,"critPercent":null,"avgHit":113348.04195994776,"totalDamageMean":2884531.8025503024,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":11.483506319798918},{"key":"unstable_affliction","displayName":"Unstable Affliction","simc":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":9.417231259149473,"executesPerFight":73.65765765765765,"intervalSec":4.572738147566582,"critPercent":null,"avgHit":50621.66969999917,"totalDamageMean":3728673.61682156,"isSkipped":false},"assistedHighlight":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":14.200000057452252,"executesPerFight":86.46346346346347,"intervalSec":4.021933984428853,"critPercent":null,"avgHit":47140.89435108394,"totalDamageMean":4075964.9963599374,"isSkipped":false},"oneButton":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":14.21410497336647,"executesPerFight":78.49949949949949,"intervalSec":4.44351810295558,"critPercent":null,"avgHit":46667.30171382972,"totalDamageMean":3663359.827527768,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.417231259149473},{"key":"demonic_soul","displayName":"Demonic Soul","simc":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":9.31455974564546,"executesPerFight":0,"intervalSec":null,"critPercent":23.518622354428214,"avgHit":0,"totalDamageMean":3688021.6934412555,"isSkipped":true},"assistedHighlight":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":16.91893719861712,"executesPerFight":0,"intervalSec":null,"critPercent":23.384249711629206,"avgHit":0,"totalDamageMean":4856408.135081961,"isSkipped":true},"oneButton":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":15.801435091848829,"executesPerFight":0,"intervalSec":null,"critPercent":23.5178409532444,"avgHit":0,"totalDamageMean":4072457.790429329,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.31455974564546},{"key":"drain_soul","displayName":"Drain Soul","simc":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":7.95239705131468,"executesPerFight":44.68068068068068,"intervalSec":7.607259718703501,"critPercent":null,"avgHit":70470.83366161863,"totalDamageMean":3148684.8161361455,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":7.95239705131468},{"key":"shadow_of_nathreza","displayName":"Shadow of Nathreza","simc":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.371505664941594,"executesPerFight":0,"intervalSec":null,"critPercent":23.560102751355302,"avgHit":0,"totalDamageMean":2126802.5499550253,"isSkipped":true},"assistedHighlight":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":4.85133521551378,"executesPerFight":0,"intervalSec":null,"critPercent":23.48028211618984,"avgHit":0,"totalDamageMean":1392526.2284534292,"isSkipped":true},"oneButton":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.294363448463586,"executesPerFight":0,"intervalSec":null,"critPercent":23.535307843258494,"avgHit":0,"totalDamageMean":1364500.8536080432,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.371505664941594},{"key":"haunt","displayName":"Haunt","simc":{"name":"haunt","spellName":"Haunt","portionPercent":5.083380720658909,"executesPerFight":24.7987987987988,"intervalSec":14.408799809038852,"critPercent":23.286734214013936,"avgHit":1046363.8033404559,"totalDamageMean":25948565.42938584,"isSkipped":false},"assistedHighlight":{"name":"haunt","spellName":"Haunt","portionPercent":6.719855261665546,"executesPerFight":23.393393393393392,"intervalSec":15.307294097039765,"critPercent":22.95362449347141,"avgHit":1047675.0026550977,"totalDamageMean":24508673.485535167,"isSkipped":false},"oneButton":{"name":"haunt","spellName":"Haunt","portionPercent":7.300709659418494,"executesPerFight":22.77177177177177,"intervalSec":15.760985027726505,"critPercent":23.111789463947087,"avgHit":1061843.137013832,"totalDamageMean":24180049.573501166,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.083380720658909},{"key":"wicked_reaping","displayName":"Wicked Reaping","simc":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":4.212771351582142,"executesPerFight":0,"intervalSec":null,"critPercent":23.59725897279327,"avgHit":0,"totalDamageMean":1668011.4313944038,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":4.212771351582142},{"key":"soul_anathema","displayName":"Soul Anathema","simc":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.642867539637798,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1442362.803974498,"isSkipped":true},"assistedHighlight":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":5.640676397978119,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1619098.553586733,"isSkipped":true},"oneButton":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":5.153415136205491,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1328174.6560844118,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.642867539637798},{"key":"shared_fate","displayName":"Shared Fate","simc":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.9234520607978676,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":761574.6873955189,"isSkipped":true},"assistedHighlight":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.2985866150474579,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":372746.0257929491,"isSkipped":true},"oneButton":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":1.4357003115030285,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":370018.85488985805,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":1.9234520607978676},{"key":"shadowbolt_volley","displayName":"Shadowbolt Volley","simc":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":1.1881255510305193,"executesPerFight":0,"intervalSec":null,"critPercent":23.687770768412253,"avgHit":0,"totalDamageMean":470428.33224414074,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":1.1881255510305193},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.567158048181594,"executesPerFight":16.866866866866868,"intervalSec":19.929608767772496,"critPercent":null,"avgHit":13313.76284010839,"totalDamageMean":224561.46532114752,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.8117677358557189,"executesPerFight":17.31731731731732,"intervalSec":19.756559951159932,"critPercent":null,"avgHit":13455.296451486633,"totalDamageMean":233009.63824896773,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.9088126668771845,"executesPerFight":17.10910910910911,"intervalSec":19.78761884634512,"critPercent":null,"avgHit":13690.113091883002,"totalDamageMean":234225.63860506934,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.567158048181594},{"key":"corruption_direct","displayName":"Corruption","simc":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.014689436595974182,"executesPerFight":2.045045045045045,"intervalSec":178.0082407407408,"critPercent":22.975609756097562,"avgHit":2844.0249030337914,"totalDamageMean":5816.15903593397,"isSkipped":true},"assistedHighlight":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.06389153436343997,"executesPerFight":6.37937937937938,"intervalSec":61.921621423330876,"critPercent":23.995622948256994,"avgHit":2874.795704135773,"totalDamageMean":18339.412434892176,"isSkipped":true},"oneButton":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.06942887580476821,"executesPerFight":6.253253253253253,"intervalSec":63.19671626831151,"critPercent":23.38966836734694,"avgHit":2861.5028029591954,"totalDamageMean":17893.70171179789,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.014689436595974182}],"fightStyle":"DungeonSlice","iterations":1000},"hectic_add_cleave":{"slug":"MID1_Warlock_Affliction_Soul_Harvester","fightProfileId":"hectic_add_cleave","fightProfileLabel":"AoE / Adds","class":"Warlock","spec":"Affliction","heroTalent":"Soul Harvester","simcProfileName":"MID1_Warlock_Affliction","playerName":"MID1_Warlock_Affliction_Soul_Harvester","talents":"CkQAAAAAAAAAAAAAAAAAAAAAAwMzMzoZhhZmZmlBAAYmZZ2MzsMzAAjllBGwEMDbBG2GAAAmBAAwMDzMjxwwMmZmxgZmZGAwMwA","simc":{"dps":163685.78739192622,"fightLengthSec":300.05494894894895,"profileSource":"default","timeline":[88843.9303553576,25697.672109367875,80917.43103309191,204872.93512533538,249489.44044618847,294543.8722011926,185074.58266080567,375263.8058299405,325323.9843582524,367068.3277284436,434518.7066260774,109148.01569271441,263394.3981374218,102012.12861415753,240945.06376352653,334028.55824173754,222379.97221028453,304917.8752844076,89870.77974105725,92289.64462594927,59145.916979421614,92401.61368299786,208786.1756518949,257872.50991106709,154601.8065428014,126540.41710700234,53937.50913613521,78612.38604002158,117524.65437301618,227599.28396962894,250984.37199078128,329943.86022148165,259213.83342607447,100154.38506297968,143722.38186658538,67192.10066510469,142814.83558460034,226441.34451457197,224659.28338833974,214610.75866039054,116093.29500355119,71962.51047838214,56322.92603316657,115486.82000285463,312029.65674698836,306618.6743460639,348144.3857168951,161693.84601215855,115148.54126243375,132152.03213427664,86243.61037027277,213683.48054016457,163431.45103267723,245733.81196365613,200634.30230042286,82101.6931992076,61551.585360736026,64869.37464490822,219547.98155851488,245592.46451693005,264650.73852959304,331763.11178833415,151111.14994121072,73950.81190488044,56335.43041587103,82882.64551675139,201112.83268971735,225666.86285816634,215577.53892719586,115567.15494657778,74450.2555439644,106294.05331598225,137397.82139414447,187629.2277804771,250845.74879738153,308343.9603602604,220471.99250868437,122956.21342133806,96530.23340495129,132440.80434745096,116827.53869575285,101677.99502194767,112692.1553235253,100699.31966881592,136931.00030276724,164975.03390405286,163895.03370813536,182079.92535976076,189795.0506544858,167697.20226615074,167926.6926735823,156256.16216440292,110232.85181134254,101493.11498480821,104370.09480480618,117068.36804910905,111282.33480294485,113964.25699540455,112683.27439501353,130523.1292568373,135872.26491250016,148588.75851861417,126288.23558972964,144834.05211118993,147784.8528307229,131419.08093859153,160882.61951633907,140805.25077718837,125477.9335282735,120031.64528512576,139043.46028638398,143450.62912024962,182912.54279592165,157320.59524238773,138835.88614226016,179176.92932707438,156426.9922366669,162071.79499660252,178808.59266606576,129525.8585179042],"sampleActions":[{"timeSec":0,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.1260000000000001,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":1.994,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":2.862,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":3.728,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":5.539,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":6.3660000000000005,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":6.3660000000000005,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":6.3660000000000005,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.119,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.873,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.626,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":9.185,"name":"unknown","spellName":"unknown","target":""},{"timeSec":10.169,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":10.925,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":11.68,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":12.435,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":13.19,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":15.007,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_1"},{"timeSec":15.762,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_2"},{"timeSec":16.516000000000002,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_3"},{"timeSec":17.269000000000002,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.628,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":19.381,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":20.366,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":21.12,"name":"unknown","spellName":"unknown","target":""},{"timeSec":22.182000000000002,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":23.282,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":24.383,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_1"},{"timeSec":25.209,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":26.311,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_2"},{"timeSec":27.138,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_3"},{"timeSec":27.964000000000002,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":29.064,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":29.886,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":31.882,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":32.71,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":33.538000000000004,"name":"unknown","spellName":"unknown","target":""},{"timeSec":34.166000000000004,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":35.043,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":35.871,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":37.003,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_1"},{"timeSec":37.831,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_3"},{"timeSec":38.656,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_5"},{"timeSec":39.482,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":40.309,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":41.384,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":43.72,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":44.794000000000004,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":45.867000000000004,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":46.939,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":48.012,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":49.083,"name":"seed_of_corruption","spellName":"Seed of Corruption","target":"Fluffy_Pillow"},{"timeSec":50.156,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":51.231,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_1"},{"timeSec":52.358000000000004,"name":"drain_soul","spellName":"Drain Soul","target":"Fluffy_Pillow"},{"timeSec":54.468,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":55.594,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":56.721000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":57.213,"name":"unknown","spellName":"unknown","target":""},{"timeSec":58.22,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":59.191,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow_1"}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":14.580147313479882,"executesPerFight":54.77877877877878,"intervalSec":5.206518964143247,"critPercent":null,"avgHit":130172.39792219012,"totalDamageMean":7130684.988882815,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.006623873056357079,"executesPerFight":1,"intervalSec":null,"critPercent":24.32701894317049,"avgHit":3239.5250305572936,"totalDamageMean":3239.5250305572936,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":9.026189654225822,"executesPerFight":0,"intervalSec":null,"critPercent":23.46963519801155,"avgHit":0,"totalDamageMean":4414421.452017262,"isSkipped":true},"drain_soul":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":6.582197084513887,"executesPerFight":36.293293293293296,"intervalSec":8.230525014996967,"critPercent":null,"avgHit":88698.00312830231,"totalDamageMean":3219142.642064922,"isSkipped":false},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":3.8694332394832593,"executesPerFight":17.21121121121121,"intervalSec":16.70855869396235,"critPercent":23.70557261956999,"avgHit":1899531.2456545841,"totalDamageMean":32693233.471256174,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.0039454755504575,"executesPerFight":0,"intervalSec":null,"critPercent":23.572953514827567,"avgHit":0,"totalDamageMean":2447270.1215238627,"isSkipped":true},"shadowbolt_volley":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":0.6893773941925041,"executesPerFight":0,"intervalSec":null,"critPercent":23.341431971439906,"avgHit":0,"totalDamageMean":337152.49446751917,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.9606228055123456,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":469809.97324439895,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.7948423044256816,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1855936.3272226937,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":7.853348855447634,"executesPerFight":52.92392392392392,"intervalSec":5.677962041673304,"critPercent":null,"avgHit":72572.51810906891,"totalDamageMean":3840822.4273719545,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5591194644382298,"executesPerFight":16.4024024024024,"intervalSec":17.57035435435434,"critPercent":null,"avgHit":16671.185668175305,"totalDamageMean":273447.4958545751,"isSkipped":false},"wicked_reaping":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":3.7831983455120697,"executesPerFight":0,"intervalSec":null,"critPercent":23.45997144548525,"avgHit":0,"totalDamageMean":1850241.6383247501,"isSkipped":true}}},"assistedHighlight":{"dps":96537.42806343634,"fightLengthSec":300.05411411411404,"profileSource":"default","timeline":[86288.67272366877,172345.17747939896,177084.67693070605,171511.65923571156,227200.43856123893,176317.18317073747,89439.05715733953,280054.8155605093,156636.13431269038,105239.51078517572,122146.0725968267,54368.57714115352,163210.4403904352,65436.99615376849,111933.57496067858,162129.93896506025,248338.66486149922,172678.90554238585,82020.32117100168,69128.80076545576,54842.48309557323,57709.52628733036,65367.99892111412,77057.40517711516,89755.05303177425,44493.02661707044,46315.68412406641,37983.6008229887,138547.23799927818,84520.17811434946,150603.7570419096,252061.023612337,268047.8071714966,90492.61214676469,74976.19996216134,63015.93314352039,78949.38929598434,76240.2518751354,80814.34135144604,98090.68122753478,48549.575474115525,80816.04943961742,59082.87594198114,67973.767366663,241608.53158385892,174733.85214853397,268723.7075802876,134370.51984500035,121649.96733681794,63850.902871845916,52851.31067062476,91990.43486795922,79339.87448997563,69255.63463852776,73743.75757565563,42114.73243091116,42806.50378881594,46550.51881266904,89084.82170166599,115007.56607015926,177969.55974450335,201461.36965495028,89085.25711492043,76815.32543908473,58246.3175975485,60537.988127522774,114481.66811159899,86969.17407525673,108067.5856471514,51430.61646476433,47842.82711110163,125892.45771251935,76171.09567315521,83685.28967382578,134169.90993015296,184833.24789428306,212678.45521643542,100257.61422072777,76877.51724549975,70885.18287281507,58620.46926739929,84048.58531165702,83489.72191230308,83174.63871992976,73282.6243962698,80643.39140032399,73308.77261625354,90920.28556546463,95470.06397137897,75740.97831037872,77815.12035236102,85471.31353878444,141253.2240455079,75146.71036087384,63188.82362444741,60837.52844807588,49505.060292817034,44310.34158665442,42655.8675702663,46949.08282185037,48993.958013337484,50433.10438877648,50791.377003785165,91493.06995660848,107114.89485772901,93690.35953995021,100276.78343322825,100774.22348625136,167030.28137434166,77227.11744142327,66082.58579974211,52548.98512830229,48161.50598884853,42217.79418936568,50403.61170926815,52592.587003858214,53237.99404962561,47335.67443112171,49256.387670469245,86360.07057007107],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":0.776,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.552,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":2.328,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":3.992,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":4.769,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":5.545,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":6.3020000000000005,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.057,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.8100000000000005,"name":"unknown","spellName":"unknown","target":""},{"timeSec":8.109,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.863,"name":"unknown","spellName":"unknown","target":""},{"timeSec":11.286,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":12.041,"name":"unknown","spellName":"unknown","target":""},{"timeSec":14.808,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":15.561,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.576,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":19.402,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":20.228,"name":"unknown","spellName":"unknown","target":""},{"timeSec":20.445,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":21.201,"name":"unknown","spellName":"unknown","target":""},{"timeSec":22.178,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":23.006,"name":"unknown","spellName":"unknown","target":""},{"timeSec":26.555,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":27.382,"name":"unknown","spellName":"unknown","target":""},{"timeSec":31.85,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":32.677,"name":"unknown","spellName":"unknown","target":""},{"timeSec":32.776,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":33.601,"name":"unknown","spellName":"unknown","target":""},{"timeSec":34.213,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":35.06,"name":"unknown","spellName":"unknown","target":""},{"timeSec":40.608000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":41.681,"name":"unknown","spellName":"unknown","target":""},{"timeSec":41.78,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":42.854,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":45.297000000000004,"name":"unknown","spellName":"unknown","target":""},{"timeSec":46.229,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":47.303000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":48.377,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":49.45,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":50.523,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":51.596000000000004,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":52.669000000000004,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":53.743,"name":"unknown","spellName":"unknown","target":""},{"timeSec":58.173,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":59.169000000000004,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":10.403725327025121,"executesPerFight":17.325325325325327,"intervalSec":17.77115357590964,"critPercent":null,"avgHit":173168.4998382714,"totalDamageMean":3000200.5957965986,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.016904088003697304,"executesPerFight":1,"intervalSec":null,"critPercent":22.033898305084744,"avgHit":4874.759118096845,"totalDamageMean":4874.759118096845,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":15.181060304214125,"executesPerFight":0,"intervalSec":null,"critPercent":23.492187699347628,"avgHit":0,"totalDamageMean":4377876.648782207,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":6.782291858581124,"executesPerFight":17.982982982982982,"intervalSec":16.06018377203648,"critPercent":23.510509403150188,"avgHit":1813140.1055130258,"totalDamageMean":32605667.66320471,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.155069394291633,"executesPerFight":0,"intervalSec":null,"critPercent":23.458795258153977,"avgHit":0,"totalDamageMean":1486606.1705753473,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.5116640422000649,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":147552.41185277246,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.957772537852703,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1141332.6623732022,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":17.295652786358357,"executesPerFight":74.17317317317317,"intervalSec":3.981996312230997,"critPercent":null,"avgHit":67243.68648322717,"totalDamageMean":4987677.602322972,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.171797936822033,"executesPerFight":16.474474474474473,"intervalSec":17.367197631578982,"critPercent":null,"avgHit":20511.743382778463,"totalDamageMean":337920.19278655446,"isSkipped":false}}},"oneButton":{"dps":88200.37441992415,"fightLengthSec":300.05231131131137,"profileSource":"default","timeline":[84958.49063937896,119384.87269859586,159259.73879730096,146657.5646225869,178493.95612557413,184177.79543947123,89983.70426327307,279136.0878090715,140101.10585242667,116888.63992653828,115348.54963384567,51061.80806834719,155042.58784155725,69316.70426622116,110217.85352540422,164632.83982929034,244045.17687259943,104680.40850718837,62387.79539811317,58729.1613851867,45229.45637589428,47503.93102409711,59662.44228412656,72952.57639155936,88238.66093196261,45272.34978592299,44329.45379464018,40501.72617449165,148350.6551829746,75595.41594220855,133731.82522537594,217104.9053036522,240136.18567587974,74078.98748757705,58011.451519590664,60949.074597972336,97374.25516411562,67719.19327745063,79441.19191520785,89131.76898858247,48531.83332879853,75533.58291622714,67025.4122422453,57745.64498116578,176208.99198752624,161208.6237394827,234928.0395802693,132428.62358926705,120820.67731061019,63562.99854512539,52475.50465976935,123580.44843099227,75492.36956690149,63477.16420472101,78896.10639160921,50786.2642076046,43511.44931324904,47065.65245489475,77099.9527626869,71740.41629683715,159280.05098296827,185263.81734199883,89693.40846228185,71092.37625478614,66884.02416190582,63555.254840816095,70583.5138269725,105109.64984650172,106808.95777322364,55853.694843537756,49123.74372457736,101792.92168291175,77453.66331070443,76121.43624896825,74510.15613445135,111962.22651647357,167957.62578091348,78831.14555171027,69693.6080002581,61453.56877546173,67179.41869286833,93392.62486962008,84355.30133859743,79905.82367061083,81949.6226196471,77348.8814996512,67652.69545570352,85972.21079358605,89849.2067603708,44984.7739841536,47790.17736508186,72655.30000630941,116565.26918214528,68816.47619071684,70456.99573616742,69107.80177563203,57427.74028902395,47238.41081238165,59846.396301753266,45997.98920796533,55940.872156655554,53344.28449274846,51855.659452986096,82656.52949381166,75370.11219962333,64966.100238932384,80641.31104408119,93922.41688177943,119919.03915805914,94978.21818139925,81647.14309634936,67291.96082800183,57689.30496069789,44956.425833238,68959.4313230158,52383.55055268777,53083.8446324626,38012.3560098865,36533.257742650225,38945.25446819068],"sampleActions":[{"timeSec":0,"name":"potion","spellName":"Light\u0027s Potential","target":"none"},{"timeSec":0,"name":"use_items","spellName":"use_items","target":"Fluffy_Pillow"},{"timeSec":0,"name":"summon_darkglare","spellName":"Summon Darkglare","target":"Fluffy_Pillow"},{"timeSec":0.779,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":1.747,"name":"corruption_direct","spellName":"Corruption","target":"Fluffy_Pillow"},{"timeSec":2.715,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":3.996,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":4.9670000000000005,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":5.936,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":6.877,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":7.819,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":8.761000000000001,"name":"unknown","spellName":"unknown","target":""},{"timeSec":8.879,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":9.176,"name":"unknown","spellName":"unknown","target":""},{"timeSec":10.154,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":11.095,"name":"unknown","spellName":"unknown","target":""},{"timeSec":12.85,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":13.791,"name":"unknown","spellName":"unknown","target":""},{"timeSec":14.798,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":15.739,"name":"unknown","spellName":"unknown","target":""},{"timeSec":18.641000000000002,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":19.672,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":20.704,"name":"unknown","spellName":"unknown","target":""},{"timeSec":23.971,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":25.004,"name":"unknown","spellName":"unknown","target":""},{"timeSec":28.385,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":29.416,"name":"unknown","spellName":"unknown","target":""},{"timeSec":32.808,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":33.84,"name":"unknown","spellName":"unknown","target":""},{"timeSec":34.226,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":35.33,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":36.361000000000004,"name":"unknown","spellName":"unknown","target":""},{"timeSec":40.594,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":41.933,"name":"unknown","spellName":"unknown","target":""},{"timeSec":43.067,"name":"dark_harvest","spellName":"Dark Harvest","target":"Fluffy_Pillow"},{"timeSec":44.944,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":45.186,"name":"unknown","spellName":"unknown","target":""},{"timeSec":46.183,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":47.523,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":48.863,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":50.203,"name":"haunt","spellName":"Haunt","target":"Fluffy_Pillow"},{"timeSec":51.543,"name":"agony","spellName":"Agony","target":"Fluffy_Pillow"},{"timeSec":52.885,"name":"unstable_affliction","spellName":"Unstable Affliction","target":"Fluffy_Pillow"},{"timeSec":54.224000000000004,"name":"unknown","spellName":"unknown","target":""}],"abilitiesByKey":{"agony":{"name":"agony","spellName":"Agony","portionPercent":11.380609319654345,"executesPerFight":17.323323323323322,"intervalSec":17.771325759446743,"critPercent":null,"avgHit":173186.81302808356,"totalDamageMean":3000171.157421435,"isSkipped":false},"corruption_direct":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.018715347584329446,"executesPerFight":1,"intervalSec":null,"critPercent":23.13060817547358,"avgHit":4933.764480136598,"totalDamageMean":4933.764480136598,"isSkipped":true},"demonic_soul":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":12.577075501716164,"executesPerFight":0,"intervalSec":null,"critPercent":23.59609686903005,"avgHit":0,"totalDamageMean":3315585.141807382,"isSkipped":true},"haunt":{"name":"haunt","spellName":"Haunt","portionPercent":7.375156967046265,"executesPerFight":17.872872872872872,"intervalSec":16.15981742043617,"critPercent":23.718763235916985,"avgHit":1821171.4347831311,"totalDamageMean":32549565.53358639,"isSkipped":false},"shadow_of_nathreza":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.626613715800164,"executesPerFight":0,"intervalSec":null,"critPercent":23.37260111161604,"avgHit":0,"totalDamageMean":1483295.2884993865,"isSkipped":true},"shared_fate":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.5585418262937485,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":147243.5289177375,"isSkipped":true},"soul_anathema":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.364425797887205,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":886934.342142268,"isSkipped":true},"unstable_affliction":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":17.52682320123219,"executesPerFight":68.76176176176176,"intervalSec":4.326145748746028,"critPercent":null,"avgHit":67194.9642480045,"totalDamageMean":4620444.123211385,"isSkipped":false},"voidstalker_sting":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.2571360943512075,"executesPerFight":16.31831831831832,"intervalSec":17.50075621890551,"critPercent":null,"avgHit":20308.947269139004,"totalDamageMean":331407.8662477518,"isSkipped":false}}},"abilities":[{"key":"agony","displayName":"Agony","simc":{"name":"agony","spellName":"Agony","portionPercent":14.580147313479882,"executesPerFight":54.77877877877878,"intervalSec":5.206518964143247,"critPercent":null,"avgHit":130172.39792219012,"totalDamageMean":7130684.988882815,"isSkipped":false},"assistedHighlight":{"name":"agony","spellName":"Agony","portionPercent":10.403725327025121,"executesPerFight":17.325325325325327,"intervalSec":17.77115357590964,"critPercent":null,"avgHit":173168.4998382714,"totalDamageMean":3000200.5957965986,"isSkipped":false},"oneButton":{"name":"agony","spellName":"Agony","portionPercent":11.380609319654345,"executesPerFight":17.323323323323322,"intervalSec":17.771325759446743,"critPercent":null,"avgHit":173186.81302808356,"totalDamageMean":3000171.157421435,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":14.580147313479882},{"key":"demonic_soul","displayName":"Demonic Soul","simc":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":9.026189654225822,"executesPerFight":0,"intervalSec":null,"critPercent":23.46963519801155,"avgHit":0,"totalDamageMean":4414421.452017262,"isSkipped":true},"assistedHighlight":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":15.181060304214125,"executesPerFight":0,"intervalSec":null,"critPercent":23.492187699347628,"avgHit":0,"totalDamageMean":4377876.648782207,"isSkipped":true},"oneButton":{"name":"demonic_soul","spellName":"Demonic Soul","portionPercent":12.577075501716164,"executesPerFight":0,"intervalSec":null,"critPercent":23.59609686903005,"avgHit":0,"totalDamageMean":3315585.141807382,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":9.026189654225822},{"key":"unstable_affliction","displayName":"Unstable Affliction","simc":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":7.853348855447634,"executesPerFight":52.92392392392392,"intervalSec":5.677962041673304,"critPercent":null,"avgHit":72572.51810906891,"totalDamageMean":3840822.4273719545,"isSkipped":false},"assistedHighlight":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":17.295652786358357,"executesPerFight":74.17317317317317,"intervalSec":3.981996312230997,"critPercent":null,"avgHit":67243.68648322717,"totalDamageMean":4987677.602322972,"isSkipped":false},"oneButton":{"name":"unstable_affliction","spellName":"Unstable Affliction","portionPercent":17.52682320123219,"executesPerFight":68.76176176176176,"intervalSec":4.326145748746028,"critPercent":null,"avgHit":67194.9642480045,"totalDamageMean":4620444.123211385,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":7.853348855447634},{"key":"drain_soul","displayName":"Drain Soul","simc":{"name":"drain_soul","spellName":"Drain Soul","portionPercent":6.582197084513887,"executesPerFight":36.293293293293296,"intervalSec":8.230525014996967,"critPercent":null,"avgHit":88698.00312830231,"totalDamageMean":3219142.642064922,"isSkipped":false},"assistedHighlight":null,"oneButton":null,"skippedByAh":true,"skippedByOb":true,"sortPortion":6.582197084513887},{"key":"shadow_of_nathreza","displayName":"Shadow of Nathreza","simc":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.0039454755504575,"executesPerFight":0,"intervalSec":null,"critPercent":23.572953514827567,"avgHit":0,"totalDamageMean":2447270.1215238627,"isSkipped":true},"assistedHighlight":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.155069394291633,"executesPerFight":0,"intervalSec":null,"critPercent":23.458795258153977,"avgHit":0,"totalDamageMean":1486606.1705753473,"isSkipped":true},"oneButton":{"name":"shadow_of_nathreza","spellName":"Shadow of Nathreza","portionPercent":5.626613715800164,"executesPerFight":0,"intervalSec":null,"critPercent":23.37260111161604,"avgHit":0,"totalDamageMean":1483295.2884993865,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":5.0039454755504575},{"key":"haunt","displayName":"Haunt","simc":{"name":"haunt","spellName":"Haunt","portionPercent":3.8694332394832593,"executesPerFight":17.21121121121121,"intervalSec":16.70855869396235,"critPercent":23.70557261956999,"avgHit":1899531.2456545841,"totalDamageMean":32693233.471256174,"isSkipped":false},"assistedHighlight":{"name":"haunt","spellName":"Haunt","portionPercent":6.782291858581124,"executesPerFight":17.982982982982982,"intervalSec":16.06018377203648,"critPercent":23.510509403150188,"avgHit":1813140.1055130258,"totalDamageMean":32605667.66320471,"isSkipped":false},"oneButton":{"name":"haunt","spellName":"Haunt","portionPercent":7.375156967046265,"executesPerFight":17.872872872872872,"intervalSec":16.15981742043617,"critPercent":23.718763235916985,"avgHit":1821171.4347831311,"totalDamageMean":32549565.53358639,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.8694332394832593},{"key":"soul_anathema","displayName":"Soul Anathema","simc":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.7948423044256816,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1855936.3272226937,"isSkipped":true},"assistedHighlight":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.957772537852703,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":1141332.6623732022,"isSkipped":true},"oneButton":{"name":"soul_anathema","spellName":"Soul Anathema","portionPercent":3.364425797887205,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":886934.342142268,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":3.7948423044256816},{"key":"wicked_reaping","displayName":"Wicked Reaping","simc":{"name":"wicked_reaping","spellName":"Wicked Reaping","portionPercent":3.7831983455120697,"executesPerFight":0,"intervalSec":null,"critPercent":23.45997144548525,"avgHit":0,"totalDamageMean":1850241.6383247501,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":3.7831983455120697},{"key":"shared_fate","displayName":"Shared Fate","simc":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.9606228055123456,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":469809.97324439895,"isSkipped":true},"assistedHighlight":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.5116640422000649,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":147552.41185277246,"isSkipped":true},"oneButton":{"name":"shared_fate","spellName":"Shared Fate","portionPercent":0.5585418262937485,"executesPerFight":0,"intervalSec":null,"critPercent":null,"avgHit":0,"totalDamageMean":147243.5289177375,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.9606228055123456},{"key":"shadowbolt_volley","displayName":"Shadowbolt Volley","simc":{"name":"shadowbolt_volley","spellName":"Shadowbolt Volley","portionPercent":0.6893773941925041,"executesPerFight":0,"intervalSec":null,"critPercent":23.341431971439906,"avgHit":0,"totalDamageMean":337152.49446751917,"isSkipped":true},"assistedHighlight":null,"oneButton":null,"skippedByAh":false,"skippedByOb":false,"sortPortion":0.6893773941925041},{"key":"voidstalker_sting","displayName":"Voidstalker Sting","simc":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":0.5591194644382298,"executesPerFight":16.4024024024024,"intervalSec":17.57035435435434,"critPercent":null,"avgHit":16671.185668175305,"totalDamageMean":273447.4958545751,"isSkipped":false},"assistedHighlight":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.171797936822033,"executesPerFight":16.474474474474473,"intervalSec":17.367197631578982,"critPercent":null,"avgHit":20511.743382778463,"totalDamageMean":337920.19278655446,"isSkipped":false},"oneButton":{"name":"voidstalker_sting","spellName":"Voidstalker Sting","portionPercent":1.2571360943512075,"executesPerFight":16.31831831831832,"intervalSec":17.50075621890551,"critPercent":null,"avgHit":20308.947269139004,"totalDamageMean":331407.8662477518,"isSkipped":false},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.5591194644382298},{"key":"corruption_direct","displayName":"Corruption","simc":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.006623873056357079,"executesPerFight":1,"intervalSec":null,"critPercent":24.32701894317049,"avgHit":3239.5250305572936,"totalDamageMean":3239.5250305572936,"isSkipped":true},"assistedHighlight":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.016904088003697304,"executesPerFight":1,"intervalSec":null,"critPercent":22.033898305084744,"avgHit":4874.759118096845,"totalDamageMean":4874.759118096845,"isSkipped":true},"oneButton":{"name":"corruption_direct","spellName":"Corruption","portionPercent":0.018715347584329446,"executesPerFight":1,"intervalSec":null,"critPercent":23.13060817547358,"avgHit":4933.764480136598,"totalDamageMean":4933.764480136598,"isSkipped":true},"skippedByAh":false,"skippedByOb":false,"sortPortion":0.006623873056357079}],"fightStyle":"HecticAddCleave","iterations":1000}}</script>
+<script type="application/json" id="results-by-profile">{"hectic_add_cleave":{"optimalDps":163685.78739192622,"assistedHighlightDps":96537.42806343634,"oneButtonDps":88200.37441992415,"deltaPercent":-41.02271822031261,"oneButtonDeltaPercent":-46.1160459773219,"likelyBrokenApl":false},"dungeonslice":{"optimalDps":109890.29994168018,"assistedHighlightDps":79567.03167712758,"oneButtonDps":71479.22887530884,"deltaPercent":-27.594126397548678,"oneButtonDeltaPercent":-34.95401421850378,"likelyBrokenApl":false},"patchwerk":{"optimalDps":117779.50298069319,"assistedHighlightDps":75529.21307593737,"oneButtonDps":68820.59505164433,"deltaPercent":-35.872362198439255,"oneButtonDeltaPercent":-41.56827520071499,"likelyBrokenApl":false}}</script>
+<script type="application/json" id="fight-profiles-data">[{"id":"patchwerk","label":"Single Target (Raid)","description":"Stationary single-target boss (Patchwerk). Matches SimC MID1_Raid defaults."},{"id":"dungeonslice","label":"M\u002B (Dungeon Slice)","description":"Mixed boss and trash pulls approximating a Mythic\u002B dungeon slice (~6 min)."},{"id":"hectic_add_cleave","label":"AoE / Adds","description":"Boss with periodic add spawns and movement (Hectic Add Cleave)."}]</script>
+<script>
+  const detailsByProfile = JSON.parse(document.getElementById('details-by-profile').textContent);
+  const resultsByProfile = JSON.parse(document.getElementById('results-by-profile').textContent);
+  const fightProfiles = JSON.parse(document.getElementById('fight-profiles-data').textContent);
+  const defaultProfileId = 'patchwerk';
+
+  const params = new URLSearchParams(window.location.search);
+  let activeProfile = params.get('profile') || defaultProfileId;
+  if (!detailsByProfile[activeProfile]) {
+    activeProfile = Object.keys(detailsByProfile)[0] || defaultProfileId;
+  }
+
+  let detail = detailsByProfile[activeProfile];
+  let resultMeta = resultsByProfile[activeProfile];
+
+  const fmt = new Intl.NumberFormat('en-US');
+  const pct = (v) => v == null ? '—' : v.toFixed(1) + '%';
+  const num = (v, d = 1) => v == null ? '—' : fmt.format(Math.round(v * (10 ** d)) / (10 ** d));
+
+  function deltaClass(pctVal) {
+    if (resultMeta?.likelyBrokenApl) return 'delta-unreliable';
+    if (pctVal >= -5) return 'delta-good';
+    if (pctVal >= -15) return 'delta-moderate';
+    return 'delta-poor';
+  }
+
+  function fmtDelta(pctVal) {
+    if (resultMeta?.likelyBrokenApl) return '—';
+    return (pctVal >= 0 ? '+' : '') + pctVal.toFixed(1) + '%';
+  }
+
+  function renderDpsGrid() {
+    const dpsGrid = document.getElementById('dps-grid');
+    dpsGrid.innerHTML = '';
+    if (!resultMeta) return;
+
+    [
+      { label: 'SimC optimal', value: resultMeta.optimalDps, delta: null },
+      { label: 'Assisted Highlight', value: resultMeta.assistedHighlightDps, delta: resultMeta.deltaPercent },
+      { label: 'One Button Rotation', value: resultMeta.oneButtonDps, delta: resultMeta.oneButtonDeltaPercent },
+    ].forEach(({ label, value, delta }) => {
+      const card = document.createElement('div');
+      card.className = 'dps-card';
+      card.innerHTML = `
+        <div class="label">${label}</div>
+        <div class="value">${resultMeta.likelyBrokenApl && label !== 'SimC optimal' ? '⚠' : fmt.format(Math.round(value))}</div>
+        ${delta != null ? `<div class="delta ${deltaClass(delta)}">${fmtDelta(delta)} vs SimC</div>` : ''}
+      `;
+      dpsGrid.appendChild(card);
+    });
+  }
+
+  function renderDamageBars() {
+    const barChart = document.getElementById('damage-bars');
+    barChart.innerHTML = '';
+    if (!detail) return;
+
+    const topAbilities = [...detail.abilities]
+      .sort((a, b) => (b.simc?.portionPercent ?? 0) - (a.simc?.portionPercent ?? 0))
+      .slice(0, 12);
+
+    topAbilities.forEach(row => {
+      const el = document.createElement('div');
+      el.className = 'bar-row';
+      el.innerHTML = `
+        <div class="bar-label" title="${row.displayName}">${row.displayName}</div>
+        <div>
+          <div class="bar-track bar-track-simc" style="margin-bottom:2px"></div>
+          <div class="bar-track bar-track-ah" style="margin-bottom:2px"></div>
+          <div class="bar-track bar-track-ob"></div>
+        </div>
+      `;
+      barChart.appendChild(el);
+    });
+
+    barChart.querySelectorAll('.bar-row').forEach((rowEl, i) => {
+      const row = topAbilities[i];
+      const tracks = rowEl.querySelectorAll('.bar-track');
+      [
+        { mode: 'simc', cls: 'bar-seg-simc', track: tracks[0] },
+        { mode: 'assistedHighlight', cls: 'bar-seg-ah', track: tracks[1] },
+        { mode: 'oneButton', cls: 'bar-seg-ob', track: tracks[2] },
+      ].forEach(({ mode, cls, track }) => {
+        const stat = row[mode];
+        if (!stat || stat.isSkipped) {
+          track.innerHTML = `<div class="bar-seg bar-seg-skipped" style="width:100%" title="Not used in this APL"></div>`;
+        } else {
+          const maxPct = Math.max(
+            row.simc?.portionPercent ?? 0,
+            row.assistedHighlight?.portionPercent ?? 0,
+            row.oneButton?.portionPercent ?? 0,
+            1
+          );
+          const w = (stat.portionPercent / maxPct * 100).toFixed(1);
+          track.innerHTML = `<div class="bar-seg ${cls}" style="width:${w}%" title="${stat.portionPercent.toFixed(1)}%"></div>`;
+        }
+      });
+    });
+  }
+
+  const canvas = document.getElementById('timeline-chart');
+  const ctx = canvas.getContext('2d');
+
+  function drawTimeline() {
+    if (!detail) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = rect.width;
+    const h = rect.height;
+    const pad = { t: 10, r: 10, b: 24, l: 52 };
+    const plotW = w - pad.l - pad.r;
+    const plotH = h - pad.t - pad.b;
+
+    const series = [
+      { data: detail.simc.timeline, color: '#3b82f6' },
+      { data: detail.assistedHighlight.timeline, color: '#22c55e' },
+      { data: detail.oneButton.timeline, color: '#a855f7' },
+    ].filter(s => s.data && s.data.length > 0);
+
+    const allVals = series.flatMap(s => s.data);
+    const maxY = Math.max(...allVals, 1);
+    const fightLen = detail.simc.fightLengthSec;
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = '#27272a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.t + (plotH * i / 4);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#71717a';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const val = maxY * (1 - i / 4);
+      const y = pad.t + (plotH * i / 4);
+      ctx.fillText(fmt.format(Math.round(val)), pad.l - 6, y + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillText('0s', pad.l, h - 6);
+    ctx.fillText(Math.round(fightLen) + 's', w - pad.r, h - 6);
+
+    series.forEach(({ data, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      data.forEach((v, i) => {
+        const x = pad.l + (i / (data.length - 1 || 1)) * plotW;
+        const y = pad.t + plotH - (v / maxY) * plotH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  const tbody = document.getElementById('ability-tbody');
+  let activeFilter = 'all';
+
+  function cell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—<span class="skip-badge">skip</span></td>`;
+    }
+    return `<td>${pct(stat.portionPercent)}</td>`;
+  }
+
+  function castCell(stat, modeLabel) {
+    if (!stat || stat.isSkipped) {
+      return `<td class="cell-skipped" title="Not used in ${modeLabel} APL">—</td>`;
+    }
+    return `<td>${num(stat.executesPerFight, 1)}</td>`;
+  }
+
+  function renderAbilities() {
+    tbody.innerHTML = '';
+    if (!detail) return;
+    detail.abilities.forEach(row => {
+      if (activeFilter === 'skip-ah' && !row.skippedByAh) return;
+      if (activeFilter === 'skip-ob' && !row.skippedByOb) return;
+
+      const tr = document.createElement('tr');
+      if (row.skippedByAh || row.skippedByOb) tr.classList.add('row-skipped');
+      tr.innerHTML = `
+        <td>${row.displayName}</td>
+        ${cell(row.simc, 'SimC')}
+        ${cell(row.assistedHighlight, 'Assisted Highlight')}
+        ${cell(row.oneButton, 'One Button Rotation')}
+        ${castCell(row.simc, 'SimC')}
+        ${castCell(row.assistedHighlight, 'Assisted Highlight')}
+        ${castCell(row.oneButton, 'One Button Rotation')}
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  let simcSpells = new Set();
+  let activeMode = 'simc';
+
+  function renderRotation() {
+    const rotBody = document.getElementById('rotation-tbody');
+    rotBody.innerHTML = '';
+    if (!detail) return;
+
+    const modeMap = {
+      simc: detail.simc,
+      ah: detail.assistedHighlight,
+      ob: detail.oneButton,
+    };
+    simcSpells = new Set(detail.simc.sampleActions.map(a => a.name));
+
+    const mode = modeMap[activeMode];
+    const actions = mode?.sampleActions ?? [];
+    const modeSpells = new Set(actions.map(a => a.name));
+
+    actions.forEach(action => {
+      const tr = document.createElement('tr');
+      if (activeMode !== 'simc' && simcSpells.has(action.name) && !modeSpells.has(action.name)) {
+        tr.classList.add('spell-skipped');
+      }
+      tr.innerHTML = `
+        <td>${action.timeSec.toFixed(2)}</td>
+        <td>${action.spellName || action.name}</td>
+        <td>${action.target || '—'}</td>
+      `;
+      rotBody.appendChild(tr);
+    });
+  }
+
+  function renderAll() {
+    detail = detailsByProfile[activeProfile];
+    resultMeta = resultsByProfile[activeProfile];
+
+    const profile = fightProfiles.find(p => p.id === activeProfile);
+    document.getElementById('fight-profile-label').textContent = profile?.label || activeProfile;
+    document.getElementById('fight-style-label').textContent = detail?.fightStyle || '—';
+    document.getElementById('player-name').textContent = detail?.playerName || '—';
+
+    const brokenBadge = document.getElementById('broken-badge');
+    brokenBadge.style.display = resultMeta?.likelyBrokenApl ? 'inline-block' : 'none';
+
+    renderDpsGrid();
+    renderDamageBars();
+    drawTimeline();
+    renderAbilities();
+    renderRotation();
+  }
+
+  function applyFightProfile(profileId) {
+    if (!detailsByProfile[profileId]) return;
+    activeProfile = profileId;
+    document.querySelectorAll('.profile-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.profile === profileId);
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.set('profile', profileId);
+    history.replaceState(null, '', url);
+    renderAll();
+  }
+
+  document.querySelectorAll('.profile-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyFightProfile(btn.dataset.profile));
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      renderAbilities();
+    });
+  });
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeMode = tab.dataset.mode;
+      renderRotation();
+    });
+  });
+
+  renderAll();
+  window.addEventListener('resize', drawTimeline);
+</script>
+</body>
+</html>
